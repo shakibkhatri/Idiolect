@@ -45,9 +45,11 @@ export async function collect(opts: CollectOptions): Promise<Collection> {
   const cache = useCache ? await readCache(cachePath) : { files: {}, commits: [] };
 
   const files: OwnedFile[] = [];
+  const blamed: Record<string, OwnedFile> = {};
   await pool(await listFiles(repo, head, extensions, ignore, maxFileBytes), 8, async (f) => {
     const cached = cache.files[f.path];
     const owned = cached?.blob === f.blob ? cached : await blameFile(repo, head, f, emails);
+    blamed[f.path] = owned;
     if (owned.ownedLines > 0) files.push(owned);
   });
   files.sort((a, b) => a.path.localeCompare(b.path));
@@ -55,7 +57,7 @@ export async function collect(opts: CollectOptions): Promise<Collection> {
   const commits = await listCommits(repo, head, emails, cache);
 
   if (useCache) {
-    cache.files = Object.fromEntries(files.map((f) => [f.path, f]));
+    cache.files = blamed;
     cache.commits = commits;
     cache.commitsHead = head;
     await writeCache(cachePath, cache);

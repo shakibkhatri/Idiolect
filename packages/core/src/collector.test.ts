@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeAll, expect, test } from "vitest";
@@ -45,6 +45,9 @@ test("returns only author A's lines, commits, and respects ignores", async () =>
   expect(c.commits.map((m) => m.subject)).toEqual(["alice reformats", "add repo"]);
   expect(existsSync(join(repo, ".idiolect/cache/collector.json"))).toBe(true);
   expect(existsSync(join(repo, ".idiolect/cache/.gitignore"))).toBe(true);
+  // files owned entirely by others are cached too, so they are not re-blamed every run
+  const cache = JSON.parse(readFileSync(join(repo, ".idiolect/cache/collector.json"), "utf8"));
+  expect(Object.keys(cache.files).sort()).toEqual(["src/Auto.kt", "src/Repo.kt", "src/Util.kt"]);
 });
 
 test("incremental rescan picks up new commits and changed files", async () => {

@@ -1,0 +1,14 @@
+{
+  "name": "idiolect",
+  "version": "0.0.1",
+  "type": "module",
+  "bin": { "idiolect": "dist/index.js" },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@idiolect/core": "workspace:*",
+    "commander": "^13.0.0"
+  }
+}
