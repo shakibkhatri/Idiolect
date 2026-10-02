@@ -31,7 +31,7 @@ export function unbotCommand(): Command {
       if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
       const profile = await loadProfile(user.emails[0]!);
       if (!profile) throw new Error("no profile, run: idiolect scan");
-      const { confidenceThreshold: threshold } = await loadRepoConfig(repo);
+      const { confidenceThreshold: threshold, check: floors } = await loadRepoConfig(repo);
       const provider = o.llm || o.fix ? createProvider(user.llm) : undefined;
       if ((o.llm || o.fix) && !provider) throw new Error("--llm and --fix need an LLM provider, run: idiolect init");
 
@@ -43,7 +43,7 @@ export function unbotCommand(): Command {
         const language = languageOf(file);
         let code = await readFile(abs, "utf8").catch(() => undefined);
         if (code === undefined || !language) continue;
-        const opts = { language, threshold, repo, file };
+        const opts = { language, threshold, repo, file, floors };
         let found = await unbot(profile, code, opts, o.llm ? provider : undefined);
         if (!found.length) continue;
         flagged++;

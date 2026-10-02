@@ -8,12 +8,15 @@ import type { Language, Profile } from "./profile.js";
 import { appliesTo } from "./render.js";
 import { isServed } from "./writer.js";
 
-// ponytail: calibrated on the author's repo so about one file in ten of his own code is flagged, make these repo config if others disagree
-const MIN_ITEMS = 10, MIN_LINES = 100, MIN_LOCATED = 3, EXCESS = 2;
+import type { RepoConfig } from "./config.js";
+
+export type Floors = RepoConfig["check"];
+/** Calibrated on the author's repo so about one file in twenty of his own code is flagged. `check` in the repo config overrides them. */
+export const DEFAULT_FLOORS: Floors = { minItems: 10, minLines: 100, minLocated: 3, excess: 2 };
 
 export type Violation = { ruleId: string; line?: number; message: string; suggestion: string };
 /** `file` is relative to the repo, used for test detection and path-scoped rules. */
-export type CheckOptions = { language: Language; threshold: number; repo?: string; file?: string };
+export type CheckOptions = { language: Language; threshold: number; repo?: string; file?: string; floors?: Floors };
 
 /** Runs the analyzer on the code and compares every served metric rule against it. No LLM, so it cannot judge voice. */
 export async function checkStyle(profile: Profile, code: string, opts: CheckOptions): Promise<Violation[]> {
@@ -22,19 +25,20 @@ export async function checkStyle(profile: Profile, code: string, opts: CheckOpti
   const stats = await analyze(code, opts.language, undefined, { test: !!opts.file && isTestPath(opts.file), path: opts.file });
   const found = await locateNodes(code, opts);
   const out: Violation[] = [];
+  const { minItems, minLines, minLocated, excess } = opts.floors ?? DEFAULT_FLOORS;
   for (const r of rules) {
     const dev = r.evidence.metric!;
     const here = metric(dev.name, stats);
     const kind = r.id.startsWith("avoid.") ? "avoid" : r.id.split(".").at(-1)!;
     // a ratio over a handful of items is noise. Avoid rules fire on one occurrence, located ratio rules need a few items, aggregates need more
     const locate = LOCATE[`${dev.name}.${kind}`];
-    const floor = kind === "avoid" ? 1 : locate ? MIN_LOCATED : dev.name.includes("loc") ? MIN_LINES : MIN_ITEMS;
+    const floor = kind === "avoid" ? 1 : locate ? minLocated : dev.name.includes("loc") ? minLines : minItems;
     if (here.sampleSize < floor) continue;
     // value rules are "keep it small" quantities except the per-kloc ones, which say the developer does a lot of something
     const bad = kind === "high" ? here.value < 0.5
       : kind === "low" ? here.value > 0.5
       : kind === "avoid" ? here.value > 0
-      : kind === "value" ? !dev.name.endsWith("per-kloc") && here.value > dev.value * EXCESS
+      : kind === "value" ? !dev.name.endsWith("per-kloc") && here.value > dev.value * excess
       : false;
     if (!bad) continue;
     const message = `${dev.name} is ${fmt(dev.name, here.value)} here (n = ${here.sampleSize}), ${fmt(dev.name, dev.value)} in your code (n = ${dev.sampleSize})`;

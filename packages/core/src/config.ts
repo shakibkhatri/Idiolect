@@ -19,6 +19,8 @@ export const RepoConfigSchema = z.object({
   minSampleSize: z.number().default(20),
   sync: z.object({ targets: z.array(z.string()).optional() }).prefault({}),
   refresh: z.object({ everyCommits: z.number().default(50) }).prefault({}),
+  // floors for Unbot and check_style: items before a ratio or median counts, lines before a density counts, items for located rules, excess over the developer's number
+  check: z.object({ minItems: z.number().default(10), minLines: z.number().default(100), minLocated: z.number().default(3), excess: z.number().default(2) }).prefault({}),
   ignore: z.array(z.string()).default([]),
 });
 export type RepoConfig = z.infer<typeof RepoConfigSchema>;

@@ -29,8 +29,8 @@ export function createIdiolectServer(deps: ServerDeps): McpServer {
     // the file may not exist yet, so fall back to the directory the client started us in
     const toplevel = (dir: string) => git(dir, ["rev-parse", "--show-toplevel"]).then((x) => x.trim()).catch(() => "");
     const repo = (abs && (await toplevel(dirname(abs)))) || (await toplevel(cwd)) || undefined;
-    const { confidenceThreshold: threshold } = await loadRepoConfig(repo ?? cwd);
-    return { profile, repo, threshold, file: abs ? relative(repo ?? cwd, abs) : undefined };
+    const { confidenceThreshold: threshold, check: floors } = await loadRepoConfig(repo ?? cwd);
+    return { profile, repo, threshold, floors, file: abs ? relative(repo ?? cwd, abs) : undefined };
   };
   const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
   const fail = (e: unknown) => ({ isError: true, content: [{ type: "text" as const, text: `idiolect: ${(e as Error).message}` }] });
@@ -55,7 +55,7 @@ export function createIdiolectServer(deps: ServerDeps): McpServer {
   }, async ({ code, language, file_path }) => {
     try {
       const c = await context(file_path);
-      const violations = (await checkStyle(c.profile, code, { language, threshold: c.threshold, repo: c.repo, file: c.file }))
+      const violations = (await checkStyle(c.profile, code, { language, threshold: c.threshold, repo: c.repo, file: c.file, floors: c.floors }))
         .map((v) => ({ rule_id: v.ruleId, ...(v.line ? { line: v.line } : {}), message: v.message, suggestion: v.suggestion }));
       const body = violations.length
         ? violations.map((v) => `${v.line ? `line ${v.line}: ` : ""}${v.suggestion} (${v.message})`).join("\n")

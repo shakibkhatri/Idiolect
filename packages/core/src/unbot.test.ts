@@ -35,6 +35,14 @@ test("fast mode flags every AI tell in the fixture with lines where they can be 
   expect(await unbot(profile, human, opts)).toEqual([]);
 });
 
+test("repo config floors decide when a quantity rule has enough data to fire", async () => {
+  const high: Rule = { id: "kotlin.functions.expression-body-ratio.high", scope: "personal", language: "kotlin", category: "structure", text: "Use expression bodies.", confidence: 0.9, status: "auto", evidence: { metric: { name: "functions.expression-body-ratio", value: 0.9, sampleSize: 500 }, examples: [] } };
+  const p = { ...profile, rules: [high] };
+  expect(await unbot(p, ai, opts)).toEqual([]); // the fixture has fewer than ten functions
+  const loose = await unbot(p, ai, { ...opts, floors: { minItems: 1, minLines: 1, minLocated: 1, excess: 1 } });
+  expect(loose.map((v) => v.ruleId)).toEqual(["kotlin.functions.expression-body-ratio.high"]);
+});
+
 test("deep mode keeps only known rule ids and lines inside the code", async () => {
   const provider: LlmProvider = { name: "fake", model: "m", complete: async () => ({ violations: [
     { rule_id: "kotlin.comments.why", line: 15, message: "restates the call", suggestion: "drop it" },
