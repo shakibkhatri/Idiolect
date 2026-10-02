@@ -34,7 +34,7 @@ export function webQuiz(report: Report, log: (s: string) => void = (s) => proces
     const server = createServer((req, res) => {
       if (req.method === "GET" && req.url === "/") {
         res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-        res.end(page(pairs.map(({ task, prompt, a, b }) => ({ task, prompt, a, b }))));
+        res.end(page(pairs.map(({ task, prompt, a, b }) => ({ task, prompt, a, b })), `profile with ${report.rules} rules, run ${report.generatedAt.slice(0, 16).replace("T", " ")}`));
         return;
       }
       if (req.method === "POST" && req.url === "/done") {
@@ -78,7 +78,7 @@ export async function ttyQuiz(report: Report): Promise<Quiz> {
   return scorePicks(pairs, raw);
 }
 
-export function page(pairs: Omit<Pair, "flip">[]): string {
+export function page(pairs: Omit<Pair, "flip">[], subtitle = ""): string {
   // the JSON goes through a script tag, so a closing tag inside a sample must not end it early
   const data = JSON.stringify(pairs).replace(/</g, "\\u003c");
   return `<!doctype html>
@@ -95,6 +95,7 @@ export function page(pairs: Omit<Pair, "flip">[]): string {
   .wrap { max-width: 1440px; margin: 0 auto; padding: 20px 24px 120px; }
   header { display: flex; align-items: center; gap: 20px; margin-bottom: 18px; }
   header h1 { font-size: 20px; margin: 0; font-weight: 650; letter-spacing: -.01em; }
+  header .sub { color: var(--muted); font-size: 13px; }
   .dots { display: flex; gap: 5px; margin-left: auto; }
   .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); transition: background .2s, transform .2s; }
   .dots i.done { background: var(--accent); } .dots i.now { background: var(--accent); transform: scale(1.35); }
@@ -132,7 +133,7 @@ export function page(pairs: Omit<Pair, "flip">[]): string {
 </head>
 <body>
 <div class="wrap">
-  <header><h1>Which sounds like you?</h1><div class="dots" id="dots"></div></header>
+  <header><h1>Which sounds like you?</h1><span class="sub">${subtitle}</span><div class="dots" id="dots"></div></header>
   <div id="root"></div>
 </div>
 <div class="foot" id="foot"><span><kbd>A</kbd> left</span><span><kbd>B</kbd> right</span><span><kbd>S</kbd> skip</span><button onclick="pick('skip')">Skip this one</button></div>

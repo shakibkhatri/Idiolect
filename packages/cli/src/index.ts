@@ -9,7 +9,7 @@ import { refreshCommand, statusCommand } from "./refresh.js";
 import { ttyQuiz, webQuiz } from "./quiz.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Command } from "commander";
-import { mkdir, readFile } from "node:fs/promises";
+import { mkdir, readdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { writeFile } from "node:fs/promises";
@@ -205,14 +205,15 @@ program.command("eval")
   .option("--only <ids...>", "run only these task ids")
   .option("--quiz", "after the judge, show pairs blind in your browser and let you pick")
   .option("--tty", "take the quiz in the terminal instead of the browser")
-  .option("--from <report.json>", "skip generation, quiz an existing report and update it")
+  .option("--from <report.json|latest>", "skip generation, quiz an existing report and update it. latest picks the newest report in this repo")
   .option("--concurrency <n>", "parallel LLM calls", "3")
   .action(async (o: { repo: string; tasks: string; only?: string[]; quiz?: boolean; tty?: boolean; from?: string; concurrency: string }) => {
     const repo = resolve(o.repo);
     const quiz = (report: Report) => (o.tty ? ttyQuiz(report) : webQuiz(report));
     if (o.from) {
-      const path = resolve(o.from);
+      const path = o.from === "latest" ? await latestReport(repo) : resolve(o.from);
       const report = JSON.parse(await readFile(path, "utf8")) as Report;
+      process.stderr.write(`report: ${path}\nprofile with ${report.rules} rules, run ${report.generatedAt}\n`);
       report.quiz = await quiz(report);
       await writeFile(path, JSON.stringify(report, null, 2));
       await writeFile(path.replace(/\.json$/, ".md"), renderReport(report));
@@ -264,6 +265,13 @@ program.command("mcp")
     });
     await server.connect(new StdioServerTransport());
   });
+
+async function latestReport(repo: string) {
+  const dir = join(repo, ".idiolect", "eval");
+  const reports = (await readdir(dir).catch(() => [] as string[])).filter((f) => f.endsWith(".json")).sort();
+  if (!reports.length) throw new Error(`no reports in ${dir}, run: idiolect eval`);
+  return join(dir, reports[reports.length - 1]!);
+}
 
 async function listAuthors(repo: string) {
   const out = await git(repo, ["shortlog", "-sne", "--all", "--no-merges"]);
