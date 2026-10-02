@@ -121,9 +121,10 @@ Reports go to `<repo>/.idiolect/eval/<timestamp>.{json,md}`.
 
 ## Publishing
 
-Not published yet. The name `idiolect` was free on 2026-10-02. The org name `idiolect` was taken, so the internal packages are `@shakibkhatri/idiolect-core`, `-eval` and `-mcp` under Shakib's own user scope, which needs no org.
+Published 2026-10-02: `idiolect@0.0.1` plus `@shakibkhatri/idiolect-core`, `-eval` and `-mcp` at 0.0.1. The org name `idiolect` was taken, so the internal packages sit under Shakib's own user scope, which needs no org.
+Verified from a clean directory: `npm i idiolect@0.0.1`, then init, scan and unbot on a one-file repo.
 Every package has `files`, `license`, `repository` and `publishConfig.access: public`. Grammars and `ai-tells.json` live inside `packages/core`, eval tasks inside `packages/eval/tasks`, so nothing resolves outside its package once installed. The CLI copies the root README in `prepack`.
-Steps for Shakib: `npm login`, bump versions if wanted, `pnpm -r publish`. Then the install line becomes `npx -y idiolect` and the MCP line `claude mcp add idiolect -- npx -y idiolect mcp`.
+Next release: bump the version in all four package.json files together, `pnpm -r publish`, tag. On this machine the global `idiolect` is still the npm-linked dev build from `packages/cli`, not the published one.
 
 ## Config and storage
 
@@ -186,7 +187,7 @@ He uses a global `~/.claude/CLAUDE.md` with his general rules, read it.
 4. Shakib runs `idiolect sync` and `idiolect hooks install` inside Dissent and commits what he likes. `.idiolect/` is still untracked there.
 5. Shakib reads README.md and decides about posting.
 6. Shakib runs `idiolect scan` in Dissent once to add TypeScript to his profile. The agent's test scan was restored to the reviewed 55-rule profile.
-7. Publish, see the Publishing section. Then Swift (grammar must be built, suggestion 3), or suggestions 15, 16, 19, 20. M9 and M10 only after real usage, per the spec.
+7. Launch post, Shakib's call, once the quiz has a number. Then Swift (grammar must be built, suggestion 3), or suggestions 15, 16, 19, 20. M9 and M10 only after real usage, per the spec.
 
 ## Things that bit us, so you do not repeat them
 

@@ -196,12 +196,12 @@ How it works:
 - `rewrite_like_me` needs the configured LLM provider and returns an error that says so otherwise.
 - The profile is re-read on every call, so a rescan shows up without restarting the server.
 
-Install, while the package is unpublished and linked globally:
+Install:
 ```
-claude mcp add idiolect -- idiolect mcp
+claude mcp add idiolect -- npx -y idiolect mcp
 ```
-After publishing: `claude mcp add idiolect -- npx -y idiolect mcp`. Config snippets for Cursor and other MCP clients go in the README at launch.
-Publishing: the name `idiolect` was free on npm on 2026-10-02 but `idiolect` as an org or user name was taken, so the internal packages live under the author's user scope as `@shakibkhatri/idiolect-core`, `-eval` and `-mcp`. Nobody installs those directly. The four packages carry `files`, `publishConfig` and repository fields, grammars, tells and eval tasks ship inside their packages, and `pnpm -r publish` releases them after `npm login`.
+Config snippets for Cursor and other MCP clients go in the README at launch.
+Published 2026-10-02 as `idiolect@0.0.1` on npm. The org name `idiolect` was taken, so the internal packages live under the author's user scope as `@shakibkhatri/idiolect-core`, `-eval` and `-mcp`. Nobody installs those directly. Grammars, tells and eval tasks ship inside their packages. Release with `pnpm -r publish` after bumping versions.
 
 **Done when:** Claude Code calls `get_style` on a `.kt` file and gets only Kotlin + general rules. Built 2026-10-02, verified over stdio against the author's profile inside the Dissent repo.
 

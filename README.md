@@ -80,12 +80,12 @@ Every rule it followed is backed by a number or a cited line from that developer
 ## Install
 
 Needs Node 22 and git.
-Not on npm yet. Until then, clone and link:
 
 ```
-pnpm install && pnpm build
-cd packages/cli && npm link
+npm install -g idiolect
 ```
+
+Or run it without installing: `npx -y idiolect <command>`.
 
 ## Use
 
@@ -109,7 +109,7 @@ Rules that only hold in one repo, like a team's commit prefixes, are kept as pro
 
 ```
 idiolect sync                               # writes STYLE.md into CLAUDE.md, AGENTS.md, Cursor and Copilot files
-claude mcp add idiolect -- idiolect mcp     # MCP server: get_style, check_style, rewrite_like_me
+claude mcp add idiolect -- npx -y idiolect mcp     # MCP server: get_style, check_style, rewrite_like_me
 ```
 
 Sync only writes between `<!-- idiolect:start -->` and `<!-- idiolect:end -->` and never touches anything else.
