@@ -44,3 +44,15 @@ That is fine for serving, but a proper spread measure (how tight the distributio
 
 Reconcile already honours approved, edited and rejected statuses across rescans, but nothing sets them yet.
 `idiolect rules list|approve|reject|edit <id>` is a small addition and unblocks the pending-rule flow before the dashboard exists.
+
+## 8. Gemini CLI and Codex CLI providers (open)
+
+Same pattern as `claude-cli`: run the installed binary headless, pass the prompt on stdin, parse JSON.
+Neither is installed here so their flags were not verified.
+Check `gemini -p` and `codex exec` output formats and whether they support a JSON schema.
+
+## 9. MCP prompt that lets the agent write the rules (open)
+
+Once M5 exists, add a `learn_my_style` prompt plus `get_profile_input` and `submit_rules` tools.
+The agent fetches metrics, baseline rules and samples, writes the rules itself, and submits them.
+That removes the CLI dependency entirely for anyone using an MCP client.

@@ -18,7 +18,8 @@ Later: **team mode**, which learns team rules from PR review comments.
 - **Local first.** Code never leaves the machine except the samples sent to the LLM provider the user chose.
   Support a fully local option (Ollama or any OpenAI-compatible local server) so nothing leaves the machine at all.
 - **LLM is optional.** Every feature has a no-LLM baseline. The LLM improves output, it never gates it.
-- **Bring your own key.** No backend, no accounts in v1.
+- **No API key needed.** Most developers have an AI plan, not an API key. The default LLM path is the agent they already use (Claude Code, later Gemini CLI and Codex) run headless on their machine under their own login. API keys and local servers are options, never a requirement. We never read or store their tokens.
+- **No backend, no accounts in v1.**
 - **Evidence or nothing.** Every rule must be backed by stats or real examples from the user's code. No guessed rules.
 - **Only the user's code.** Use git blame and author emails so other people's code never shapes the profile.
 - **Never overwrite user files.** Only write inside clearly marked blocks.
@@ -34,7 +35,9 @@ Later: **team mode**, which learns team rules from PR review comments.
 - `child_process` for git, no wrapper library
 - `@modelcontextprotocol/sdk` for the MCP server (stdio transport)
 - `commander` for the CLI, `zod` for schemas, `vitest` for tests
-- LLM provider interface with adapters: Anthropic (default), OpenAI, Google Gemini, and `openai-compatible` (any base URL).
+- LLM provider interface with adapters: `claude-cli` (default when Claude Code is installed, headless `claude -p --json-schema`), Anthropic, OpenAI, Google Gemini, and `openai-compatible` (any base URL).
+  Later: `gemini-cli` and `codex-cli` the same way, once their non-interactive flags are verified.
+  Longer term: an MCP prompt `learn_my_style` lets any agent do the writing itself through the MCP server, no CLI needed.
   The `openai-compatible` adapter covers Ollama, LM Studio, vLLM, llama.cpp server and corporate gateways, so local needs no dedicated code.
 - Default model per provider lives in one table in `core`. Anthropic default is `claude-opus-5-5`. `model` in config is optional and overrides it
 - Dashboard: Vite + React, served locally by the CLI

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { analyzeKotlin, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadConfig, loadProfile, mergeStats, profilePath, saveConfig, saveProfile, upsertSource, analyzeCommits, configPath, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type Config, type SampleInput } from "@idiolect/core";
 import { writeFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
 import { Command } from "commander";
 import { resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
@@ -29,13 +30,18 @@ program.command("init")
     if (!emails.length) throw new Error("no emails selected");
     const kotlinFiles = (await git(repo, ["ls-files", "*.kt", "*.kts"])).split("\n").filter(Boolean).length;
     const languages: Config["languages"] = kotlinFiles ? ["kotlin"] : [];
-    const providers = ["anthropic", "openai", "gemini", "openai-compatible", "none"] as const;
+    const providers = ["claude-cli", "anthropic", "openai", "gemini", "openai-compatible", "none"] as const;
     let provider = o.provider as Config["llm"]["provider"] | undefined;
     if (!provider) {
-      console.log(`\nLLM provider. Samples of your code are sent to it to phrase the rules; "none" keeps everything local with metric rules only.`);
-      console.log(`  ${providers.join(", ")}  (openai-compatible covers Ollama, LM Studio, vLLM)`);
-      const answer = o.yes ? "" : (await ask(`Provider [anthropic]: `)).trim();
-      provider = (answer || "anthropic") as Config["llm"]["provider"];
+      const hasClaude = await hasCommand("claude");
+      const def = hasClaude ? "claude-cli" : "none";
+      console.log(`\nLLM provider. Samples of your code go to it to phrase the rules. "none" keeps everything local with metric rules only.`);
+      console.log(`  claude-cli         your installed Claude Code, uses your existing plan${hasClaude ? "  <- found" : "  (not found on PATH)"}`);
+      console.log(`  anthropic | openai | gemini   API key`);
+      console.log(`  openai-compatible  Ollama, LM Studio, vLLM, any local server`);
+      console.log(`  none`);
+      const answer = o.yes ? "" : (await ask(`Provider [${def}]: `)).trim();
+      provider = (answer || def) as Config["llm"]["provider"];
     }
     if (!providers.includes(provider)) throw new Error(`unknown provider ${provider}`);
     const previous = await loadConfig(repo);
@@ -44,7 +50,7 @@ program.command("init")
     console.log(`\nwrote ${configPath(repo)}`);
     console.log(`  emails:    ${emails.join(", ")}`);
     console.log(`  languages: ${languages.join(", ") || "none supported yet (kotlin only for now)"}`);
-    console.log(`  llm:       ${provider}${provider === "anthropic" ? " (needs ANTHROPIC_API_KEY)" : provider === "openai" ? " (needs OPENAI_API_KEY and llm.model)" : provider === "gemini" ? " (needs GEMINI_API_KEY and llm.model)" : provider === "openai-compatible" ? " (needs llm.model, default base url is Ollama)" : ""}`);
+    console.log(`  llm:       ${provider}${provider === "claude-cli" ? " (your Claude Code login)" : provider === "anthropic" ? " (needs ANTHROPIC_API_KEY)" : provider === "openai" ? " (needs OPENAI_API_KEY and llm.model)" : provider === "gemini" ? " (needs GEMINI_API_KEY and llm.model)" : provider === "openai-compatible" ? " (needs llm.model, default base url is Ollama)" : ""}`);
     console.log(`\nnext: idiolect scan`);
   });
 
@@ -133,6 +139,7 @@ async function listAuthors(repo: string) {
   return out.split("\n").map((l) => l.match(/^\s*(\d+)\s+(.*?)\s+<(.+)>$/)).filter((m): m is RegExpMatchArray => !!m)
     .map((m) => ({ commits: Number(m[1]), name: m[2]!, email: m[3]!.toLowerCase() }));
 }
+const hasCommand = (cmd: string) => new Promise<boolean>((res) => execFile("which", [cmd], (err) => res(!err)));
 const sameName = (a: string, b?: string) => !!b && a.toLowerCase().replace(/\s+/g, "") === b.toLowerCase().replace(/\s+/g, "");
 async function ask(q: string) {
   const rl = createInterface({ input: process.stdin, output: process.stdout });

@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import type { z } from "zod";
+import { execFile } from "node:child_process";
+import { tmpdir } from "node:os";
+import { z } from "zod";
 import type { Config } from "./config.js";
 
 export type LlmRequest<T> = { system: string; user: string; schema: z.ZodType<T>; maxTokens?: number };
@@ -16,6 +18,7 @@ const DEFAULTS = {
 /** Returns undefined when no provider is configured, which the writer treats as "baseline rules only". */
 export function createProvider(llm: Config["llm"]): LlmProvider | undefined {
   if (llm.provider === "none") return undefined;
+  if (llm.provider === "claude-cli") return claudeCliProvider(llm.model);
   const d = DEFAULTS[llm.provider];
   const model = llm.model ?? d.model;
   if (!model) throw new Error(`llm.model is required for provider ${llm.provider}`);
@@ -27,6 +30,34 @@ export function createProvider(llm: Config["llm"]): LlmProvider | undefined {
   if (llm.provider === "anthropic") return anthropicProvider(model, new Anthropic({ apiKey }));
   if (llm.provider === "gemini") return geminiProvider(model, apiKey!, baseUrl!);
   return openAiCompatibleProvider(llm.provider, model, apiKey ?? "ollama", baseUrl!);
+}
+
+// claude's validator rejects the $schema header zod emits
+function jsonSchema(schema: z.ZodType): Record<string, unknown> {
+  const { $schema: _drop, ...rest } = z.toJSONSchema(schema) as Record<string, unknown>;
+  return rest;
+}
+
+/** Runs the user's installed Claude Code in headless mode. Uses their existing login, no API key, we never touch their tokens. */
+function claudeCliProvider(model?: string): LlmProvider {
+  return {
+    name: "claude-cli", model: model ?? "default",
+    complete<T>(req: LlmRequest<T>): Promise<T> {
+      const args = ["-p", "--output-format", "json", "--no-session-persistence", "--tools", "", "--append-system-prompt", req.system, "--json-schema", JSON.stringify(jsonSchema(req.schema))];
+      if (model) args.push("--model", model);
+      return new Promise<T>((resolve, reject) => {
+        const child = execFile("claude", args, { cwd: tmpdir(), maxBuffer: 64 * 1024 * 1024, timeout: 15 * 60 * 1000 }, (err, stdout, stderr) => {
+          if (err && !stdout) return reject(new Error(`claude CLI failed: ${err.message} ${stderr}`.trim()));
+          let out: { is_error?: boolean; result?: string; structured_output?: unknown };
+          try { out = JSON.parse(stdout); } catch { return reject(new Error(`claude CLI returned non-JSON: ${stdout.slice(0, 200)}`)); }
+          if (out.is_error) return reject(new Error(`claude CLI: ${out.result ?? "unknown error"}`));
+          if (out.structured_output === undefined) return reject(new Error(`claude CLI returned no structured output: ${String(out.result).slice(0, 200)}`));
+          try { resolve(req.schema.parse(out.structured_output)); } catch (e) { reject(new Error(`claude CLI output failed validation: ${(e as Error).message.slice(0, 300)}`)); }
+        });
+        child.stdin!.end(req.user);
+      });
+    },
+  };
 }
 
 function anthropicProvider(model: string, client: Anthropic): LlmProvider {
