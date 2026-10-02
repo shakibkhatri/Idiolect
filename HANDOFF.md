@@ -181,8 +181,8 @@ He uses a global `~/.claude/CLAUDE.md` with his general rules, read it.
 
 ## Open items, in order
 
-1. Shakib takes the blind quiz on `Dissent/.idiolect/eval/2026-10-02T15-08-05-753Z.json` and the result goes in the spec M4 line. He said on 2026-10-02 he has no time yet, so build on without waiting.
-2. If the quiz is near chance, work `SUGGESTIONS.md` item 13: cap voice rules, ask for fewer sharper rules.
+1. Quiz taken on 2026-10-02: 5 of 15 for the profile, judge 15 of 15. Not a verdict, see SPEC M4: Dissent is mostly agent-written under Shakib's name with trailers stripped, so he has no reference for "sounds like me" there. Open question: does he have a repo he wrote by hand to run the eval and quiz on, or should the quiz ask "which would you merge as-is" (suggestion 22).
+2. Suggestion 13 stays parked until a meaningful quiz lands near chance.
 3. Shakib runs `claude mcp add idiolect -- idiolect mcp` and tries `get_style` and `check_style` from Claude Code inside Dissent.
 4. Shakib runs `idiolect sync` and `idiolect hooks install` inside Dissent and commits what he likes. `.idiolect/` is still untracked there.
 5. Shakib reads README.md and decides about posting.

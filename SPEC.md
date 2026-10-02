@@ -168,7 +168,8 @@ Start with **Kotlin only**, add others after M5. TypeScript, Python and Go added
   1. **Metric distance:** run the analyzer on the output, compare to the user's stats
   2. **LLM judge:** pairwise, "which output matches these reference samples from the developer"
   3. **Blind quiz:** CLI shows two outputs in random order, user picks which sounds like them. `idiolect eval --from <report> --quiz` replays a stored run so the quiz costs no LLM calls
-- **The quiz is the headline number.** The judge shares a model with the generator and may flatter its own styled output, so it is a cheap proxy for iteration. The quiz, taken seriously by the author, is the truth. No real quiz has been taken yet
+- **The quiz is the headline number.** The judge shares a model with the generator and may flatter its own styled output, so it is a cheap proxy for iteration. The quiz, taken seriously by the author, is the truth
+- First real quiz, 2026-10-02, Dissent, 15 tasks, 55-rule profile: the author picked the profile output 5 of 15 times while the judge picked it 15 of 15. The author then said most of Dissent was written by agents under his name, with co-author trailers stripped, so "which sounds like you" has no answer there: the profile learned the agents' accepted style and the author has no inner reference to judge it against. The number is recorded, not acted on. A meaningful quiz needs a repo the author wrote by hand, or a different question for agent-heavy repos, see suggestion 22
 - Output: report with win rate, quiz picks per task and metric distance per category, saved as JSON + Markdown under `<repo>/.idiolect/eval/`
 
 **Done when:** `idiolect eval` prints a win rate, and re-running after a profile change shows the difference.
@@ -324,7 +325,7 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
 0. **Spike:** parse one real Kotlin file with `web-tree-sitter`, print the AST. Done 2026-10-02, see `packages/core/src/parser.test.ts`
 1. **M1 Collector** + **M2 Analyzer** (Kotlin). Done 2026-10-02
 2. **M3 Profile writer** + `STYLE.md`. Done 2026-10-02, author reviewed the rules from two repos and found them correct
-3. **M4 Eval harness** - prove it works on the author's own repos before going further. Built 2026-10-02. Judge 7/7 for the profile on two repos. Metric table hinted the profile over-comments, so STYLE.md puts quantity rules first. Blind quiz: not done yet as of 2026-10-02, the author will take it later on the stored Dissent report
+3. **M4 Eval harness** - prove it works on the author's own repos before going further. Built 2026-10-02. Judge 7/7 for the profile on two repos. Metric table hinted the profile over-comments, so STYLE.md puts quantity rules first. Blind quiz on Dissent 5 of 15 on 2026-10-02, judge 15 of 15, see M4 for why that is not a verdict
 4. **M5 MCP server** + **M6 Sync**. Both done 2026-10-02. `get_style` over stdio returns the same 46 rules as `idiolect show` inside the repo, sync is idempotent on the author's repo
 4b. `idiolect rules` done 2026-10-02. Verified in Dissent: reject, approve and edit all survived `idiolect scan --no-llm`
 5. **M7 Unbot linter**. Done 2026-10-02, verified in Dissent, see M7

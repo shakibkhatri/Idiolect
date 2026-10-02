@@ -127,3 +127,18 @@ Add a few TypeScript tasks and let the task language pick the analyzer for the m
 Python test functions are `def test_x` in test files, so `naming.testNames` gets their snake style, which is all pytest allows.
 Go test functions are `func TestX`, classified by the camel-sentence heuristic.
 Neither says much about the developer. Worth skipping both languages in the test-name rules, or classifying by the words after the prefix.
+
+## 21. Exclude or down-weight commits with an agent trailer (open)
+
+A developer who lets Claude Code or Copilot commit under their name has lines in blame that are not theirs.
+Where the trailers survive ("Co-Authored-By: Claude", "Generated with Claude Code", "Co-authored-by: Copilot"), the collector can map blame hashes to commits and drop those lines, with a `scan` line saying how much was excluded.
+It is cheap: `git log --format=%H -i --grep=...` once, then a set lookup per blame line.
+It does not help the author's own repos, whose rules strip the trailers, which is why it is logged and not built.
+
+## 22. The quiz question for agent-heavy repos (open)
+
+"Which sounds like you?" assumes the developer wrote the history by hand.
+For the author's Dissent most of the code came from agents he steered, so the quiz came out 5 of 15 with nothing to learn from it.
+For such a developer the honest question is "Which would you merge into this repo as-is?", which measures what the profile is for in practice: fewer edits before accepting agent output.
+Offer it as `--quiz-merge`, keep the picks in the same report shape, and say in the report which question was asked.
+Suggestion 13 stays parked until a quiz with a meaningful question comes out near chance.
