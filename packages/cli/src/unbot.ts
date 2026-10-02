@@ -12,7 +12,9 @@ async function pickFiles(repo: string, given: string[], o: { staged?: boolean; a
   return [...new Set(out.split("\n").filter((f) => languageOf(f)))].sort();
 }
 
-const show = (v: Violation) => `  ${String(v.line ?? "-").padStart(5)}  ${v.suggestion}${v.line ? "" : ` ${v.message}`}  [${v.ruleId}]`;
+// metric messages repeat the numbers, so only the LLM's explanation of a located line is worth printing before the suggestion
+const isMetricMessage = (m: string) => /\(n = \d+\)/.test(m);
+const show = (v: Violation) => `  ${String(v.line ?? "-").padStart(5)}  ${v.line && !isMetricMessage(v.message) ? `${v.message} Try: ${v.suggestion}` : v.suggestion}${v.line ? "" : ` ${v.message}`}  [${v.ruleId}]`;
 
 export function unbotCommand(): Command {
   return new Command("unbot").description("flag code that breaks your measured habits or sounds like AI. Warns only, --strict fails")

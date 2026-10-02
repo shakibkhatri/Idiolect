@@ -1,5 +1,5 @@
 import type { Node } from "web-tree-sitter";
-import { analyzeTree, bump, countComment, countCommentText, countName, firstWord, GENERIC_NAME, testNameStyle, type AnalyzeOptions, type LanguageStats, type NameKind } from "./analyzer.js";
+import { analyzeTree, bump, countComment, countCommentText, countName, firstWord, GENERIC_NAME, type AnalyzeOptions, type LanguageStats, type NameKind } from "./analyzer.js";
 import type { LineRange } from "./collector.js";
 
 const NEST = new Set(["if_statement", "for_statement", "while_statement", "try_statement", "with_statement", "match_statement", "lambda"]);
@@ -65,7 +65,8 @@ function countFunction(n: Node, s: LanguageStats, test: boolean) {
   f.count++;
   const fname = field(n, "name")?.text;
   const magic = !!fname && fname.startsWith("__");
-  if (test) { s.tests.functions++; if (fname) bump(s.naming.testNames, testNameStyle(fname)); }
+  // test_x and TestX are the only forms the framework allows, so the name says nothing about the developer
+  if (test) s.tests.functions++;
   else if (!magic) { countName(fname, "function", s); if (fname && GENERIC_NAME.test(fname)) s.naming.genericNames++; }
   if (fname && !test && !magic) bump(s.naming.functionVerb, firstWord(fname));
   const body = field(n, "body");
