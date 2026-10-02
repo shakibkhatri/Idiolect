@@ -120,6 +120,16 @@ test("render serves every metric rule but only the top voice rules per section, 
   expect(comments.indexOf("capital letter")).toBeLessThan(comments.indexOf("Voice rule 1."));
 });
 
+test("a language under 5% of the lines is left out of the full profile but served when asked for", () => {
+  const p = upsertSource(emptyProfile("me", ["me@x"]), source("/a", () => {}));
+  const py = emptyStats(); py.loc = 300;
+  const withPy: Profile = { ...p, stats: { ...p.stats, python: py } };
+  const rule = { id: "python.comments.x", scope: "personal" as const, language: "python" as const, category: "comments" as const, text: "Python comments are terse.", evidence: { examples: [{ file: "a.py", line: 1, snippet: "# x" }] }, confidence: 0.9, status: "auto" as const };
+  const rules = [...baselineRules(withPy, opts), rule];
+  expect(renderStyleMd({ ...withPy, rules }, { threshold: 0.6 })).not.toContain("Python comments are terse.");
+  expect(renderStyleMd({ ...withPy, rules }, { threshold: 0.6, language: "python" })).toContain("Python comments are terse.");
+});
+
 test("redact strips key-like strings and keeps the rest", () => {
   expect(redact('val key = "sk-ant-abcdefghijklmnopqrstuvwxyz0123"')).toBe('val key = "[REDACTED]"');
   expect(redact("password = hunter2!!x")).toBe("password = [REDACTED]");

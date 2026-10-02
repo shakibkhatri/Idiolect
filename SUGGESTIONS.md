@@ -87,10 +87,11 @@ Round 1, cap only: quiz 7 of 15, judge 11 of 15, profile output now carries fewe
 Round 2, rescanned with the new writer: judge 13 of 15, metric distance 0.136 against 0.140, commit bodies wrapped. The author stopped quizzing before grading it, so round 2 has no quiz. The report is `2026-10-02T21-29-38-667Z` in Dissent.
 The "do less" family and the Python noise below are still open.
 
-## 23. A small secondary language adds its own metric rules to the profile (open)
+## 23. A small secondary language adds its own metric rules to the profile (done 2026-10-02)
 
 Dissent has six Python scripts. After the scan they produce "Python: Start comments with a capital letter" and two more Python comment rules in a profile that is 95% Kotlin, and `idiolect show` prints them in Dissent next to the Kotlin rules.
 Options: a per-language floor on lines owned before a language gets metric rules, or render only the languages that make up more than a few percent of the repo unless asked with `--lang`.
+Done the second way: the render leaves out any language under 5% of the developer's lines unless that language is requested, which `idiolect show --lang`, `get_style` on a file and Unbot all do.
 
 
 ## 14. check_style cannot point at lines for naming and structure rules (open)

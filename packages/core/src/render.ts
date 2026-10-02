@@ -19,7 +19,10 @@ export const appliesTo = (r: Rule, opts: { language?: string; file?: string }) =
 
 /** Personal rules always. Project rules only when rendering for the repo they were learned in. */
 export function renderStyleMd(profile: Profile, opts: RenderOptions): string {
-  const served = profile.rules.filter((r) => isServed(r, opts.threshold) && appliesTo(r, opts));
+  // a language under 5% of the developer's lines only shows up when asked for, so six scripts do not pad a Kotlin profile
+  const total = Object.values(profile.stats).reduce((n, s) => n + (s?.loc ?? 0), 0);
+  const minor = new Set(Object.entries(profile.stats).filter(([, s]) => total && (s?.loc ?? 0) / total < 0.05).map(([l]) => l));
+  const served = profile.rules.filter((r) => isServed(r, opts.threshold) && appliesTo(r, opts) && (opts.language || !minor.has(r.language)));
   const rules = served.filter((r) => !r.repo);
   const project = opts.repo ? served.filter((r) => r.repo === opts.repo) : [];
   const langs = new Set(served.map((r) => r.language).filter((l) => l !== "any"));
