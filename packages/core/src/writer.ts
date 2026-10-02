@@ -17,6 +17,7 @@ const LlmRules = z.object({
     examples: z.array(z.object({ file: z.string(), line: z.number().int() })).min(1).max(3),
     confidence: z.number().min(0).max(1),
   })),
+  confirms: z.array(z.string()).describe("ids of existing personal rules that these samples also show"),
 });
 
 export const SYSTEM_PROMPT = `You write a coding style profile for one developer. AI coding agents will read it before writing code for them.
@@ -30,11 +31,12 @@ Rules:
 - Prefer a few specific rules over many vague ones. Ten to twenty rules is typical.
 - scope is "personal" when the habit would hold in any codebase this developer works in: voice, phrasing, structure, error handling style, how they name and comment.
   scope is "project" when the rule depends on this codebase: its domain vocabulary, product or company names, specific libraries, wrappers, tokens, ticket formats, stakeholder names, team commit conventions. Project rules are only shown inside this repo, so be strict: anything naming a project-specific symbol, product or person is "project".
+- You may be given personal rules already learned from the developer's other repos. Never rewrite or duplicate one. If the samples show the same habit, put its id in "confirms" instead. Only write a new rule for a habit not already covered.
 - confidence is 0 to 1: how consistently the samples show the habit.
 - id is lowercase dotted, like kotlin.comments.explain-why or any.commits.mention-screen.
 Return JSON only.`;
 
-export function buildPrompt(profile: Profile, samples: Samples, baseline: Rule[]): { system: string; user: string } {
+export function buildPrompt(profile: Profile, samples: Samples, baseline: Rule[], existing: Rule[] = []): { system: string; user: string } {
   const metrics: Record<string, unknown> = {};
   for (const [lang, stats] of Object.entries(profile.stats)) for (const [id, fn] of Object.entries(METRICS)) { const m = fn(stats!); if (m.sampleSize) metrics[`${lang}.${id}`] = { value: Math.round(m.value * 100) / 100, n: m.sampleSize }; }
   for (const [id, fn] of Object.entries(COMMIT_METRICS)) { const m = fn(profile.commitStats); if (m.sampleSize) metrics[id] = { value: Math.round(m.value * 100) / 100, n: m.sampleSize }; }
@@ -44,6 +46,7 @@ export function buildPrompt(profile: Profile, samples: Samples, baseline: Rule[]
     `# Developer: ${profile.developer.name}`,
     `# Metrics\n${JSON.stringify(metrics)}`,
     `# Rules already derived from metrics (do not repeat)\n${baseline.map((r) => `- ${r.text}`).join("\n")}`,
+    existing.length ? `# Personal rules already learned from other repos (do not duplicate, confirm by id instead)\n${existing.map((r) => `- [${r.id}] ${r.text}`).join("\n")}` : "",
     block("Function samples", samples.functions),
     block("Comment samples", samples.comments),
     block("Commit message samples", samples.commits),
@@ -62,8 +65,13 @@ export async function writeRules(profile: Profile, samples: Samples, provider: L
     if (!fresh.some((f) => f.id === r.id)) fresh.push(r);
   }
   if (provider) {
-    const prompt = buildPrompt(profile, samples, baseline);
+    const existing = fresh.filter((r) => r.evidence.examples.length && !r.repo);
+    const prompt = buildPrompt(profile, samples, baseline, existing);
     const out = await provider.complete({ ...prompt, schema: LlmRules });
+    for (const id of out.confirms) {
+      const r = existing.find((e) => e.id === id);
+      if (r) r.confidence = Math.min(1, Math.round((r.confidence + 0.1) * 100) / 100);
+    }
     const sent = new Map([...samples.functions, ...samples.comments, ...samples.commits].map((s) => [`${s.file}:${s.line}`, s]));
     const ids = new Set(fresh.map((r) => r.id));
     for (const r of out.rules) {

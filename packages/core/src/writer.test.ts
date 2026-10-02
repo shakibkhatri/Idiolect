@@ -60,7 +60,7 @@ test("writer keeps only LLM rules whose examples were actually sent, and reconci
       { id: "comments.terse", scope: "personal", language: "kotlin", category: "comments", text: "Keep comments to a few lowercase words.", examples: [{ file: "A.kt", line: 1 }], confidence: 0.8 },
       { id: "kotlin.made-up", scope: "personal", language: "kotlin", category: "naming", text: "A rule with a fake citation that must be dropped.", examples: [{ file: "Nope.kt", line: 9 }], confidence: 0.9 },
       { id: "framework.crew", scope: "project", language: "kotlin", category: "framework", text: "Call the user the crew in comments.", examples: [{ file: "A.kt", line: 1 }], confidence: 0.9 },
-    ] }) as never,
+    ], confirms: [] }) as never,
   };
   const rules = await writeRules(p, samples, mock, { ...opts, repo: "/a" });
   const llm = rules.filter((r) => r.evidence.examples.length);
@@ -72,9 +72,9 @@ test("writer keeps only LLM rules whose examples were actually sent, and reconci
 
   const again = await writeRules({ ...p, rules }, samples, undefined, opts);
   expect(again.map((r) => r.id)).toContain("kotlin.comments.terse"); // no provider keeps earlier LLM rules
-  const other = await writeRules({ ...p, rules }, samples, { ...mock, complete: async () => ({ rules: [] }) as never }, { ...opts, repo: "/b" });
-  expect(other.map((r) => r.id)).toContain("kotlin.comments.terse"); // scanning another repo keeps rules learned in /a
-  const relearn = await writeRules({ ...p, rules }, samples, { ...mock, complete: async () => ({ rules: [] }) as never }, { ...opts, repo: "/a" });
+  const other = await writeRules({ ...p, rules }, samples, { ...mock, complete: async () => ({ rules: [], confirms: ["kotlin.comments.terse"] }) as never }, { ...opts, repo: "/b" });
+  expect(other.find((r) => r.id === "kotlin.comments.terse")).toMatchObject({ confidence: 0.9 }); // another repo confirming raises confidence
+  const relearn = await writeRules({ ...p, rules }, samples, { ...mock, complete: async () => ({ rules: [], confirms: [] }) as never }, { ...opts, repo: "/a" });
   expect(relearn.map((r) => r.id)).not.toContain("kotlin.comments.terse"); // re-learning /a replaces them
 
   const home = renderStyleMd({ ...p, rules }, { threshold: 0.6 });
