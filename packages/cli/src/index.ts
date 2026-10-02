@@ -233,9 +233,11 @@ program.command("eval")
     if (o.only) tasks = tasks.filter((t) => o.only!.includes(t.id));
     if (!tasks.length) throw new Error("no tasks");
 
-    const c = await collect({ repo, emails: user.emails, ignore: config.ignore });
+    // reference samples come from the languages the tasks are written in
+    const languages = [...new Set(tasks.map((t) => t.language))];
+    const c = await collect({ repo, emails: user.emails, ignore: config.ignore, extensions: languages.flatMap((l) => EXTENSIONS[l]) });
     const inputs: SampleInput[] = [];
-    for (const f of c.files.filter((x) => languageOf(x.path) === "kotlin").slice(0, 400)) inputs.push({ path: f.path, code: await git(repo, ["show", `${c.head}:${f.path}`]), ranges: f.ranges, test: isTestPath(f.path) });
+    for (const f of c.files.slice(0, 400)) inputs.push({ path: f.path, code: await git(repo, ["show", `${c.head}:${f.path}`]), ranges: f.ranges, test: isTestPath(f.path) });
     const samples = await collectSamples(inputs, c.commits, { maxTokens: 12000, functions: 12, comments: 20, commits: 8 });
     const references = [...samples.functions, ...samples.comments, ...samples.commits];
     process.stderr.write(`${tasks.length} tasks, ${references.length} reference samples, ${provider.name} ${provider.model}, ${tasks.length * 3} LLM calls\n`);

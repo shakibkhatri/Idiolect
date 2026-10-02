@@ -1,0 +1,5 @@
+id: ts-fetch-retry
+language: typescript
+prompt: |
+  Write a TypeScript function that wraps fetch with a timeout and retries, retrying only on network errors and 5xx responses, with exponential backoff and a cap on attempts.
+  Return the parsed JSON typed by a generic parameter. Comment it the way you normally would.

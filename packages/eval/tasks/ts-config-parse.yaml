@@ -1,0 +1,5 @@
+id: ts-config-parse
+language: typescript
+prompt: |
+  Write a TypeScript module that reads the service configuration from environment variables: a required PORT number, a required DATABASE_URL, an optional LOG_LEVEL limited to "debug", "info" or "error" with "info" as default, and an optional FEATURE_FLAGS comma-separated list.
+  Fail fast with one clear error that names every missing or malformed variable. Add a small test.

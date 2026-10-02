@@ -164,7 +164,7 @@ Start with **Kotlin only**, add others after M5. TypeScript, Python and Go added
 **Done when:** running on the author's own repos produces a profile where every rule has evidence and the author agrees with most of it.
 
 ### M4 Eval harness (`eval`)
-- Task file (`data/eval-tasks/*.yaml`): prompt, language, optional context files
+- Task file (`packages/eval/tasks/*.yaml`): id, language, kind (code or commit), prompt. 15 Kotlin tasks and 5 TypeScript tasks ship with the package. The task language picks the generator's persona, the analyzer for the metric distance and the reference samples, so a repo with both languages gets scored per language and the metric names carry the language when a run mixes them
 - For each task, generate code **with** and **without** the profile
 - Scores:
   1. **Metric distance:** run the analyzer on the output, compare to the user's stats
@@ -228,7 +228,7 @@ Published 2026-10-02 as `idiolect@0.0.1` on npm. The org name `idiolect` was tak
 - `idiolect unbot [files]` checks for AI habits and profile violations. Without files it checks Kotlin files changed since HEAD plus untracked ones, `--staged` checks the index for hooks, `--all` every tracked Kotlin file
 - Two modes: fast (`checkStyle`, AST + regex, no LLM) and deep (`--llm`, the LLM checks the example-backed voice rules and returns line-level violations, unknown rule ids and lines outside the file are dropped)
 - Examples of AI tells: comments restating the code, "This function...", words like "robust", "seamless", "leverage", "comprehensive", docblocks on trivial private functions, over-generic names (`handleData`, `processItem`), try/catch around everything, emoji in comments. These come from the profile's avoid rules, so a tell the developer actually does is not flagged for them
-- Quantity rules only fire with enough data in the file: at least 10 items for medians and ratios, 100 lines for densities, 3 items for ratio rules that point at lines, and a value rule needs 2x the developer's number. Avoid rules fire on a single occurrence. Calibrated on the author's repo: 41 of 799 of his own files flagged, 18 of those real `!!`, emoji and TODO occurrences
+- Quantity rules only fire with enough data in the file: at least 10 items for medians and ratios, 100 lines for densities, 3 items for ratio rules that point at lines, and a value rule needs 2x the developer's number. All four live in the repo config as `check.minItems`, `check.minLines`, `check.minLocated` and `check.excess`, and the MCP `check_style` reads the same values. Avoid rules fire on a single occurrence. Calibrated on the author's repo: 41 of 799 of his own files flagged, 18 of those real `!!`, emoji and TODO occurrences
 - `--fix` rewrites each flagged file with the same `rewriteLikeMe` the MCP tool uses and re-checks it
 - `idiolect hooks install` writes a pre-commit hook running `idiolect unbot --staged`, appends to `.husky/pre-commit` when present, and points at lefthook.yml instead of editing it
 - Default: warn only. `--strict`: non-zero exit
@@ -302,6 +302,7 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
   "minSampleSize": 20,
   "sync": { "targets": ["AGENTS.md", "CLAUDE.md", ".cursor/rules/idiolect.mdc"] },
   "refresh": { "everyCommits": 50 },
+  "check": { "minItems": 10, "minLines": 100, "minLocated": 3, "excess": 2 },
   "ignore": ["**/build/**", "**/generated/**"]
 }
 ```

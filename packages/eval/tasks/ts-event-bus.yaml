@@ -1,0 +1,5 @@
+id: ts-event-bus
+language: typescript
+prompt: |
+  Write a small typed event bus in TypeScript: subscribe to a named event with a typed payload, unsubscribe, and emit. The event names and payload types come from one interface the caller supplies.
+  Keep it dependency free.

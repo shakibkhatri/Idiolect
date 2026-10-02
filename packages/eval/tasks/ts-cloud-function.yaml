@@ -1,0 +1,5 @@
+id: ts-cloud-function
+language: typescript
+prompt: |
+  Write a Firebase callable cloud function in TypeScript that lets a signed-in user report a post. It validates the input (postId string, reason from a fixed set, optional note under 500 chars), refuses unauthenticated calls, writes a report document, and increments a reportCount on the post in the same transaction.
+  Handle the failure cases the way you normally would.

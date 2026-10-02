@@ -1,4 +1,4 @@
-import { analyzeCommits, analyzeKotlin, emptyStats, mergeStats, METRICS, COMMIT_METRICS, renderStyleMd, type CommitStats, type LanguageStats, type LlmProvider, type Profile, type Sample } from "@shakibkhatri/idiolect-core";
+import { analyze, analyzeCommits, emptyStats, mergeStats, METRICS, COMMIT_METRICS, renderStyleMd, type CommitStats, type Language, type LanguageStats, type LlmProvider, type Profile, type Sample } from "@shakibkhatri/idiolect-core";
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,7 +8,8 @@ export const DEFAULT_TASKS_DIR = fileURLToPath(new URL("../tasks", import.meta.u
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
 
-export type Task = { id: string; language: "kotlin"; kind: "code" | "commit"; prompt: string };
+export type Task = { id: string; language: Language; kind: "code" | "commit"; prompt: string };
+const LANGUAGE_NAMES: Record<Language, string> = { kotlin: "Kotlin", typescript: "TypeScript", python: "Python", go: "Go" };
 export type Generation = { task: Task; with: string; without: string };
 export type Judgement = { task: string; winner: "with" | "without"; reason: string };
 export type Report = {
@@ -22,14 +23,14 @@ export type Report = {
   generations: Generation[];
 };
 
-const TaskSchema = z.object({ id: z.string(), language: z.literal("kotlin").default("kotlin"), kind: z.enum(["code", "commit"]).default("code"), prompt: z.string() });
+const TaskSchema = z.object({ id: z.string(), language: z.enum(["kotlin", "typescript", "python", "go"]).default("kotlin"), kind: z.enum(["code", "commit"]).default("code"), prompt: z.string() });
 
 export async function loadTasks(dir: string): Promise<Task[]> {
   const files = (await readdir(dir)).filter((f) => f.endsWith(".yaml") || f.endsWith(".yml")).sort();
   return Promise.all(files.map(async (f) => TaskSchema.parse(parseYaml(await readFile(join(dir, f), "utf8")))));
 }
 
-const Code = z.object({ code: z.string().describe("the Kotlin source, nothing else") });
+const Code = z.object({ code: z.string().describe("the source code, nothing else") });
 const Commit = z.object({ message: z.string().describe("the full commit message: subject line, blank line, body") });
 const Verdict = z.object({ winner: z.enum(["A", "B"]), reason: z.string().max(300) });
 
@@ -37,14 +38,14 @@ export type EvalOptions = { profile: Profile; provider: LlmProvider; references:
 
 export async function runEval(o: EvalOptions): Promise<Report> {
   const style = renderStyleMd(o.profile, { threshold: o.threshold, repo: o.repo });
-  const baseSystem = "You are a senior Kotlin developer writing production code for a real app. Return only what is asked.";
-  const styledSystem = `${baseSystem}\n\nWrite the way this developer writes. Their style profile:\n\n${style}`;
+  const baseSystem = (task: Task) => `You are a senior ${LANGUAGE_NAMES[task.language]} developer writing production code for a real app. Return only what is asked.`;
+  const styledSystem = (task: Task) => `${baseSystem(task)}\n\nWrite the way this developer writes. Their style profile:\n\n${style}`;
 
   const generations = await pool(o.tasks, o.concurrency ?? 3, async (task): Promise<Generation> => {
     const gen = async (system: string) => task.kind === "commit"
       ? (await o.provider.complete({ system, user: task.prompt, schema: Commit })).message
       : (await o.provider.complete({ system, user: task.prompt, schema: Code })).code;
-    const [withText, withoutText] = await Promise.all([gen(styledSystem), gen(baseSystem)]);
+    const [withText, withoutText] = await Promise.all([gen(styledSystem(task)), gen(baseSystem(task))]);
     o.onProgress?.(`generated ${task.id}`);
     return { task, with: withText, without: withoutText };
   });
@@ -72,19 +73,19 @@ export async function runEval(o: EvalOptions): Promise<Report> {
   };
 }
 
-/** Mean absolute difference between the developer's ratio metrics and the same metrics on all generated outputs merged together. */
+/** Mean absolute difference between the developer's ratio metrics and the same metrics on all generated outputs of a language merged together. */
 export async function metricDistance(profile: Profile, generations: Generation[]) {
-  const dev = profile.stats.kotlin;
   const devCommits = profile.commitStats;
+  const languages = [...new Set(generations.filter((g) => g.task.kind === "code").map((g) => g.task.language))];
   const side = async (pick: (g: Generation) => string) => {
-    let stats: LanguageStats = emptyStats();
+    const stats = Object.fromEntries(languages.map((l) => [l, emptyStats()])) as Record<Language, LanguageStats>;
     const commits: CommitStats[] = [];
     for (const g of generations) {
       if (g.task.kind === "commit") {
         const [subject = "", ...rest] = pick(g).trim().split("\n");
         commits.push(analyzeCommits([{ hash: "x", email: "x", date: "x", subject, body: rest.join("\n").trim() }]));
       } else {
-        stats = mergeStats(stats, await analyzeKotlin(pick(g)));
+        stats[g.task.language] = mergeStats(stats[g.task.language], await analyze(pick(g), g.task.language));
       }
     }
     return { stats, commits: commits.reduce((a, b) => mergeStats(a, b), analyzeCommits([])) };
@@ -92,13 +93,20 @@ export async function metricDistance(profile: Profile, generations: Generation[]
   const w = await side((g) => g.with);
   const wo = await side((g) => g.without);
   const perMetric: { metric: string; developer: number; with: number; without: number }[] = [];
-  for (const [id, fn] of Object.entries(METRICS)) {
-    if (!id.endsWith("-ratio") && !id.endsWith("-share") && id !== "comments.per-100-loc") continue;
-    if (!dev) break;
-    const d = fn(dev), a = fn(w.stats), b = fn(wo.stats);
-    if (d.sampleSize < 20 || !a.sampleSize || !b.sampleSize) continue;
-    const norm = (v: number) => (id === "comments.per-100-loc" ? Math.min(1, v / 20) : v);
-    perMetric.push({ metric: id, developer: norm(d.value), with: norm(a.value), without: norm(b.value) });
+  for (const lang of languages) {
+    const dev = profile.stats[lang];
+    if (!dev) continue;
+    for (const [id, fn] of Object.entries(METRICS)) {
+      if (!id.endsWith("-ratio") && !id.endsWith("-share") && id !== "comments.per-100-loc") continue;
+      // an idiom metric of another language, like kotlin.data-class-ratio on TypeScript output, is noise
+      const prefix = id.split(".")[0]!;
+      if (prefix in LANGUAGE_NAMES && prefix !== lang) continue;
+      const d = fn(dev), a = fn(w.stats[lang]), b = fn(wo.stats[lang]);
+      if (d.sampleSize < 20 || !a.sampleSize || !b.sampleSize) continue;
+      const norm = (v: number) => (id === "comments.per-100-loc" ? Math.min(1, v / 20) : v);
+      // the language sits in the name only when the run mixes languages, so single-language reports read as before
+      perMetric.push({ metric: languages.length > 1 ? `${lang}.${id}` : id, developer: norm(d.value), with: norm(a.value), without: norm(b.value) });
+    }
   }
   for (const [id, fn] of Object.entries(COMMIT_METRICS)) {
     if (!id.endsWith("-ratio")) continue;
@@ -126,7 +134,7 @@ export function renderReport(r: Report): string {
   const picked = new Map(r.quiz?.picks.map((p) => [p.task, p.picked]));
   for (const v of r.judge.verdicts) out.push(`- **${v.task}**: judge says ${v.winner} profile${picked.has(v.task) ? `, developer picked ${picked.get(v.task)}` : ""}. ${v.reason}`);
   out.push("", `## Outputs`, "");
-  for (const g of r.generations) out.push(`### ${g.task.id}`, "", `**with profile**`, "", "```kotlin", g.with.trim(), "```", "", `**without**`, "", "```kotlin", g.without.trim(), "```", "");
+  for (const g of r.generations) { const fence = "```" + (g.task.kind === "commit" ? "" : g.task.language); out.push(`### ${g.task.id}`, "", `**with profile**`, "", fence, g.with.trim(), "```", "", `**without**`, "", fence, g.without.trim(), "```", ""); }
   return out.join("\n");
 }
 

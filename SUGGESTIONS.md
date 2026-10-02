@@ -99,12 +99,13 @@ The analyzer only counts, so `check_style` reports a line for comment rules and 
 Naming and structure violations (a camelCase constant, a 40-line function) would be more useful with a line.
 Option: let the analyzer optionally collect `{metric, line}` occurrences, then both the checker and Unbot get lines for free.
 
-## 15. Unbot calibration knobs and judge check (open)
+## 15. Unbot calibration knobs and judge check (knobs done 2026-10-02, judge check open)
 
 `core/check.ts` hard-codes the sample floors (10 items, 100 lines) and the 2x excess for value rules, tuned so about 5% of the author's own Dissent files are flagged.
 Another developer with a flatter or spikier distribution may want them in `.idiolect/config.json`.
 The M7 done criterion also asked for the eval judge to prefer the `--fix` output over the original.
 It passed the check and read right by eye, but nobody ran the judge on a before and after pair. A `--judge` flag on unbot, or an eval task kind "fix", would close that.
+Knobs done: `check` in the repo config with the four floors, read by Unbot and by the MCP `check_style`. The judge check is still open.
 
 ## 16. Deep mode drops the message in CLI output (done 2026-10-02)
 
@@ -127,10 +128,11 @@ Unbot no longer lists each doc comment for that rule, but the rule itself is sti
 Per-file counts during the scan would allow a spread check: a habit that varies this much between files is not a rule, or gets its confidence halved like a habit that varies between repos.
 Done: the scan keeps per-file stats, `fileSpread` counts files over and under 0.5 for every ratio metric, the source stores it, and a high or low rule where 15% or more of files do the opposite gets half confidence and says "Varies by file".
 
-## 19. TypeScript eval tasks (open)
+## 19. TypeScript eval tasks (done 2026-10-02)
 
 `idiolect eval` generates and judges Kotlin only, the task schema fixes the language.
 Add a few TypeScript tasks and let the task language pick the analyzer for the metric distance.
+Done: five TypeScript tasks, the task language drives the persona, the analyzer and the reference samples, and the metric distance is computed per language.
 
 ## 20. Python and Go test names (done 2026-10-02, both skipped)
 

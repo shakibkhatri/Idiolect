@@ -1,0 +1,5 @@
+id: ts-group-by
+language: typescript
+prompt: |
+  Write a TypeScript utility that takes a list of notification records with a userId and a sentAt ISO date and returns, per user, the count sent in the last 7 days and the most recent sentAt.
+  Type the input and output. Add a small unit test.
