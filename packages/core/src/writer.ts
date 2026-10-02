@@ -28,11 +28,12 @@ Rules:
 - Every rule must be backed by one to three example samples, cited by their exact file and line as given. A rule you cannot cite does not exist.
 - Only state what the samples show. No generic best practices, nothing you would say about any developer.
 - Rule text is one or two sentences, imperative, written as an instruction to an agent. Quote a short pattern from the samples when it helps.
-- Prefer a few specific rules over many vague ones. Ten to twenty rules is typical.
+- Write at most twelve rules, at most three per category. Pick the habits that show in most of the samples, not the ones that show in a few.
+- Never write a rule that would make an agent add a comment, doc block or structure the samples mostly lack. Describe how the developer writes when they do write, never where to add more.
 - scope is "personal" when the habit would hold in any codebase this developer works in: voice, phrasing, structure, error handling style, how they name and comment.
   scope is "project" when the rule depends on this codebase: its domain vocabulary, product or company names, specific libraries, wrappers, tokens, ticket formats, stakeholder names, team commit conventions. Project rules are only shown inside this repo, so be strict: anything naming a project-specific symbol, product or person is "project".
 - You may be given personal rules already learned from the developer's other repos. Never rewrite or duplicate one. If the samples show the same habit, put its id in "confirms" instead. Only write a new rule for a habit not already covered.
-- confidence is 0 to 1: how consistently the samples show the habit.
+- confidence is 0 to 1: the share of relevant samples that show the habit. 0.9 means nearly every relevant sample does it, 0.6 means some do.
 - id is lowercase dotted, like kotlin.comments.explain-why or any.commits.mention-screen. language is the language the samples are in, or "any" for commits and habits that hold across languages.
 Return JSON only.`;
 

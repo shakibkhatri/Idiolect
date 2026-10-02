@@ -77,7 +77,7 @@ type Profile = {
 
 type Rule = {
   id: string                       // e.g. "kotlin.comments.lowercase-start"
-  scope: "personal" | "team"       // project rules are personal rules with `repo` set
+  scope: "personal" | "team"       // project rules are personal rules with `repo` set, see below
   language: Language | "any"
   category: "naming" | "comments" | "structure" | "errors" | "framework" | "commits" | "avoid"
   text: string                     // the rule as the agent reads it
@@ -157,7 +157,8 @@ Start with **Kotlin only**, add others after M5. TypeScript, Python and Go added
   Below that the LLM gets the number but is told it is weak and must not turn it into a rule
 - On rescan: an approved rule whose text changed becomes `pending`, so a decision is never silently overridden. Auto rules the user never looked at are replaced in place, otherwise a background refresh would drop served rules without anyone deciding
 - Decisions: `idiolect rules approve|reject|edit <id>` sets the status. Approved and edited rules are served and kept across rescans, rejected rules are stored but never served and a rescan does not revive them. The MCP server reads the profile per call, so a decision is live immediately, `idiolect sync` has to be re-run by hand
-- Render `STYLE.md` (sections: Naming, Comments, Structure, Errors, Framework, Commits, Avoid, Team rules)
+- Render `STYLE.md` (sections: Naming, Comments, Structure, Errors, Framework, Commits, Avoid, then Project conventions inside the repo they came from, then Team rules)
+- Fewer, sharper rules: the render serves every metric rule and every approved or edited rule, then at most three example-backed rules per section by confidence. The writer is asked for at most twelve rules, three per category, with confidence meaning the share of samples that show the habit. The first blind quiz on 2026-10-02 showed why: with eleven comment-voice rules served, the agent applied each one everywhere and the author picked the plain output 10 of 15 times
 
 **Done when:** running on the author's own repos produces a profile where every rule has evidence and the author agrees with most of it.
 
