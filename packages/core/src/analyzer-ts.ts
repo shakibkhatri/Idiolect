@@ -1,5 +1,5 @@
 import type { Node } from "web-tree-sitter";
-import { analyzeTree, bump, countComment, countName, firstWord, GENERIC_NAME, grammarFor, type AnalyzeOptions, type LanguageStats, type NameKind } from "./analyzer.js";
+import { analyzeTree, bump, countComment, countName, firstWord, GENERIC_NAME, grammarFor, testNameStyle, type AnalyzeOptions, type LanguageStats, type NameKind } from "./analyzer.js";
 import type { LineRange } from "./collector.js";
 
 const FUNCTION_LIKE = new Set(["function_declaration", "generator_function_declaration", "function_expression", "arrow_function", "method_definition"]);
@@ -75,7 +75,7 @@ function count(n: Node, s: LanguageStats, test: boolean) {
 function countFunction(n: Node, anchor: Node, fname: string | undefined, s: LanguageStats, test: boolean) {
   const f = s.functions;
   f.count++;
-  if (test) { s.tests.functions++; if (fname) bump(s.naming.testNames, fname.split(/(?=[A-Z])|_/).length >= 4 ? "camelSentence" : "camel"); }
+  if (test) { s.tests.functions++; if (fname) bump(s.naming.testNames, testNameStyle(fname)); }
   else { countName(fname, "function", s); if (fname && GENERIC_NAME.test(fname)) s.naming.genericNames++; }
   if (fname && !test) bump(s.naming.functionVerb, firstWord(fname));
   countDoc(anchor, s);

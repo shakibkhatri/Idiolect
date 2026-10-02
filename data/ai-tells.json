@@ -8,5 +8,8 @@
   { "id": "errors.force-unwrap", "metric": "errors.force-unwrap-per-kloc", "text": "Do not use !! to force-unwrap nullable values.", "language": "kotlin" },
   { "id": "errors.non-null-assertion", "metric": "errors.force-unwrap-per-kloc", "text": "Do not use the ! non-null assertion. Narrow the type or handle the undefined case.", "language": "typescript" },
   { "id": "types.any", "metric": "typescript.any-per-kloc", "text": "Do not use any. Type the value or use unknown.", "language": "typescript" },
+  { "id": "errors.bare-except", "metric": "python.bare-except-per-kloc", "text": "Do not use a bare except. Catch the exception you expect.", "language": "python" },
+  { "id": "errors.panic", "metric": "go.panic-per-kloc", "text": "Do not panic. Return the error.", "language": "go" },
+  { "id": "errors.unchecked-assertion", "metric": "errors.force-unwrap-per-kloc", "text": "Use the two-value form of type assertions, v, ok := x.(T), so a wrong type does not panic.", "language": "go" },
   { "id": "comments.todo", "metric": "comments.todo-ratio", "text": "Do not leave TODO comments." }
 ]

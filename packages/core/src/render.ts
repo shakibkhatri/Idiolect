@@ -2,7 +2,7 @@ import { matchesGlob } from "node:path";
 import type { Profile, Rule } from "./profile.js";
 import { isServed } from "./writer.js";
 
-const LANGUAGE_NAMES: Record<string, string> = { kotlin: "Kotlin", typescript: "TypeScript" };
+const LANGUAGE_NAMES: Record<string, string> = { kotlin: "Kotlin", typescript: "TypeScript", python: "Python", go: "Go" };
 const SECTIONS: [Rule["category"], string][] = [
   ["naming", "Naming"], ["comments", "Comments"], ["structure", "Structure"], ["errors", "Errors"],
   ["framework", "Framework"], ["commits", "Commits"], ["avoid", "Avoid"],

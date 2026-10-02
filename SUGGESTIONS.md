@@ -119,3 +119,9 @@ Per-file counts during the scan would allow a spread check: a habit that varies 
 
 `idiolect eval` generates and judges Kotlin only, the task schema fixes the language.
 Add a few TypeScript tasks and let the task language pick the analyzer for the metric distance.
+
+## 20. Python and Go test names (open)
+
+Python test functions are `def test_x` in test files, so `naming.testNames` gets their snake style, which is all pytest allows.
+Go test functions are `func TestX`, classified by the camel-sentence heuristic.
+Neither says much about the developer. Worth skipping both languages in the test-name rules, or classifying by the words after the prefix.

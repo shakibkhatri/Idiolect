@@ -12,4 +12,6 @@ done <<TABLE
 kotlin @tree-sitter-grammars/tree-sitter-kotlin 1.1.0
 typescript tree-sitter-typescript 0.23.2
 tsx tree-sitter-typescript 0.23.2
+python tree-sitter-python 0.25.0
+go tree-sitter-go 0.25.0
 TABLE

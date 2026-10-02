@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 import { Language, Parser, type Tree } from "web-tree-sitter";
 
 // add a wasm to grammars/ and a row to scripts/update-grammars.sh per grammar
-export type SupportedLanguage = "kotlin" | "typescript" | "tsx";
+export type SupportedLanguage = "kotlin" | "typescript" | "tsx" | "python" | "go";
 
 const languages = new Map<SupportedLanguage, Language>();
 let initialized: Promise<void> | undefined;

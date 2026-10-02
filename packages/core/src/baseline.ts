@@ -10,9 +10,12 @@ type Def = { metric: string; category: Rule["category"]; kind: Kind; min?: numbe
 const n = (x: number) => Math.round(x * 10) / 10;
 
 /** Deterministic rules, one per metric, phrased from the number itself. "high" fires at >= 0.8, "low" at <= 0.2, "value" always. */
-const COMMON_DEFS: Def[] = [
+const EXPRESSION_BODY_DEFS: Def[] = [
   { metric: "functions.expression-body-ratio", category: "structure", kind: "high", text: () => "Use expression bodies for single-expression functions." },
   { metric: "functions.expression-body-ratio", category: "structure", kind: "low", text: () => "Use block bodies, even for short functions." },
+];
+
+const COMMON_DEFS: Def[] = [
   { metric: "functions.early-return-ratio", category: "structure", kind: "high", text: () => "Prefer guard clauses and early returns over nested conditionals." },
   { metric: "functions.length-p50", category: "structure", kind: "value", text: (m, s) => `Keep functions short. Typical length is ${m.value} lines, 90% are under ${metric("functions.length-p90", s).value} lines.` },
   { metric: "functions.params-p90", category: "structure", kind: "value", text: (m) => `Functions take at most ${m.value} parameters in 90% of cases.` },
@@ -52,7 +55,25 @@ const TYPESCRIPT_DEFS: Def[] = [
   { metric: "typescript.type-alias-ratio", category: "structure", kind: "low", text: () => "Declare object shapes with interfaces, not type aliases." },
   { metric: "typescript.optional-chain-per-kloc", category: "structure", kind: "value", min: 2, text: (m) => `Optional chaining is common, about ${n(m.value)} per 1000 lines.` },
 ];
-const DEFS: Record<Language, Def[]> = { kotlin: [...COMMON_DEFS, ...KOTLIN_DEFS], typescript: [...COMMON_DEFS, ...TYPESCRIPT_DEFS] };
+const PYTHON_DEFS: Def[] = [
+  { metric: "python.type-hint-ratio", category: "structure", kind: "high", text: () => "Annotate function parameters and return types." },
+  { metric: "python.type-hint-ratio", category: "structure", kind: "low", text: () => "No type hints on function signatures." },
+  { metric: "python.fstring-ratio", category: "structure", kind: "high", text: () => "Format strings with f-strings, not .format()." },
+  { metric: "python.fstring-ratio", category: "structure", kind: "low", text: () => "Format strings with .format(), not f-strings." },
+  { metric: "python.comprehension-per-kloc", category: "structure", kind: "value", min: 2, text: (m) => `Comprehensions are common, about ${n(m.value)} per 1000 lines.` },
+  { metric: "python.dataclass-ratio", category: "structure", kind: "high", text: () => "Model data with @dataclass." },
+];
+const GO_DEFS: Def[] = [
+  { metric: "go.err-check-per-kloc", category: "errors", kind: "value", min: 2, text: (m) => `Check errors inline with if err != nil, about ${n(m.value)} per 1000 lines.` },
+  { metric: "go.named-return-ratio", category: "structure", kind: "high", text: () => "Name the return values in function signatures." },
+  { metric: "go.named-return-ratio", category: "structure", kind: "low", text: () => "Do not name return values, return them explicitly." },
+];
+const DEFS: Record<Language, Def[]> = {
+  kotlin: [...COMMON_DEFS, ...EXPRESSION_BODY_DEFS, ...KOTLIN_DEFS],
+  typescript: [...COMMON_DEFS, ...EXPRESSION_BODY_DEFS, ...TYPESCRIPT_DEFS],
+  python: [...COMMON_DEFS, ...PYTHON_DEFS],
+  go: [...COMMON_DEFS, ...GO_DEFS],
+};
 
 const COMMIT_DEFS: Def[] = [
   { metric: "commits.conventional-ratio", category: "commits", kind: "high", text: () => "Use conventional commit prefixes: feat:, fix:, refactor:." },

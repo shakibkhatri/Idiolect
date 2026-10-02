@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { analyzeCommits, emptyStats, mergeStats, type CommitStats, type LanguageStats } from "./analyzer.js";
 import type { Commit } from "./collector.js";
 
-export type Language = "kotlin" | "typescript";
+export type Language = "kotlin" | "typescript" | "python" | "go";
 
 export type Rule = {
   id: string;

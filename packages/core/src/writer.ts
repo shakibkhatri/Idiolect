@@ -11,7 +11,7 @@ const LlmRules = z.object({
   rules: z.array(z.object({
     id: z.string().regex(/^[a-z0-9.-]+$/),
     scope: z.enum(["personal", "project"]),
-    language: z.enum(["kotlin", "typescript", "any"]),
+    language: z.enum(["kotlin", "typescript", "python", "go", "any"]),
     category: z.enum(["naming", "comments", "structure", "errors", "framework", "commits", "avoid"]),
     text: z.string().min(10).max(400),
     examples: z.array(z.object({ file: z.string(), line: z.number().int() })).min(1).max(3),

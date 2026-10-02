@@ -7,7 +7,7 @@ It reads only the lines you authored, measures them, and turns the numbers and a
 Claude Code, Cursor, Copilot and any MCP client can read the profile.
 Unbot, the linter, flags code that breaks your habits or sounds like AI, and can rewrite it in your voice.
 
-Kotlin and TypeScript for now. Swift, Python and Go come next.
+Kotlin, TypeScript, Python and Go. Swift comes next.
 
 ## Before and after
 
@@ -139,7 +139,7 @@ idiolect unbot --strict         # exit 1 when anything is flagged
 idiolect hooks install          # warn-only pre-commit hook
 ```
 
-Fast mode is deterministic: it measures the file and compares it to your numbers, in Kotlin or TypeScript.
+Fast mode is deterministic: it measures the file and compares it to your numbers, in any supported language.
 AI tells like buzzwords, restating comments, `!!`, emoji and TODOs are flagged only if you never do them yourself.
 
 ### Measure it

@@ -19,6 +19,8 @@ export type LanguageStats = {
   errors: { tryCatch: number; runCatching: number; resultType: number; forceUnwrap: number };
   kotlin: { when3: number; ifElseChain3: number; sealedInterface: number; sealedClass: number; extensionFunctions: number; dataClasses: number; composables: number; modifierParamFirst: number; modifierParamLater: number; remember: number };
   typescript: { arrowFunctions: number; functionDeclarations: number; typeAliases: number; interfaces: number; optionalChains: number; anyTypes: number };
+  python: { typeHinted: number; fStrings: number; formatCalls: number; comprehensions: number; bareExcepts: number; dataclasses: number };
+  go: { errChecks: number; namedReturns: number; structs: number; interfaces: number; panics: number };
 };
 
 export type CommitStats = { count: number; subjectLength: Histogram; lowercaseStart: number; conventionalPrefix: number; trailingPeriod: number; withBody: number; tense: Counter };
@@ -37,10 +39,12 @@ export function emptyStats(): LanguageStats {
     errors: { tryCatch: 0, runCatching: 0, resultType: 0, forceUnwrap: 0 },
     kotlin: { when3: 0, ifElseChain3: 0, sealedInterface: 0, sealedClass: 0, extensionFunctions: 0, dataClasses: 0, composables: 0, modifierParamFirst: 0, modifierParamLater: 0, remember: 0 },
     typescript: { arrowFunctions: 0, functionDeclarations: 0, typeAliases: 0, interfaces: 0, optionalChains: 0, anyTypes: 0 },
+    python: { typeHinted: 0, fStrings: 0, formatCalls: 0, comprehensions: 0, bareExcepts: 0, dataclasses: 0 },
+    go: { errChecks: 0, namedReturns: 0, structs: 0, interfaces: 0, panics: 0 },
   };
 }
 
-export const EXTENSIONS: Record<Language, string[]> = { kotlin: [".kt", ".kts"], typescript: [".ts", ".tsx"] };
+export const EXTENSIONS: Record<Language, string[]> = { kotlin: [".kt", ".kts"], typescript: [".ts", ".tsx"], python: [".py"], go: [".go"] };
 export const allExtensions = () => Object.values(EXTENSIONS).flat();
 /** Language of a source path, undefined for files Idiolect does not analyze. Type declarations are nobody's style. */
 export function languageOf(path: string): Language | undefined {
@@ -61,7 +65,7 @@ export function mergeStats<T>(a: T, b: T): T {
 export const bump = (h: Histogram, key: string | number, by = 1) => { h[key] = (Object.hasOwn(h, key) ? h[key]! : 0) + by; };
 
 /** Test files keep structural stats but route function names to `naming.testNames` so sentence-style test names never pollute verb stats. */
-export const isTestPath = (path: string) => /(^|\/)(test|tests|__tests__|androidTest|commonTest|jvmTest|iosTest|unitTest)\/|(Test|Tests|Spec)\.kts?$|\.(test|spec)\.tsx?$/.test(path);
+export const isTestPath = (path: string) => /(^|\/)(test|tests|__tests__|androidTest|commonTest|jvmTest|iosTest|unitTest)\/|(Test|Tests|Spec)\.kts?$|\.(test|spec)\.tsx?$|(^|\/)test_[^/]*\.py$|_test\.(py|go)$|(^|\/)conftest\.py$/.test(path);
 
 export type AnalyzeOptions = { test?: boolean; path?: string };
 export type Counter2 = (n: Node, s: LanguageStats, test: boolean) => void;
@@ -192,8 +196,13 @@ function countFunction(n: Node, s: LanguageStats, test: boolean) {
 export function countComment(n: Node, s: LanguageStats) {
   const c = s.comments;
   const isDoc = n.text.startsWith("/**");
-  if (n.text.startsWith("//")) c.line++; else if (isDoc) c.doc++; else c.block++;
-  const text = commentText(n.text);
+  if (n.text.startsWith("//") || n.text.startsWith("#")) c.line++; else if (isDoc) c.doc++; else c.block++;
+  countCommentText(commentText(n.text), s);
+}
+
+/** The voice counters over a comment body. Python docstrings go through here too, they are the doc comments of that language. */
+export function countCommentText(text: string, s: LanguageStats) {
+  const c = s.comments;
   c.chars += text.length;
   const firstLetter = text.match(/[A-Za-z]/)?.[0];
   if (firstLetter && firstLetter === firstLetter.toLowerCase() && /^[a-z]/.test(text)) c.lowercaseStart++;
@@ -207,13 +216,13 @@ export function countComment(n: Node, s: LanguageStats) {
 
 /** Comment body without the // or /** markers and leading asterisks, joined to one line. */
 export const commentText = (raw: string) => raw
-  .replace(/^\/\*\*?|\*\/$/g, "").replace(/^\/\/+/, "")
+  .replace(/^\/\*\*?|\*\/$/g, "").replace(/^\/\/+|^#+/, "")
   .split("\n").map((l) => l.replace(/^\s*\*\s?/, "").trim()).filter(Boolean).join(" ").trim();
 export const TODO_TAG = /\b(TODO|FIXME|HACK)\b(\s*\([^)]*\))?(\s*:)?/;
 export const RESTATES = /^(this (function|method|class|file|property)|the (function|method) )/i;
 export const BUZZWORDS = /\b(robust|seamless(ly)?|leverag(e|es|ing)|comprehensive(ly)?|utiliz(e|es|ing)|ensur(e|es|ing) that|streamlin(e|ed)|cutting[- ]edge|delve|crucial|facilitat(e|es))\b/i;
 export const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2705}\u{274C}]/u;
-export const GENERIC_NAME = /^(handle|process|manage|do)(Data|Item|Items|Input|Request|Response|Result|Stuff|Logic|It)$|^(helper|util|utility|data|temp|result|value|item)\d*$/i;
+export const GENERIC_NAME = /^(handle|process|manage|do)_?(data|item|items|input|request|response|result|stuff|logic|it)$|^(helper|util|utility|data|temp|result|value|item)\d*$/i;
 
 function countDoc(n: Node, s: LanguageStats) {
   const parent = n.parent?.type;
@@ -241,7 +250,7 @@ export function countName(id: string | undefined, kind: NameKind, s: LanguageSta
 }
 
 // ponytail: three buckets are enough to say "you write test names as backtick sentences"
-function testNameStyle(id: string): string {
+export function testNameStyle(id: string): string {
   if (id.startsWith("`")) return "backtick";
   if (/_/.test(id)) return "snake";
   return words(id).length >= 4 ? "camelSentence" : "camel";

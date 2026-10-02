@@ -1,4 +1,6 @@
 import { BUZZWORDS, commentText, EMOJI, grammarFor, isTestPath, RESTATES, TODO_TAG } from "./analyzer.js";
+import { isGoDocComment } from "./analyzer-go.js";
+import { docstringText } from "./analyzer-py.js";
 import { analyze } from "./languages.js";
 import { COMMIT_METRICS, metric } from "./metrics.js";
 import { parse } from "./parser.js";
@@ -60,7 +62,9 @@ async function locateNodes(code: string, opts: CheckOptions): Promise<Found> {
   const out: Found = { comments: [], forceUnwraps: [], anys: [] };
   const visit = (n: typeof tree.rootNode) => {
     const line = n.startPosition.row + 1;
-    if (COMMENT_TYPES.has(n.type)) out.comments.push({ line, end: n.endPosition.row, text: commentText(n.text), doc: n.text.startsWith("/**") });
+    if (COMMENT_TYPES.has(n.type)) out.comments.push({ line, end: n.endPosition.row, text: commentText(n.text), doc: n.text.startsWith("/**") || (opts.language === "go" && isGoDocComment(n)) });
+    // a Python docstring is a string statement opening a body, it is a doc comment for the line finders
+    else if (opts.language === "python" && n.type === "expression_statement" && n.namedChildren[0]?.type === "string" && (n.parent?.type === "block" || n.parent?.type === "module") && n.parent.namedChildren[0]?.id === n.id) out.comments.push({ line, end: n.endPosition.row, text: docstringText(n.text), doc: true });
     else if (n.type === "non_null_expression" || (n.type === "unary_expression" && n.children.some((c) => c?.type === "!!"))) out.forceUnwraps.push(line);
     else if (n.type === "predefined_type" && n.text === "any") out.anys.push(line);
     for (const c of n.namedChildren) if (c) visit(c);
@@ -72,7 +76,7 @@ async function locateNodes(code: string, opts: CheckOptions): Promise<Found> {
 
 const lines = (cs: CommentNode[]) => cs.map((c) => c.line);
 const nextDecl = (c: CommentNode, code: string) => code.split("\n").slice(c.end + 1).find((l) => l.trim()) ?? "";
-const PRIVATE = /^\s*(private|internal|protected)\b/;
+const PRIVATE = /^\s*(private|internal|protected)\b|^\s*(def|class)\s+_[a-z]|^\s*(func(\s*\([^)]*\))?|type|var|const)\s+[a-z]/;
 
 /** Line finders keyed by metric and rule kind. Metrics without one report a single violation without a line.
  * doc-ratio has none on purpose: a developer who documents some files fully and others not at all would see every doc comment flagged. */

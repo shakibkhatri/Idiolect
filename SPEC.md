@@ -28,7 +28,7 @@ Later: **team mode**, which learns team rules from PR review comments.
 ## 3. Tech stack
 
 - TypeScript, Node 22+ (20 is end of life, 22 has `path.matchesGlob` and `fs.glob` built in), pnpm workspaces (monorepo)
-- `web-tree-sitter` with WASM grammars (no native builds): Kotlin, Swift, TypeScript/JavaScript, Python, Go.
+- `web-tree-sitter` with WASM grammars (no native builds): Kotlin, TypeScript, Python, Go today, Swift and JavaScript later.
   Grammar `.wasm` files are vendored in `packages/core/grammars/` (MIT) and refreshed with `scripts/update-grammars.sh`.
   Reason: `tree-sitter-wasms` is stale (legacy `dylink` section, rejected by current `web-tree-sitter`) and the official grammar packages carry a node-gyp install script.
   Kotlin, TypeScript, Python and Go publish a modern wasm on npm. Swift does not, it must be built once with the tree-sitter CLI and vendored the same way
@@ -131,12 +131,14 @@ Pure counting with tree-sitter, no LLM. Per language, at least:
 - **Language-specific:**
   - Kotlin: `when` vs if/else chains (3+ branches), sealed interface vs sealed class, extension functions, data classes, Compose modifier param position, `remember` usage
   - Swift: guard vs if-let, structs vs classes, trailing closures
+  - Python: type hint ratio, f-strings vs `.format()`, comprehensions, `@dataclass`, bare `except`. Docstrings are the doc comments: they count toward doc ratios and run through the same voice counters as comments. A leading underscore makes a declaration private, `self.x = ...` is a property, a module-level name holding a literal is a constant
+  - Go: `if err != nil` density, named returns, structs vs interfaces, `panic`. A single-value type assertion `x.(T)` feeds the force-unwrap counter, the two-value form does not. Exported means public. The doc comment is the comment block ending on the line above a top-level declaration
   - TS: arrow vs function declarations, `type` vs `interface`, optional chaining, `any`. Non-null `!` feeds the same force-unwrap counter as Kotlin `!!`. Only named functions count as functions, a callback is a lambda. Module-level non-exported declarations count as private for the doc ratios. Test functions are the `function` declarations in test files, `it()` callbacks are not counted, see suggestion 17
 - **Commits:** length, lowercase ratio, conventional prefix ratio, tense
 
-Start with **Kotlin only**, add others after M5. TypeScript added 2026-10-02, the shared walk is `analyzeTree` and each language supplies a node counter. `.d.ts` files are ignored, `.tsx` uses the tsx grammar.
+Start with **Kotlin only**, add others after M5. TypeScript, Python and Go added 2026-10-02, the shared walk is `analyzeTree` and each language supplies a node counter in `analyzer-<lang>.ts`. `.d.ts` files are ignored, `.tsx` uses the tsx grammar. Expression-body rules exist only for Kotlin and TypeScript.
 
-**Done when:** stats are deterministic and unit-tested against fixtures with known values. TypeScript verified on the author's Firebase functions in Dissent: 148 function declarations by grep versus 147 counted, interfaces and type aliases exact
+**Done when:** stats are deterministic and unit-tested against fixtures with known values. TypeScript verified on the author's Firebase functions in Dissent: 148 function declarations by grep versus 147 counted, interfaces and type aliases exact. Python verified on the six scripts in Dissent: files, lines, functions, classes and try count exact. Go has no real repo on the author's machine, it is verified on its fixture only
 
 ### M3 Profile writer (`core`)
 - Input: stats + sampled snippets (stratified: ~30 functions, ~100 comments, ~100 commit messages, configurable token budget)
@@ -325,7 +327,7 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
 4b. `idiolect rules` done 2026-10-02. Verified in Dissent: reject, approve and edit all survived `idiolect scan --no-llm`
 5. **M7 Unbot linter**. Done 2026-10-02, verified in Dissent, see M7
 6. **Launch:** README with before/after examples, post on Hacker News, r/programming, r/ClaudeAI
-7. Add languages (Swift, TS, Python, Go), **M8 Auto refresh**. M8 done 2026-10-02. TypeScript done 2026-10-02, verified in Dissent
+7. Add languages (Swift, TS, Python, Go), **M8 Auto refresh**. M8 done 2026-10-02. TypeScript, Python and Go done 2026-10-02, TypeScript and Python verified in Dissent, Go on its fixture. Swift still needs its grammar built
 8. **M9 Team mode**, **M10 Dashboard** - only after real usage
 
 ## 12. Out of scope for v1

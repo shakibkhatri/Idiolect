@@ -9,7 +9,7 @@ export type ServerDeps = {
   cwd?: string;
 };
 
-const LANGUAGES = ["kotlin", "typescript"] as const;
+const LANGUAGES = ["kotlin", "typescript", "python", "go"] as const;
 
 export const WRITE_LIKE_ME = `This developer has a style profile served by the idiolect MCP server.
 Before writing or editing code for them, call get_style with the file path so you get the rules for that language and repo.

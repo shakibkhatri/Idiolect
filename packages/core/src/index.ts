@@ -5,6 +5,8 @@ export { UserConfigSchema, RepoConfigSchema, loadUserConfig, saveUserConfig, loa
 export { emptyProfile, loadProfile, saveProfile, upsertSource, updateRules, profilePath, type Profile, type Source, type Rule, type Language } from "./profile.js";
 export { METRICS, COMMIT_METRICS, metric, percentile, type Metric } from "./metrics.js";
 export { analyzeTypeScript } from "./analyzer-ts.js";
+export { analyzePython } from "./analyzer-py.js";
+export { analyzeGo } from "./analyzer-go.js";
 export { analyze } from "./languages.js";
 export { baselineRules } from "./baseline.js";
 export { redact } from "./redact.js";

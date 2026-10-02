@@ -26,7 +26,7 @@ export const METRICS: Record<string, MetricFn> = {
   "naming.function-camel-ratio": (s) => ratio(s.naming.casing.function.camel, s.naming.casing.function.camel + s.naming.casing.function.snake + s.naming.casing.function.other),
   "naming.constant-screaming-ratio": (s) => ratio(s.naming.casing.constant.screaming, s.naming.casing.constant.screaming + s.naming.casing.constant.camel + s.naming.casing.constant.pascal),
   "naming.abbreviation-ratio": (s) => ratio(s.naming.abbreviated, s.naming.identifiers),
-  "naming.generic-ratio": (s) => ratio(s.naming.genericNames, s.naming.casing.function.camel + s.naming.casing.function.pascal),
+  "naming.generic-ratio": (s) => ratio(s.naming.genericNames, s.naming.casing.function.camel + s.naming.casing.function.pascal + s.naming.casing.function.snake),
   "naming.boolean-is-has-ratio": (s) => { const b = s.naming.booleanPrefix; const total = sum(b); return ratio((b.is ?? 0) + (b.has ?? 0) + (b.can ?? 0) + (b.should ?? 0), total); },
   "naming.test-backtick-ratio": (s) => ratio(s.naming.testNames.backtick ?? 0, sum(s.naming.testNames)),
   "naming.test-camel-sentence-ratio": (s) => ratio(s.naming.testNames.camelSentence ?? 0, sum(s.naming.testNames)),
@@ -56,6 +56,14 @@ export const METRICS: Record<string, MetricFn> = {
   "typescript.type-alias-ratio": (s) => ratio(s.typescript.typeAliases, s.typescript.typeAliases + s.typescript.interfaces),
   "typescript.optional-chain-per-kloc": (s) => perKloc(s.typescript.optionalChains, s),
   "typescript.any-per-kloc": (s) => perKloc(s.typescript.anyTypes, s),
+  "python.type-hint-ratio": (s) => ratio(s.python.typeHinted, s.functions.count),
+  "python.fstring-ratio": (s) => ratio(s.python.fStrings, s.python.fStrings + s.python.formatCalls),
+  "python.comprehension-per-kloc": (s) => perKloc(s.python.comprehensions, s),
+  "python.bare-except-per-kloc": (s) => perKloc(s.python.bareExcepts, s),
+  "python.dataclass-ratio": (s) => ratio(s.python.dataclasses, s.naming.casing.class.pascal),
+  "go.err-check-per-kloc": (s) => perKloc(s.go.errChecks, s),
+  "go.named-return-ratio": (s) => ratio(s.go.namedReturns, s.functions.count),
+  "go.panic-per-kloc": (s) => perKloc(s.go.panics, s),
 };
 
 export const COMMIT_METRICS: Record<string, (c: CommitStats) => Metric> = {
