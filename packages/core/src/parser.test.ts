@@ -21,7 +21,6 @@ test("parses Kotlin fixture without errors", async () => {
     }
   };
   visit();
-  console.log([...types].sort().join(" "));
   expect(types).toContain("function_declaration");
   expect(types).toContain("when_expression");
   expect(types).toContain("line_comment");

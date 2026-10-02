@@ -26,12 +26,12 @@ Later: **team mode**, which learns team rules from PR review comments.
 
 ## 3. Tech stack
 
-- TypeScript, Node 20+, pnpm workspaces (monorepo)
+- TypeScript, Node 22+ (20 is end of life, 22 has `path.matchesGlob` and `fs.glob` built in), pnpm workspaces (monorepo)
 - `web-tree-sitter` with WASM grammars (no native builds): Kotlin, Swift, TypeScript/JavaScript, Python, Go.
   Grammar `.wasm` files are vendored in `packages/core/grammars/` (MIT) and refreshed with `scripts/update-grammars.sh`.
   Reason: `tree-sitter-wasms` is stale (legacy `dylink` section, rejected by current `web-tree-sitter`) and the official grammar packages carry a node-gyp install script.
   Kotlin, TypeScript, Python and Go publish a modern wasm on npm. Swift does not, it must be built once with the tree-sitter CLI and vendored the same way
-- `simple-git` or `child_process` for git
+- `child_process` for git, no wrapper library
 - `@modelcontextprotocol/sdk` for the MCP server (stdio transport)
 - `commander` for the CLI, `zod` for schemas, `vitest` for tests
 - LLM provider interface with adapters: Anthropic (default), OpenAI, Google Gemini, and `openai-compatible` (any base URL).
