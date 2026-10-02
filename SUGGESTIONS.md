@@ -73,3 +73,10 @@ Options: judge with a different provider when two are configured, or add a contr
 
 Seven tasks give a handful of functions and one commit message, so per-metric numbers like commits.body-ratio swing between 0 and 1.
 Weight each metric by its output sample size, or require a minimum before it counts, and say in the report how many samples each number rests on.
+
+## 13. Profile over-application: cap voice rules per section (open)
+
+First blind quiz: the agent given the profile wrote more comments and more structure than the developer does, and the developer picked the plain output 4 of 7 times.
+Reordering quantities first is the cheap fix.
+If the quiz still sits near chance, cap example-backed rules to the top N per section by confidence, and ask the LLM for fewer, sharper rules.
+Also consider a "do less" rule family learned from what the developer does NOT do in the samples: no KDoc on private members, no preview composables, no sealed error hierarchies.
