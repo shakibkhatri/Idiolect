@@ -12,9 +12,9 @@ export type LanguageStats = {
   files: number;
   loc: number;
   functions: { count: number; blockBody: number; expressionBody: number; lengthLines: Histogram; params: Histogram; maxNesting: Histogram; earlyReturn: number };
-  naming: { casing: Record<NameKind, Record<Casing, number>>; nameLength: Record<NameKind, Histogram>; functionVerb: Counter; booleanPrefix: Counter; abbreviated: number; identifiers: number; testNames: Counter };
+  naming: { casing: Record<NameKind, Record<Casing, number>>; nameLength: Record<NameKind, Histogram>; functionVerb: Counter; booleanPrefix: Counter; abbreviated: number; identifiers: number; testNames: Counter; genericNames: number };
   tests: { files: number; loc: number; functions: number };
-  comments: { line: number; block: number; doc: number; chars: number; lowercaseStart: number; trailingPeriod: number; todo: Counter; publicDecls: number; publicDocumented: number; privateDecls: number; privateDocumented: number };
+  comments: { line: number; block: number; doc: number; chars: number; lowercaseStart: number; trailingPeriod: number; todo: Counter; tells: Counter; publicDecls: number; publicDocumented: number; privateDecls: number; privateDocumented: number };
   errors: { tryCatch: number; runCatching: number; resultType: number; forceUnwrap: number };
   kotlin: { when3: number; ifElseChain3: number; sealedInterface: number; sealedClass: number; extensionFunctions: number; dataClasses: number; composables: number; modifierParamFirst: number; modifierParamLater: number; remember: number };
 };
@@ -29,9 +29,9 @@ export function emptyStats(): LanguageStats {
     files: 0,
     loc: 0,
     functions: { count: 0, blockBody: 0, expressionBody: 0, lengthLines: {}, params: {}, maxNesting: {}, earlyReturn: 0 },
-    naming: { casing: perKind(() => ({ camel: 0, pascal: 0, snake: 0, screaming: 0, backtick: 0, other: 0 })), nameLength: perKind(() => ({})), functionVerb: {}, booleanPrefix: {}, abbreviated: 0, identifiers: 0, testNames: {} },
+    naming: { casing: perKind(() => ({ camel: 0, pascal: 0, snake: 0, screaming: 0, backtick: 0, other: 0 })), nameLength: perKind(() => ({})), functionVerb: {}, booleanPrefix: {}, abbreviated: 0, identifiers: 0, testNames: {}, genericNames: 0 },
     tests: { files: 0, loc: 0, functions: 0 },
-    comments: { line: 0, block: 0, doc: 0, chars: 0, lowercaseStart: 0, trailingPeriod: 0, todo: {}, publicDecls: 0, publicDocumented: 0, privateDecls: 0, privateDocumented: 0 },
+    comments: { line: 0, block: 0, doc: 0, chars: 0, lowercaseStart: 0, trailingPeriod: 0, todo: {}, tells: {}, publicDecls: 0, publicDocumented: 0, privateDecls: 0, privateDocumented: 0 },
     errors: { tryCatch: 0, runCatching: 0, resultType: 0, forceUnwrap: 0 },
     kotlin: { when3: 0, ifElseChain3: 0, sealedInterface: 0, sealedClass: 0, extensionFunctions: 0, dataClasses: 0, composables: 0, modifierParamFirst: 0, modifierParamLater: 0, remember: 0 },
   };
@@ -129,7 +129,7 @@ function countFunction(n: Node, s: LanguageStats, test: boolean) {
   const fname = name(n);
   const prose = test || !!fname?.startsWith("`");
   if (test) { s.tests.functions++; if (fname) bump(s.naming.testNames, testNameStyle(fname)); }
-  else countName(fname, "function", s);
+  else { countName(fname, "function", s); if (fname && GENERIC_NAME.test(fname)) s.naming.genericNames++; }
   if (fname && !prose) bump(s.naming.functionVerb, firstWord(fname));
   countDoc(n, s);
 
@@ -183,7 +183,14 @@ function countComment(n: Node, s: LanguageStats) {
   if (text.endsWith(".")) c.trailingPeriod++;
   const todo = text.match(/\b(TODO|FIXME|HACK)\b(\s*\([^)]*\))?(\s*:)?/);
   if (todo) bump(c.todo, `${todo[1]}${todo[2] ? "(x)" : ""}${todo[3] ? ":" : ""}`);
+  if (BUZZWORDS.test(text)) bump(c.tells, "buzzword");
+  if (/^(this (function|method|class|file|property)|the (function|method) )/i.test(text)) bump(c.tells, "restates");
+  if (EMOJI.test(text)) bump(c.tells, "emoji");
 }
+
+const BUZZWORDS = /\b(robust|seamless(ly)?|leverag(e|es|ing)|comprehensive(ly)?|utiliz(e|es|ing)|ensur(e|es|ing) that|streamlin(e|ed)|cutting[- ]edge|delve|crucial|facilitat(e|es))\b/i;
+const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2705}\u{274C}]/u;
+const GENERIC_NAME = /^(handle|process|manage|do)(Data|Item|Items|Input|Request|Response|Result|Stuff|Logic|It)$|^(helper|util|utility|data|temp|result|value|item)\d*$/i;
 
 function countDoc(n: Node, s: LanguageStats) {
   const parent = n.parent?.type;

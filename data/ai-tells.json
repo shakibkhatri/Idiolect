@@ -1,0 +1,10 @@
+[
+  { "id": "comments.buzzwords", "metric": "comments.buzzword-ratio", "text": "Do not use words like robust, seamless, leverage, comprehensive, utilize, streamline, crucial or delve in comments." },
+  { "id": "comments.restating", "metric": "comments.restates-ratio", "text": "Do not start comments with \"This function\", \"This method\" or \"This class\". Say what is not obvious from the code, or write nothing." },
+  { "id": "comments.emoji", "metric": "comments.emoji-ratio", "text": "No emoji in comments." },
+  { "id": "comments.private-docblocks", "metric": "comments.private-doc-ratio", "text": "Do not write doc comments on private functions and properties." },
+  { "id": "naming.generic", "metric": "naming.generic-ratio", "text": "No generic names like handleData, processItem, result2 or helper. Name the thing after what it is." },
+  { "id": "errors.try-everything", "metric": "errors.try-per-kloc", "text": "Do not wrap code in try/catch defensively. Let errors propagate unless there is a specific recovery." },
+  { "id": "errors.force-unwrap", "metric": "errors.force-unwrap-per-kloc", "text": "Do not use !! to force-unwrap nullable values." },
+  { "id": "comments.todo", "metric": "comments.todo-ratio", "text": "Do not leave TODO comments." }
+]

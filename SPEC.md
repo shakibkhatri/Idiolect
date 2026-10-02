@@ -135,7 +135,10 @@ Start with **Kotlin only**, add others after M5.
 - **No-LLM baseline:** without a provider configured, render template rules straight from stats (e.g. "p50 function length is 12 lines").
   First run gives value with no key and no local model. The LLM upgrades these into prose and adds the Avoid section
 - Every rule must reference a metric or examples, otherwise dropped
-- **Avoid section:** check each item in `data/ai-tells.json` against the user's code. If the user basically never does it, add an "avoid" rule
+- **Avoid section:** check each item in `data/ai-tells.json` against the user's code. If the user basically never does it, add an "avoid" rule.
+  Each tell references a metric id from `core/metrics.ts`, so detection is counted by the analyzer, never guessed by the LLM
+- **LLM rules must cite samples.** The model returns rules with example references (file and line). References that were not in the samples sent are dropped, and a rule left without examples is dropped
+- Confidence for metric rules is the 95% Wilson lower bound of the ratio, so small samples lower confidence without being dropped outright
 - Rules below confidence threshold (default 0.6) are stored but not served
 - Minimum evidence: a metric-based rule needs `sampleSize >= minSampleSize` (default 20) and a ratio of >= 0.8 or <= 0.2.
   Below that the LLM gets the number but is told it is weak and must not turn it into a rule

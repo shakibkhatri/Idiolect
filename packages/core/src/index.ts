@@ -3,3 +3,10 @@ export { collect, detectEmail, git, DEFAULT_IGNORE, type Collection, type Collec
 export { analyzeKotlin, analyzeCommits, isTestPath, mergeStats, emptyStats, casing, type LanguageStats, type CommitStats, type Histogram, type Counter, type NameKind, type Casing } from "./analyzer.js";
 export { ConfigSchema, loadConfig, saveConfig, configPath, type Config } from "./config.js";
 export { emptyProfile, loadProfile, saveProfile, upsertSource, profilePath, type Profile, type Source, type Rule, type Language } from "./profile.js";
+export { METRICS, COMMIT_METRICS, metric, percentile, type Metric } from "./metrics.js";
+export { baselineRules } from "./baseline.js";
+export { redact } from "./redact.js";
+export { collectSamples, estimateTokens, type Samples, type Sample, type SampleInput } from "./sampler.js";
+export { createProvider, type LlmProvider, type LlmRequest } from "./llm.js";
+export { writeRules, buildPrompt, reconcile, isServed, SYSTEM_PROMPT } from "./writer.js";
+export { renderStyleMd } from "./render.js";

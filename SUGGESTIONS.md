@@ -27,3 +27,20 @@ Early return is "a return inside a conditional that is not the last statement".
 Nesting counts if, when, loops, try and lambdas.
 Both produce plausible numbers but nobody has confirmed they match what the developer means.
 Check during M3 when rules get phrased.
+
+## 5. Fill in default models for OpenAI and Gemini (open)
+
+`core/llm.ts` has a defaults table.
+Anthropic defaults to claude-opus-5-5.
+OpenAI and Gemini have no default and require `llm.model` in config, because their current model ids were not verified when the adapters were written.
+Verify against the provider docs and fill them in.
+
+## 6. Baseline confidence for "value" rules is a flat formula (open)
+
+Percentile rules like "functions are about 10 lines" get `0.3 + 0.5 * min(1, n/100)`.
+That is fine for serving, but a proper spread measure (how tight the distribution is) would make the number mean something.
+
+## 7. Approve, reject and edit rules from the CLI (open)
+
+Reconcile already honours approved, edited and rejected statuses across rescans, but nothing sets them yet.
+`idiolect rules list|approve|reject|edit <id>` is a small addition and unblocks the pending-rule flow before the dashboard exists.
