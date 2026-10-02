@@ -96,7 +96,7 @@ export function reconcile(previous: Rule[], fresh: Rule[]): Rule[] {
     if (!p) return r;
     if (p.status === "edited") return { ...r, text: p.text, status: "edited" };
     if (p.status === "rejected") return { ...r, status: "rejected" };
-    if (p.status === "approved") return p.text === r.text ? { ...r, status: "approved" } : { ...r, status: "pending" };
+    if (p.status === "approved") return p.text === r.text ? { ...r, status: "approved" } : { ...r, status: "pending", previousText: p.text };
     if (p.status === "pending") return { ...r, status: "pending" };
     return r;
   });

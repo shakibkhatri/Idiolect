@@ -89,7 +89,7 @@ test("writer keeps only LLM rules whose examples were actually sent, and reconci
     { ...rules.find((r) => r.id === "avoid.kotlin.errors.force-unwrap")!, status: "rejected" as const },
   ];
   const next = reconcile(prev, rules.map((r) => (r.id === "kotlin.comments.terse" ? { ...r, text: "changed" } : r)));
-  expect(next.find((r) => r.id === "kotlin.comments.terse")!.status).toBe("pending");
+  expect(next.find((r) => r.id === "kotlin.comments.terse")).toMatchObject({ status: "pending", previousText: "Keep comments to a few lowercase words." });
   expect(next.find((r) => r.id === "kotlin.comments.trailing-period-ratio.high")).toMatchObject({ status: "edited", text: "My own wording." });
   expect(next.find((r) => r.id === "avoid.kotlin.errors.force-unwrap")!.status).toBe("rejected");
 

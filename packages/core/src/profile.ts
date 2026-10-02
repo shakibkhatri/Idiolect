@@ -16,6 +16,7 @@ export type Rule = {
   evidence: { metric?: { name: string; value: number; sampleSize: number }; examples: { file: string; line: number; snippet: string }[]; count?: number };
   confidence: number;
   status: "auto" | "pending" | "approved" | "rejected" | "edited";
+  previousText?: string; // the approved text a rescan replaced, kept while the rule is pending
   paths?: string[];
   learnedIn?: string;   // repo path the examples came from (LLM rules)
   repo?: string;        // set when the rule is a project convention: served only inside this repo
@@ -75,6 +76,6 @@ export function updateRules(profile: Profile, ids: string[], status: "approved" 
   const missing = ids.filter((id) => !known.has(id));
   if (missing.length) throw new Error(`no rule ${missing.join(", ")}, see: idiolect rules list`);
   if (status === "edited" && !text?.trim()) throw new Error("edit needs the new rule text");
-  const rules = profile.rules.map((r) => (ids.includes(r.id) ? { ...r, status, ...(status === "edited" ? { text: text!.trim() } : {}) } : r));
+  const rules = profile.rules.map((r) => (ids.includes(r.id) ? { ...r, status, previousText: undefined, ...(status === "edited" ? { text: text!.trim() } : {}) } : r));
   return { ...profile, rules };
 }
