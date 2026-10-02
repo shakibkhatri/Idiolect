@@ -2,7 +2,7 @@
 import { analyzeKotlin, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, userConfigPath, repoConfigPath, loadProfile, mergeStats, profilePath, saveProfile, upsertSource, analyzeCommits, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type UserConfig, type SampleInput } from "@idiolect/core";
 import { loadTasks, renderReport, runEval, type Report } from "@idiolect/eval";
 import { Command } from "commander";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { writeFile } from "node:fs/promises";
@@ -166,9 +166,21 @@ program.command("eval")
   .option("--tasks <dir>", "task directory", fileURLToPath(new URL("../../../data/eval-tasks", import.meta.url)))
   .option("--only <ids...>", "run only these task ids")
   .option("--quiz", "after the judge, show pairs blind and let you pick")
+  .option("--from <report.json>", "skip generation, quiz an existing report and update it")
   .option("--concurrency <n>", "parallel LLM calls", "3")
-  .action(async (o: { repo: string; tasks: string; only?: string[]; quiz?: boolean; concurrency: string }) => {
+  .action(async (o: { repo: string; tasks: string; only?: string[]; quiz?: boolean; from?: string; concurrency: string }) => {
     const repo = resolve(o.repo);
+    if (o.from) {
+      const path = resolve(o.from);
+      const report = JSON.parse(await readFile(path, "utf8")) as Report;
+      report.quiz = await quiz(report);
+      await writeFile(path, JSON.stringify(report, null, 2));
+      await writeFile(path.replace(/\.json$/, ".md"), renderReport(report));
+      console.log(`\nquiz:   you picked the profile output ${Math.round(report.quiz.winRate * 100)}% (${report.quiz.withWins}/${report.quiz.total})`);
+      console.log(`judge:  with profile wins ${Math.round(report.judge.winRate * 100)}% (${report.judge.withWins}/${report.judge.total})`);
+      console.log(`report: ${path.replace(/\.json$/, ".md")}`);
+      return;
+    }
     const user = await loadUserConfig();
     if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
     const profile = await loadProfile(user.emails[0]!);

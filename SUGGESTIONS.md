@@ -62,3 +62,14 @@ That removes the CLI dependency entirely for anyone using an MCP client.
 Personal LLM rules accumulate across repos by design, but two repos can produce near-identical rules with different ids.
 A cheap pass: when a new personal rule's text is very similar to an existing one, merge the examples instead of adding a rule.
 Could be done by the same LLM call if it is shown the existing personal rules.
+
+## 11. Eval judge shares a model with the generator (open)
+
+`idiolect eval` generates and judges with the same provider, so the judge may prefer its own styled output for reasons other than resemblance.
+The blind quiz is the unbiased check and should be the headline number once a few people have run it.
+Options: judge with a different provider when two are configured, or add a control arm where the judge compares "without" against a second "without" and should land near 50%.
+
+## 12. Metric distance on eval output is small-sample (open)
+
+Seven tasks give a handful of functions and one commit message, so per-metric numbers like commits.body-ratio swing between 0 and 1.
+Weight each metric by its output sample size, or require a minimum before it counts, and say in the report how many samples each number rests on.
