@@ -26,7 +26,8 @@ export async function collectSamples(files: SampleInput[], commits: Commit[], op
     walk(tree.rootNode);
     tree.delete();
   }
-  const commitSamples = commits.map((c) => ({ file: "commit", line: 0, text: c.body ? `${c.subject}\n\n${c.body}` : c.subject }));
+  // cite commits by short hash so a rule's evidence can be checked with git show
+  const commitSamples = commits.map((c) => ({ file: `commit:${c.hash.slice(0, 7)}`, line: 0, text: c.body ? `${c.subject}\n\n${c.body}` : c.subject }));
 
   const budget = { left: opts.maxTokens };
   const take = (xs: Sample[], max: number) => {

@@ -31,6 +31,6 @@ export function renderStyleMd(profile: Profile, opts: RenderOptions): string {
 function evidence(r: Rule): string {
   const parts: string[] = [];
   if (r.evidence.metric) parts.push(`${r.evidence.metric.name} = ${r.evidence.metric.value}, n = ${r.evidence.metric.sampleSize}`);
-  if (r.evidence.examples.length) parts.push(r.evidence.examples.map((e) => `${e.file}:${e.line}`).join(", "));
+  if (r.evidence.examples.length) parts.push(r.evidence.examples.map((e) => (e.file.startsWith("commit:") ? e.file : `${e.file}:${e.line}`)).join(", "));
   return `  _(${parts.join("; ")}; confidence ${r.confidence})_`;
 }

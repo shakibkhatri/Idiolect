@@ -4,6 +4,7 @@ import { z } from "zod";
 
 export const ConfigSchema = z.object({
   emails: z.array(z.string()).min(1),
+  name: z.string().optional(),
   languages: z.array(z.enum(["kotlin"])).default(["kotlin"]),
   llm: z.object({ provider: z.enum(["claude-cli", "anthropic", "openai", "gemini", "openai-compatible", "none"]).default("none"), model: z.string().optional(), apiKeyEnv: z.string().optional(), baseUrl: z.string().optional() }).prefault({}),
   sampling: z.object({ maxTokens: z.number().default(40000) }).prefault({}),

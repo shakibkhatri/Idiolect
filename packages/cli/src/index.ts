@@ -19,6 +19,7 @@ program.command("init")
     const authors = await listAuthors(repo);
     const mine = await detectEmail(repo);
     let emails = o.email;
+    let name: string | undefined;
     if (!emails) {
       console.log("Authors in this repo:");
       authors.forEach((a, i) => console.log(`  ${i + 1}. ${a.email}  (${a.name}, ${a.commits} commits)${a.email === mine ? "  <- git config" : ""}`));
@@ -26,7 +27,9 @@ program.command("init")
       const answer = o.yes ? "" : (await ask(`Which are you? numbers, comma separated [${def.join(",")}]: `)).trim();
       const picks = answer ? answer.split(/[,\s]+/).map(Number) : def;
       emails = picks.map((i) => authors[i - 1]?.email).filter((e): e is string => !!e);
+      name = authors[(picks[0] ?? 1) - 1]?.name;
     }
+    name ??= authors.find((a) => a.email === emails![0])?.name;
     if (!emails.length) throw new Error("no emails selected");
     const kotlinFiles = (await git(repo, ["ls-files", "*.kt", "*.kts"])).split("\n").filter(Boolean).length;
     const languages: Config["languages"] = kotlinFiles ? ["kotlin"] : [];
@@ -45,9 +48,10 @@ program.command("init")
     }
     if (!providers.includes(provider)) throw new Error(`unknown provider ${provider}`);
     const previous = await loadConfig(repo);
-    const config: Config = { ...previous, emails, languages, llm: { ...previous?.llm, provider } } as Config;
+    const config: Config = { ...previous, emails, name, languages, llm: { ...previous?.llm, provider } } as Config;
     await saveConfig(repo, config);
     console.log(`\nwrote ${configPath(repo)}`);
+    console.log(`  developer: ${name ?? emails[0]}`);
     console.log(`  emails:    ${emails.join(", ")}`);
     console.log(`  languages: ${languages.join(", ") || "none supported yet (kotlin only for now)"}`);
     console.log(`  llm:       ${provider}${provider === "claude-cli" ? " (your Claude Code login)" : provider === "anthropic" ? " (needs ANTHROPIC_API_KEY)" : provider === "openai" ? " (needs OPENAI_API_KEY and llm.model)" : provider === "gemini" ? " (needs GEMINI_API_KEY and llm.model)" : provider === "openai-compatible" ? " (needs llm.model, default base url is Ollama)" : ""}`);
@@ -80,7 +84,7 @@ program.command("scan")
     const commitStats = analyzeCommits(c.commits);
 
     const primary = config.emails[0]!;
-    const name = (await git(repo, ["config", "user.name"]).catch(() => "")).trim() || primary;
+    const name = config.name ?? ((await git(repo, ["log", "-1", `--author=${primary}`, "--format=%an"]).catch(() => "")).trim() || primary);
     let profile = upsertSource(await loadProfile(primary) ?? emptyProfile(name, config.emails), {
       repo, head: c.head, scannedAt: new Date().toISOString(), commits: c.commits.length, linesOwned, stats: { kotlin }, commitStats,
     });
