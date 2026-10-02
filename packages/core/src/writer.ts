@@ -51,8 +51,11 @@ export function buildPrompt(profile: Profile, samples: Samples, baseline: Rule[]
 /** Baseline rules always. LLM rules only with a provider, and only when every cited example is one we actually sent. */
 export async function writeRules(profile: Profile, samples: Samples, provider: LlmProvider | undefined, opts: WriteOptions): Promise<Rule[]> {
   const baseline = baselineRules(profile, opts);
-  let fresh = baseline;
-  if (provider) {
+  const fresh = [...baseline];
+  if (!provider) {
+    // no provider this run: keep earlier example-backed rules instead of silently dropping them
+    for (const r of profile.rules) if (r.evidence.examples.length && !fresh.some((f) => f.id === r.id)) fresh.push(r);
+  } else {
     const prompt = buildPrompt(profile, samples, baseline);
     const out = await provider.complete({ ...prompt, schema: LlmRules });
     const sent = new Map([...samples.functions, ...samples.comments, ...samples.commits].map((s) => [`${s.file}:${s.line}`, s]));

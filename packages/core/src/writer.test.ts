@@ -66,6 +66,9 @@ test("writer keeps only LLM rules whose examples were actually sent, and reconci
   expect(llm.map((r) => r.id)).toEqual(["kotlin.comments.terse"]);
   expect(llm[0]!.evidence.examples[0]!.snippet).toBe("// keep it simple");
 
+  const again = await writeRules({ ...p, rules }, samples, undefined, opts);
+  expect(again.map((r) => r.id)).toContain("kotlin.comments.terse"); // no provider keeps earlier LLM rules
+
   const prev = [
     { ...llm[0]!, status: "approved" as const },
     { ...rules.find((r) => r.id === "kotlin.comments.trailing-period-ratio.high")!, status: "edited" as const, text: "My own wording." },
