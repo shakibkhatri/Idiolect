@@ -1,0 +1,5 @@
+id: retry-helper
+language: kotlin
+prompt: |
+  Write a reusable Kotlin helper that retries a suspend block up to N times with exponential backoff, only for exceptions that are considered transient.
+  Comment it the way you normally would.

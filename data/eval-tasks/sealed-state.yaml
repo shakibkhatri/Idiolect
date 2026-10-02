@@ -1,0 +1,5 @@
+id: sealed-state
+language: kotlin
+prompt: |
+  Model the loading state of a screen that shows a list of devices: not loaded yet, loading, loaded with items, failed with an error.
+  Then write a function that turns that state into a short status label for the UI.

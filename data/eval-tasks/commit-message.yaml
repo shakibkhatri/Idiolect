@@ -1,0 +1,6 @@
+id: commit-message
+language: kotlin
+kind: commit
+prompt: |
+  Write the commit message for this change: the device list screen refetched from the network on every tab switch, which made the list flicker and cost a request each time.
+  The fix keeps the last successful result in the state holder and only refetches when it is older than 30 seconds or the user pulls to refresh. Unit tests were added for the staleness check; it was not tried on a physical device.

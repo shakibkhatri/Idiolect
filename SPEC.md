@@ -293,8 +293,8 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
 ## 11. Build order
 
 0. **Spike:** parse one real Kotlin file with `web-tree-sitter`, print the AST. Done 2026-10-02, see `packages/core/src/parser.test.ts`
-1. **M1 Collector** + **M2 Analyzer** (Kotlin)
-2. **M3 Profile writer** + `STYLE.md`
+1. **M1 Collector** + **M2 Analyzer** (Kotlin). Done 2026-10-02
+2. **M3 Profile writer** + `STYLE.md`. Done 2026-10-02, author reviewed the rules from two repos and found them correct
 3. **M4 Eval harness** - prove it works on the author's own repos before going further
 4. **M5 MCP server** + **M6 Sync**
 5. **M7 Unbot linter**

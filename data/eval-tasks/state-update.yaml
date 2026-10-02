@@ -1,0 +1,5 @@
+id: state-update
+language: kotlin
+prompt: |
+  Write a Kotlin ViewModel (or state holder) for a settings screen with a "notifications enabled" toggle.
+  Toggling should update the UI state immediately and persist the value through a `SettingsStore` (assume `suspend fun setNotifications(enabled: Boolean)`), handling persistence failure.

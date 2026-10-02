@@ -1,0 +1,13 @@
+{
+  "name": "@idiolect/eval",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": { "build": "tsc -b" },
+  "dependencies": {
+    "@idiolect/core": "workspace:*",
+    "yaml": "^2.6.0",
+    "zod": "^4.0.0"
+  }
+}

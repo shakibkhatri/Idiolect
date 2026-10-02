@@ -1,0 +1,5 @@
+id: repository-fetch
+language: kotlin
+prompt: |
+  Write a Kotlin repository class `SessionRepository` with a suspend function that loads the current user's session from a remote `SessionApi` (assume `suspend fun fetchSession(userId: String): SessionDto`) and maps it to a domain `Session`.
+  Handle the failure case. Add any comments you would normally add.

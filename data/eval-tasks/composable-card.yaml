@@ -1,0 +1,5 @@
+id: composable-card
+language: kotlin
+prompt: |
+  Write a Jetpack Compose composable `DeviceCard` that shows a device name, a battery percentage and an optional "offline" badge, and calls a callback when tapped.
+  Include whatever parameters, comments and structure you would use in a real app.

@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 import { analyzeKotlin, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, userConfigPath, repoConfigPath, loadProfile, mergeStats, profilePath, saveProfile, upsertSource, analyzeCommits, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type UserConfig, type SampleInput } from "@idiolect/core";
+import { loadTasks, renderReport, runEval, type Report } from "@idiolect/eval";
 import { Command } from "commander";
+import { mkdir } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 
 const program = new Command().name("idiolect").description("Learn your coding style and feed it to AI agents");
@@ -156,6 +159,62 @@ program.command("show")
     const { confidenceThreshold } = await loadRepoConfig(resolve(o.repo));
     console.log(renderStyleMd(profile, { threshold: confidenceThreshold, language: o.lang, evidence: o.evidence, repo }));
   });
+
+program.command("eval")
+  .description("generate code with and without your profile and score which sounds more like you")
+  .option("--repo <path>", "repository path, used for reference samples and project rules", ".")
+  .option("--tasks <dir>", "task directory", fileURLToPath(new URL("../../../data/eval-tasks", import.meta.url)))
+  .option("--only <ids...>", "run only these task ids")
+  .option("--quiz", "after the judge, show pairs blind and let you pick")
+  .option("--concurrency <n>", "parallel LLM calls", "3")
+  .action(async (o: { repo: string; tasks: string; only?: string[]; quiz?: boolean; concurrency: string }) => {
+    const repo = resolve(o.repo);
+    const user = await loadUserConfig();
+    if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
+    const profile = await loadProfile(user.emails[0]!);
+    if (!profile) throw new Error("no profile, run: idiolect scan");
+    const provider = createProvider(user.llm);
+    if (!provider) throw new Error("eval needs an LLM provider, run: idiolect init");
+    const config = await loadRepoConfig(repo);
+    let tasks = await loadTasks(o.tasks);
+    if (o.only) tasks = tasks.filter((t) => o.only!.includes(t.id));
+    if (!tasks.length) throw new Error("no tasks");
+
+    const c = await collect({ repo, emails: user.emails, ignore: config.ignore });
+    const inputs: SampleInput[] = [];
+    for (const f of c.files.slice(0, 400)) inputs.push({ path: f.path, code: await git(repo, ["show", `${c.head}:${f.path}`]), ranges: f.ranges, test: isTestPath(f.path) });
+    const samples = await collectSamples(inputs, c.commits, { maxTokens: 12000, functions: 12, comments: 20, commits: 8 });
+    const references = [...samples.functions, ...samples.comments, ...samples.commits];
+    process.stderr.write(`${tasks.length} tasks, ${references.length} reference samples, ${provider.name} ${provider.model}, ${tasks.length * 3} LLM calls\n`);
+
+    const report: Report = await runEval({ profile, provider, references, tasks, repo, threshold: config.confidenceThreshold, concurrency: Number(o.concurrency), onProgress: (m) => process.stderr.write(`  ${m}\n`) });
+    if (o.quiz) report.quiz = await quiz(report);
+
+    const dir = join(repo, ".idiolect", "eval");
+    await mkdir(dir, { recursive: true });
+    const stamp = report.generatedAt.replace(/[:.]/g, "-");
+    await writeFile(join(dir, `${stamp}.json`), JSON.stringify(report, null, 2));
+    await writeFile(join(dir, `${stamp}.md`), renderReport(report));
+    const pct = (x: number) => `${Math.round(x * 100)}%`;
+    console.log(`\njudge:  with profile wins ${pct(report.judge.winRate)} (${report.judge.withWins}/${report.judge.total})`);
+    if (report.quiz) console.log(`quiz:   you picked the profile output ${pct(report.quiz.winRate)} (${report.quiz.withWins}/${report.quiz.total})`);
+    console.log(`metric distance: with ${report.metricDistance.with}, without ${report.metricDistance.without} (lower is closer to you)`);
+    console.log(`report: ${join(dir, `${stamp}.md`)}`);
+  });
+
+async function quiz(report: Report) {
+  let withWins = 0;
+  for (const g of report.generations) {
+    const flip = Math.random() < 0.5;
+    const [a, b] = flip ? [g.without, g.with] : [g.with, g.without];
+    console.log(`\n==== ${g.task.id}\n\n--- A\n${a.trim()}\n\n--- B\n${b.trim()}\n`);
+    const pick = (await ask("Which sounds like you? [A/B/skip]: ")).trim().toUpperCase();
+    if (pick !== "A" && pick !== "B") continue;
+    if ((pick === "A") !== flip) withWins++;
+  }
+  const total = report.generations.length;
+  return { withWins, total, winRate: total ? withWins / total : 0 };
+}
 
 async function listAuthors(repo: string) {
   const out = await git(repo, ["shortlog", "-sne", "--all", "--no-merges"]);

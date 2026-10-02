@@ -1,0 +1,5 @@
+id: extension-parse
+language: kotlin
+prompt: |
+  Write Kotlin code that parses a serial number string like "DM-2024-00123" into its three parts (prefix, year, sequence), rejecting malformed input.
+  Also write a small unit test class for it.

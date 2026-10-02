@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@idiolect/core": "workspace:*",
+    "@idiolect/eval": "workspace:*",
     "commander": "^13.0.0"
   }
 }
