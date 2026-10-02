@@ -141,6 +141,7 @@ Start with **Kotlin only**, add others after M5.
 - Every rule must reference a metric or examples, otherwise dropped
 - **Avoid section:** check each item in `data/ai-tells.json` against the user's code. If the user basically never does it, add an "avoid" rule.
   Each tell references a metric id from `core/metrics.ts`, so detection is counted by the analyzer, never guessed by the LLM
+- **Personal vs project.** The LLM labels each rule personal (holds in any codebase) or project (depends on this codebase's vocabulary, libraries, team conventions). Project rules carry `repo` and are served only inside that repo. Every LLM rule carries `learnedIn`, and a rescan replaces only the rules learned in that repo
 - **LLM rules must cite samples.** The model returns rules with example references (file and line). References that were not in the samples sent are dropped, and a rule left without examples is dropped
 - Confidence for metric rules is the 95% Wilson lower bound of the ratio, so small samples lower confidence without being dropped outright
 - Rules below confidence threshold (default 0.6) are stored but not served

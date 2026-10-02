@@ -112,7 +112,7 @@ program.command("scan")
     try { provider = o.llm ? createProvider(user.llm) : undefined; }
     catch (e) { process.stderr.write(`warning: ${(e as Error).message}, writing metric rules only\n`); }
     const samples = await collectSamples(inputs, c.commits, { maxTokens: config.sampling.maxTokens });
-    const ruleOpts = { minSampleSize: config.minSampleSize, confidenceThreshold: config.confidenceThreshold };
+    const ruleOpts = { minSampleSize: config.minSampleSize, confidenceThreshold: config.confidenceThreshold, repo };
     if (o.dryRun) {
       const prompt = buildPrompt(profile, samples, baselineRules(profile, ruleOpts));
       console.log(`--- system (${estimateTokens(prompt.system)} tokens)\n${prompt.system}\n\n--- user (${estimateTokens(prompt.user)} tokens, ${samples.functions.length} functions, ${samples.comments.length} comments, ${samples.commits.length} commits)\n${prompt.user}`);
@@ -123,6 +123,8 @@ program.command("scan")
     profile = { ...profile, rules: await writeRules(profile, samples, provider, ruleOpts) };
     await saveProfile(profile);
     await writeFile(profilePath(primary).replace(/\.json$/, ".STYLE.md"), renderStyleMd(profile, { threshold: config.confidenceThreshold }));
+    const project = profile.rules.filter((r) => r.repo === repo).length;
+    if (project) process.stderr.write(`${project} project-only rules kept for this repo, shown by idiolect show inside it\n`);
 
     const { summarizeKotlin, summarizeCommits } = await import("./summary.js");
     console.log(`\nThis repo`);
@@ -150,8 +152,9 @@ program.command("show")
     if (!email) throw new Error("no ~/.idiolect/config.json, run: idiolect init");
     const profile = await loadProfile(email);
     if (!profile) throw new Error(`no profile for ${email}, run: idiolect scan`);
+    const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"]).catch(() => "")).trim() || undefined;
     const { confidenceThreshold } = await loadRepoConfig(resolve(o.repo));
-    console.log(renderStyleMd(profile, { threshold: confidenceThreshold, language: o.lang, evidence: o.evidence }));
+    console.log(renderStyleMd(profile, { threshold: confidenceThreshold, language: o.lang, evidence: o.evidence, repo }));
   });
 
 async function listAuthors(repo: string) {

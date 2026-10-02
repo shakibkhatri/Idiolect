@@ -16,6 +16,8 @@ export type Rule = {
   confidence: number;
   status: "auto" | "pending" | "approved" | "rejected" | "edited";
   paths?: string[];
+  learnedIn?: string;   // repo path the examples came from (LLM rules)
+  repo?: string;        // set when the rule is a project convention: served only inside this repo
 };
 
 export type Source = { repo: string; head: string; scannedAt: string; commits: number; linesOwned: number; stats: Partial<Record<Language, LanguageStats>>; commitStats: CommitStats };

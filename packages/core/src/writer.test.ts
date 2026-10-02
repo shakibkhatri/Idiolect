@@ -57,17 +57,31 @@ test("writer keeps only LLM rules whose examples were actually sent, and reconci
   const mock: LlmProvider = {
     name: "mock", model: "m",
     complete: async () => ({ rules: [
-      { id: "comments.terse", language: "kotlin", category: "comments", text: "Keep comments to a few lowercase words.", examples: [{ file: "A.kt", line: 1 }], confidence: 0.8 },
-      { id: "kotlin.made-up", language: "kotlin", category: "naming", text: "A rule with a fake citation that must be dropped.", examples: [{ file: "Nope.kt", line: 9 }], confidence: 0.9 },
+      { id: "comments.terse", scope: "personal", language: "kotlin", category: "comments", text: "Keep comments to a few lowercase words.", examples: [{ file: "A.kt", line: 1 }], confidence: 0.8 },
+      { id: "kotlin.made-up", scope: "personal", language: "kotlin", category: "naming", text: "A rule with a fake citation that must be dropped.", examples: [{ file: "Nope.kt", line: 9 }], confidence: 0.9 },
+      { id: "framework.crew", scope: "project", language: "kotlin", category: "framework", text: "Call the user the crew in comments.", examples: [{ file: "A.kt", line: 1 }], confidence: 0.9 },
     ] }) as never,
   };
-  const rules = await writeRules(p, samples, mock, opts);
+  const rules = await writeRules(p, samples, mock, { ...opts, repo: "/a" });
   const llm = rules.filter((r) => r.evidence.examples.length);
-  expect(llm.map((r) => r.id)).toEqual(["kotlin.comments.terse"]);
+  expect(llm.map((r) => r.id)).toEqual(["kotlin.comments.terse", "kotlin.framework.crew"]);
   expect(llm[0]!.evidence.examples[0]!.snippet).toBe("// keep it simple");
+  expect(llm[0]).toMatchObject({ learnedIn: "/a" });
+  expect(llm[0]!.repo).toBeUndefined();
+  expect(llm[1]).toMatchObject({ learnedIn: "/a", repo: "/a" });
 
   const again = await writeRules({ ...p, rules }, samples, undefined, opts);
   expect(again.map((r) => r.id)).toContain("kotlin.comments.terse"); // no provider keeps earlier LLM rules
+  const other = await writeRules({ ...p, rules }, samples, { ...mock, complete: async () => ({ rules: [] }) as never }, { ...opts, repo: "/b" });
+  expect(other.map((r) => r.id)).toContain("kotlin.comments.terse"); // scanning another repo keeps rules learned in /a
+  const relearn = await writeRules({ ...p, rules }, samples, { ...mock, complete: async () => ({ rules: [] }) as never }, { ...opts, repo: "/a" });
+  expect(relearn.map((r) => r.id)).not.toContain("kotlin.comments.terse"); // re-learning /a replaces them
+
+  const home = renderStyleMd({ ...p, rules }, { threshold: 0.6 });
+  expect(home).not.toContain("the crew");
+  const inRepo = renderStyleMd({ ...p, rules }, { threshold: 0.6, repo: "/a" });
+  expect(inRepo).toContain("## Project conventions (a)");
+  expect(inRepo).toContain("the crew");
 
   const prev = [
     { ...llm[0]!, status: "approved" as const },

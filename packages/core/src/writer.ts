@@ -5,11 +5,12 @@ import { COMMIT_METRICS, METRICS } from "./metrics.js";
 import type { Language, Profile, Rule } from "./profile.js";
 import type { Samples } from "./sampler.js";
 
-export type WriteOptions = { minSampleSize: number; confidenceThreshold: number };
+export type WriteOptions = { minSampleSize: number; confidenceThreshold: number; repo?: string };
 
 const LlmRules = z.object({
   rules: z.array(z.object({
     id: z.string().regex(/^[a-z0-9.-]+$/),
+    scope: z.enum(["personal", "project"]),
     language: z.enum(["kotlin", "any"]),
     category: z.enum(["naming", "comments", "structure", "errors", "framework", "commits", "avoid"]),
     text: z.string().min(10).max(400),
@@ -27,6 +28,8 @@ Rules:
 - Only state what the samples show. No generic best practices, nothing you would say about any developer.
 - Rule text is one or two sentences, imperative, written as an instruction to an agent. Quote a short pattern from the samples when it helps.
 - Prefer a few specific rules over many vague ones. Ten to twenty rules is typical.
+- scope is "personal" when the habit would hold in any codebase this developer works in: voice, phrasing, structure, error handling style, how they name and comment.
+  scope is "project" when the rule depends on this codebase: its domain vocabulary, product or company names, specific libraries, wrappers, tokens, ticket formats, stakeholder names, team commit conventions. Project rules are only shown inside this repo, so be strict: anything naming a project-specific symbol, product or person is "project".
 - confidence is 0 to 1: how consistently the samples show the habit.
 - id is lowercase dotted, like kotlin.comments.explain-why or any.commits.mention-screen.
 Return JSON only.`;
@@ -52,14 +55,17 @@ export function buildPrompt(profile: Profile, samples: Samples, baseline: Rule[]
 export async function writeRules(profile: Profile, samples: Samples, provider: LlmProvider | undefined, opts: WriteOptions): Promise<Rule[]> {
   const baseline = baselineRules(profile, opts);
   const fresh = [...baseline];
-  if (!provider) {
-    // no provider this run: keep earlier example-backed rules instead of silently dropping them
-    for (const r of profile.rules) if (r.evidence.examples.length && !fresh.some((f) => f.id === r.id)) fresh.push(r);
-  } else {
+  // earlier example-backed rules survive unless this scan re-learns the same repo with a provider
+  for (const r of profile.rules) {
+    if (!r.evidence.examples.length) continue;
+    if (provider && opts.repo && (r.learnedIn ?? opts.repo) === opts.repo) continue;
+    if (!fresh.some((f) => f.id === r.id)) fresh.push(r);
+  }
+  if (provider) {
     const prompt = buildPrompt(profile, samples, baseline);
     const out = await provider.complete({ ...prompt, schema: LlmRules });
     const sent = new Map([...samples.functions, ...samples.comments, ...samples.commits].map((s) => [`${s.file}:${s.line}`, s]));
-    const ids = new Set(baseline.map((r) => r.id));
+    const ids = new Set(fresh.map((r) => r.id));
     for (const r of out.rules) {
       const examples = r.examples.map((e) => sent.get(`${e.file}:${e.line}`)).filter((s): s is NonNullable<typeof s> => !!s)
         .map((s) => ({ file: s.file, line: s.line, snippet: s.text.length > 240 ? s.text.slice(0, 240) + "…" : s.text }));
@@ -67,7 +73,7 @@ export async function writeRules(profile: Profile, samples: Samples, provider: L
       const id = r.id.startsWith(`${r.language}.`) ? r.id : `${r.language}.${r.id}`;
       if (ids.has(id)) continue;
       ids.add(id);
-      fresh.push({ id, scope: "personal", language: r.language as Language | "any", category: r.category, text: r.text, evidence: { examples }, confidence: Math.round(r.confidence * 100) / 100, status: "auto" });
+      fresh.push({ id, scope: "personal", language: r.language as Language | "any", category: r.category, text: r.text, evidence: { examples }, confidence: Math.round(r.confidence * 100) / 100, status: "auto", learnedIn: opts.repo, ...(r.scope === "project" && opts.repo ? { repo: opts.repo } : {}) });
     }
   }
   return reconcile(profile.rules, fresh);

@@ -56,3 +56,9 @@ Check `gemini -p` and `codex exec` output formats and whether they support a JSO
 Once M5 exists, add a `learn_my_style` prompt plus `get_profile_input` and `submit_rules` tools.
 The agent fetches metrics, baseline rules and samples, writes the rules itself, and submits them.
 That removes the CLI dependency entirely for anyone using an MCP client.
+
+## 10. Dedupe personal rules learned from different repos (open)
+
+Personal LLM rules accumulate across repos by design, but two repos can produce near-identical rules with different ids.
+A cheap pass: when a new personal rule's text is very similar to an existing one, merge the examples instead of adding a rule.
+Could be done by the same LLM call if it is shown the existing personal rules.

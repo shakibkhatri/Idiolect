@@ -6,10 +6,13 @@ const SECTIONS: [Rule["category"], string][] = [
   ["framework", "Framework"], ["commits", "Commits"], ["avoid", "Avoid"],
 ];
 
-export type RenderOptions = { threshold: number; language?: string; evidence?: boolean };
+export type RenderOptions = { threshold: number; language?: string; evidence?: boolean; repo?: string };
 
+/** Personal rules always. Project rules only when rendering for the repo they were learned in. */
 export function renderStyleMd(profile: Profile, opts: RenderOptions): string {
-  const rules = profile.rules.filter((r) => isServed(r, opts.threshold) && (!opts.language || r.language === "any" || r.language === opts.language));
+  const served = profile.rules.filter((r) => isServed(r, opts.threshold) && (!opts.language || r.language === "any" || r.language === opts.language));
+  const rules = served.filter((r) => !r.repo);
+  const project = opts.repo ? served.filter((r) => r.repo === opts.repo) : [];
   const out = [`# Code style: ${profile.developer.name}`, ""];
   out.push(`Learned from ${profile.sources.length} ${profile.sources.length === 1 ? "repo" : "repos"}, ${profile.sources.reduce((n, s) => n + s.linesOwned, 0)} lines of the developer's own code. Follow these when writing code, comments and commits for them.`, "");
   for (const [category, title] of SECTIONS) {
@@ -17,6 +20,11 @@ export function renderStyleMd(profile: Profile, opts: RenderOptions): string {
     if (!own.length) continue;
     out.push(`## ${title}`, "");
     for (const r of own) out.push(`- ${r.text}${opts.evidence ? evidence(r) : ""}`);
+    out.push("");
+  }
+  if (project.length) {
+    out.push(`## Project conventions (${opts.repo!.split("/").pop()})`, "", "These hold in this repo only. They come from its vocabulary, libraries and team habits.", "");
+    for (const r of project.sort((a, b) => b.confidence - a.confidence)) out.push(`- ${r.text}${opts.evidence ? evidence(r) : ""}`);
     out.push("");
   }
   const team = rules.filter((r) => r.scope === "team");
