@@ -76,7 +76,8 @@ Weight each metric by its output sample size, or require a minimum before it cou
 
 ## 13. Profile over-application: cap voice rules per section (open)
 
-First blind quiz: the agent given the profile wrote more comments and more structure than the developer does, and the developer picked the plain output 4 of 7 times.
-Reordering quantities first is the cheap fix.
+Metric table from the first eval: with the profile the agent wrote more comments per line than the developer does, without it fewer.
+Weak evidence from seven tasks, and the first quiz was answered at random so it says nothing.
+Reordering quantities first is the cheap precaution.
 If the quiz still sits near chance, cap example-backed rules to the top N per section by confidence, and ask the LLM for fewer, sharper rules.
 Also consider a "do less" rule family learned from what the developer does NOT do in the samples: no KDoc on private members, no preview composables, no sealed error hierarchies.
