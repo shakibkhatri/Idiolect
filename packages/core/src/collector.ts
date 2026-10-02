@@ -23,7 +23,7 @@ export type CollectOptions = {
 
 export const DEFAULT_IGNORE = [
   "**/build/**", "**/dist/**", "**/out/**", "**/generated/**", "**/node_modules/**",
-  "**/vendor/**", "**/third_party/**", "**/*.lock", "**/*lock.json", "**/*.min.*",
+  "**/vendor/**", "**/third_party/**", "**/*.lock", "**/*lock.json", "**/*.min.*", "**/*.d.ts",
 ];
 
 type Cache = { files: Record<string, OwnedFile>; commitsHead?: string; commits: Commit[] };

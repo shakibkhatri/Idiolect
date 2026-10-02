@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { analyzeCommits, emptyStats, mergeStats, type CommitStats, type LanguageStats } from "./analyzer.js";
 import type { Commit } from "./collector.js";
 
-export type Language = "kotlin";
+export type Language = "kotlin" | "typescript";
 
 export type Rule = {
   id: string;
@@ -41,7 +41,11 @@ export function emptyProfile(name: string, emails: string[]): Profile {
 
 export async function loadProfile(email: string): Promise<Profile | undefined> {
   const raw = await readFile(profilePath(email), "utf8").catch(() => undefined);
-  return raw === undefined ? undefined : (JSON.parse(raw) as Profile);
+  if (raw === undefined) return undefined;
+  const profile = JSON.parse(raw) as Profile;
+  // stats written before a language or counter existed get the zero shape, so metrics never see undefined
+  const fill = (stats: Partial<Record<Language, LanguageStats>>) => Object.fromEntries(Object.entries(stats).map(([l, st]) => [l, mergeStats(emptyStats(), st!)]));
+  return { ...profile, stats: fill(profile.stats), sources: profile.sources.map((s) => ({ ...s, stats: fill(s.stats) })) };
 }
 
 export async function saveProfile(profile: Profile) {

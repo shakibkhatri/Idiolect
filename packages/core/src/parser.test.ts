@@ -25,3 +25,11 @@ test("parses Kotlin fixture without errors", async () => {
   expect(types).toContain("when_expression");
   expect(types).toContain("line_comment");
 });
+
+test("parses TypeScript and TSX fixtures without errors", async () => {
+  const ts = fileURLToPath(new URL("../../../fixtures/typescript/Sample.ts", import.meta.url));
+  const tree = await parse(readFileSync(ts, "utf8"), "typescript");
+  expect(tree.rootNode.hasError).toBe(false);
+  const tsx = await parse("export const App = () => <div className=\"a\">{1}</div>;\n", "tsx");
+  expect(tsx.rootNode.hasError).toBe(false);
+});

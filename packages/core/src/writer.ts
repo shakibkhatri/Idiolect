@@ -11,7 +11,7 @@ const LlmRules = z.object({
   rules: z.array(z.object({
     id: z.string().regex(/^[a-z0-9.-]+$/),
     scope: z.enum(["personal", "project"]),
-    language: z.enum(["kotlin", "any"]),
+    language: z.enum(["kotlin", "typescript", "any"]),
     category: z.enum(["naming", "comments", "structure", "errors", "framework", "commits", "avoid"]),
     text: z.string().min(10).max(400),
     examples: z.array(z.object({ file: z.string(), line: z.number().int() })).min(1).max(3),
@@ -33,7 +33,7 @@ Rules:
   scope is "project" when the rule depends on this codebase: its domain vocabulary, product or company names, specific libraries, wrappers, tokens, ticket formats, stakeholder names, team commit conventions. Project rules are only shown inside this repo, so be strict: anything naming a project-specific symbol, product or person is "project".
 - You may be given personal rules already learned from the developer's other repos. Never rewrite or duplicate one. If the samples show the same habit, put its id in "confirms" instead. Only write a new rule for a habit not already covered.
 - confidence is 0 to 1: how consistently the samples show the habit.
-- id is lowercase dotted, like kotlin.comments.explain-why or any.commits.mention-screen.
+- id is lowercase dotted, like kotlin.comments.explain-why or any.commits.mention-screen. language is the language the samples are in, or "any" for commits and habits that hold across languages.
 Return JSON only.`;
 
 export function buildPrompt(profile: Profile, samples: Samples, baseline: Rule[], existing: Rule[] = []): { system: string; user: string } {

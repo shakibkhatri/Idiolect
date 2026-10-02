@@ -1,8 +1,8 @@
 import { fileURLToPath } from "node:url";
 import { Language, Parser, type Tree } from "web-tree-sitter";
 
-// ponytail: kotlin only, add a wasm to grammars/ and a row to scripts/update-grammars.sh per language
-export type SupportedLanguage = "kotlin";
+// add a wasm to grammars/ and a row to scripts/update-grammars.sh per grammar
+export type SupportedLanguage = "kotlin" | "typescript" | "tsx";
 
 const languages = new Map<SupportedLanguage, Language>();
 let initialized: Promise<void> | undefined;

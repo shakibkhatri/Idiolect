@@ -1,3 +1,4 @@
+import { grammarFor, languageOf } from "./analyzer.js";
 import type { Commit, LineRange } from "./collector.js";
 import { parse } from "./parser.js";
 import { redact } from "./redact.js";
@@ -14,13 +15,15 @@ export async function collectSamples(files: SampleInput[], commits: Commit[], op
   const functions: Sample[] = [];
   const comments: Sample[] = [];
   for (const f of files) {
-    const tree = await parse(f.code, "kotlin");
+    const lang = languageOf(f.path);
+    if (!lang) continue;
+    const tree = await parse(f.code, grammarFor(lang, f.path));
     const owned = (row: number) => !f.ranges || f.ranges.some((r) => r.start <= row + 1 && row + 1 <= r.end);
     const walk = (n: import("web-tree-sitter").Node) => {
       const row = n.startPosition.row;
       const lines = n.endPosition.row - row + 1;
-      if (n.type === "function_declaration" && !f.test && owned(row) && lines >= 3 && lines <= 40 && n.text.includes("{")) functions.push({ file: f.path, line: row + 1, text: n.text });
-      else if ((n.type === "line_comment" || n.type === "block_comment") && owned(row)) comments.push({ file: f.path, line: row + 1, text: n.text });
+      if (isFunction(n) && !f.test && owned(row) && lines >= 3 && lines <= 40 && n.text.includes("{")) functions.push({ file: f.path, line: row + 1, text: n.text });
+      else if (COMMENT_TYPES.has(n.type) && owned(row)) comments.push({ file: f.path, line: row + 1, text: n.text });
       for (const c of n.namedChildren) if (c) walk(c);
     };
     walk(tree.rootNode);
@@ -43,6 +46,16 @@ export async function collectSamples(files: SampleInput[], commits: Commit[], op
     return out;
   };
   return { commits: take(commitSamples, opts.commits ?? 100), comments: take(comments, opts.comments ?? 100), functions: take(functions, opts.functions ?? 30) };
+}
+
+const COMMENT_TYPES = new Set(["line_comment", "block_comment", "comment"]);
+const FUNCTION_VALUES = new Set(["arrow_function", "function_expression"]);
+/** Kotlin functions, TypeScript functions and methods, and a const holding an arrow function as one sample. */
+function isFunction(n: import("web-tree-sitter").Node): boolean {
+  if (n.type === "function_declaration" || n.type === "method_definition") return true;
+  if (n.type !== "lexical_declaration") return false;
+  const value = n.namedChildren[0]?.childForFieldName("value");
+  return !!value && FUNCTION_VALUES.has(value.type);
 }
 
 // deterministic order so dry-run and the real call send the same samples

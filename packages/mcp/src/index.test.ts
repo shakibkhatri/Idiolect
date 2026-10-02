@@ -45,11 +45,12 @@ test("get_style serves personal rules for the language, not project rules of ano
 
 test("check_style finds the lines that break metric rules", async () => {
   const client = await connect();
-  const code = `// Loads the user\nfun load(id: String): User {\n    return repo.find(id)!!\n}\n`;
+  const code = `// Loads the user\n// Cached per id\n// Never null\nfun load(id: String): User {\n    return repo.find(id)!!\n}\n`;
   const res = await client.callTool({ name: "check_style", arguments: { code, file_path: "app/src/Repo.kt" } });
   const v = (res.structuredContent as { violations: { rule_id: string; line?: number }[] }).violations;
   expect(v).toContainEqual(expect.objectContaining({ rule_id: "kotlin.comments.lowercase-start-ratio.high", line: 1 }));
-  expect(v).toContainEqual(expect.objectContaining({ rule_id: "avoid.errors.force-unwrap", line: 3 }));
+  expect(v).toContainEqual(expect.objectContaining({ rule_id: "kotlin.comments.lowercase-start-ratio.high", line: 3 }));
+  expect(v).toContainEqual(expect.objectContaining({ rule_id: "avoid.errors.force-unwrap", line: 5 }));
   // four lines are too few for a density rule to say anything
   expect(v).not.toContainEqual(expect.objectContaining({ rule_id: "kotlin.comments.per-100-loc.value" }));
   expect(textOf(res)).toContain("line 1: Start comments in lowercase.");

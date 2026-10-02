@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { analyzeKotlin, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, ensureRepoDir, userConfigPath, repoConfigPath, loadProfile, mergeStats, profilePath, saveProfile, upsertSource, analyzeCommits, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type UserConfig, type SampleInput } from "@idiolect/core";
+import { analyze, languageOf, EXTENSIONS, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, ensureRepoDir, userConfigPath, repoConfigPath, loadProfile, mergeStats, profilePath, saveProfile, upsertSource, analyzeCommits, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type UserConfig, type SampleInput, type Language, type LanguageStats } from "@idiolect/core";
 import { loadTasks, renderReport, runEval, type Report } from "@idiolect/eval";
 import { createIdiolectServer } from "@idiolect/mcp";
 import { syncTargets } from "./sync.js";
@@ -68,9 +68,12 @@ program.command("init")
     const allEmails = [...(user?.emails ?? []), ...emails.filter((e) => !known.has(e))];
     await saveUserConfig({ ...user, name, emails: allEmails, llm: { ...user?.llm, provider } });
 
-    const kotlinFiles = (await git(repo, ["ls-files", "*.kt", "*.kts"])).split("\n").filter(Boolean).length;
+    const languages: Language[] = [];
+    for (const [lang, exts] of Object.entries(EXTENSIONS) as [Language, string[]][]) {
+      if ((await git(repo, ["ls-files", ...exts.map((e) => `*${e}`)])).split("\n").some((f) => f && languageOf(f))) languages.push(lang);
+    }
     const repoConfig = await loadRepoConfig(repo);
-    await saveRepoConfig(repo, { languages: kotlinFiles ? ["kotlin"] : [], ignore: repoConfig.ignore });
+    await saveRepoConfig(repo, { languages, ignore: repoConfig.ignore });
 
     const need = { "claude-cli": "your Claude Code login", anthropic: "needs ANTHROPIC_API_KEY", openai: "needs OPENAI_API_KEY and llm.model", gemini: "needs GEMINI_API_KEY and llm.model", "openai-compatible": "needs llm.model, default base url is Ollama", none: "metric rules only" }[provider];
     console.log(`\nwrote ${userConfigPath()}  (you, shared across repos)`);
@@ -78,7 +81,7 @@ program.command("init")
     console.log(`  emails:    ${allEmails.join(", ")}`);
     console.log(`  llm:       ${provider} (${need})`);
     console.log(`wrote ${repoConfigPath(repo)}  (repo settings only, safe to commit)`);
-    console.log(`  languages: ${kotlinFiles ? "kotlin" : "none supported yet (kotlin only for now)"}`);
+    console.log(`  languages: ${languages.join(", ") || "none supported yet (kotlin and typescript for now)"}`);
     console.log(`\nnext: idiolect scan`);
   });
 
@@ -94,25 +97,27 @@ program.command("scan")
     if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
     const config = await loadRepoConfig(repo);
     const t0 = Date.now();
-    const c = await collect({ repo, emails: user.emails, ignore: config.ignore, cache: o.cache });
+    const c = await collect({ repo, emails: user.emails, ignore: config.ignore, cache: o.cache, extensions: config.languages.flatMap((l) => EXTENSIONS[l]) });
     const linesOwned = c.files.reduce((n, f) => n + f.ownedLines, 0);
     if (!c.files.length && !c.commits.length) throw new Error(`none of your emails (${user.emails.join(", ")}) appear in this repo, run: idiolect init`);
     process.stderr.write(`collected ${c.files.length} files, ${linesOwned} owned lines, ${c.commits.length} commits (${Date.now() - t0}ms)\n`);
 
-    let kotlin = emptyStats();
+    const stats: Partial<Record<Language, LanguageStats>> = {};
     const inputs: SampleInput[] = [];
     for (const f of c.files) {
+      const lang = languageOf(f.path);
+      if (!lang) continue;
       const code = await git(repo, ["show", `${c.head}:${f.path}`]);
       const test = isTestPath(f.path);
       inputs.push({ path: f.path, code, ranges: f.ranges, test });
-      kotlin = mergeStats(kotlin, await analyzeKotlin(code, f.ranges, { test }));
+      stats[lang] = mergeStats(stats[lang] ?? emptyStats(), await analyze(code, lang, f.ranges, { test, path: f.path }));
     }
     const commitStats = analyzeCommits(c.commits);
 
     const primary = user.emails[0]!;
     const name = user.name ?? primary;
     let profile = upsertSource(await loadProfile(primary) ?? emptyProfile(name, user.emails), {
-      repo, head: c.head, scannedAt: new Date().toISOString(), commits: c.commits.length, linesOwned, stats: { kotlin }, commitStats,
+      repo, head: c.head, scannedAt: new Date().toISOString(), commits: c.commits.length, linesOwned, stats, commitStats,
     });
     profile = { ...profile, developer: { name, emails: user.emails } };
     await saveProfile(profile);
@@ -135,13 +140,13 @@ program.command("scan")
     const project = profile.rules.filter((r) => r.repo === repo).length;
     if (project) process.stderr.write(`${project} project-only rules kept for this repo, shown by idiolect show inside it\n`);
 
-    const { summarizeKotlin, summarizeCommits } = await import("./summary.js");
+    const { summarizeLanguage, summarizeCommits } = await import("./summary.js");
     console.log(`\nThis repo`);
-    console.log(summarizeKotlin(kotlin));
+    for (const [lang, st] of Object.entries(stats) as [Language, LanguageStats][]) console.log(summarizeLanguage(lang, st));
     console.log(summarizeCommits(commitStats));
     if (profile.sources.length > 1) {
       console.log(`\nMerged profile (${profile.sources.length} repos)`);
-      console.log(summarizeKotlin(profile.stats.kotlin!));
+      for (const [lang, st] of Object.entries(profile.stats) as [Language, LanguageStats][]) console.log(summarizeLanguage(lang, st));
       console.log(summarizeCommits(profile.commitStats));
     }
     const by = (st: string) => profile.rules.filter((r) => r.status === st).length;
@@ -222,7 +227,7 @@ program.command("eval")
 
     const c = await collect({ repo, emails: user.emails, ignore: config.ignore });
     const inputs: SampleInput[] = [];
-    for (const f of c.files.slice(0, 400)) inputs.push({ path: f.path, code: await git(repo, ["show", `${c.head}:${f.path}`]), ranges: f.ranges, test: isTestPath(f.path) });
+    for (const f of c.files.filter((x) => languageOf(x.path) === "kotlin").slice(0, 400)) inputs.push({ path: f.path, code: await git(repo, ["show", `${c.head}:${f.path}`]), ranges: f.ranges, test: isTestPath(f.path) });
     const samples = await collectSamples(inputs, c.commits, { maxTokens: 12000, functions: 12, comments: 20, commits: 8 });
     const references = [...samples.functions, ...samples.comments, ...samples.commits];
     process.stderr.write(`${tasks.length} tasks, ${references.length} reference samples, ${provider.name} ${provider.model}, ${tasks.length * 3} LLM calls\n`);

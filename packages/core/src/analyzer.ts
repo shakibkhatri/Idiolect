@@ -1,6 +1,7 @@
 import type { Node } from "web-tree-sitter";
 import type { Commit, LineRange } from "./collector.js";
-import { parse } from "./parser.js";
+import { parse, type SupportedLanguage } from "./parser.js";
+import type { Language } from "./profile.js";
 
 // All stats are counts or histograms (value -> count). Merging is a plain sum, ratios and percentiles are derived at render time.
 export type Histogram = Record<string, number>;
@@ -17,6 +18,7 @@ export type LanguageStats = {
   comments: { line: number; block: number; doc: number; chars: number; lowercaseStart: number; trailingPeriod: number; todo: Counter; tells: Counter; publicDecls: number; publicDocumented: number; privateDecls: number; privateDocumented: number };
   errors: { tryCatch: number; runCatching: number; resultType: number; forceUnwrap: number };
   kotlin: { when3: number; ifElseChain3: number; sealedInterface: number; sealedClass: number; extensionFunctions: number; dataClasses: number; composables: number; modifierParamFirst: number; modifierParamLater: number; remember: number };
+  typescript: { arrowFunctions: number; functionDeclarations: number; typeAliases: number; interfaces: number; optionalChains: number; anyTypes: number };
 };
 
 export type CommitStats = { count: number; subjectLength: Histogram; lowercaseStart: number; conventionalPrefix: number; trailingPeriod: number; withBody: number; tense: Counter };
@@ -34,8 +36,18 @@ export function emptyStats(): LanguageStats {
     comments: { line: 0, block: 0, doc: 0, chars: 0, lowercaseStart: 0, trailingPeriod: 0, todo: {}, tells: {}, publicDecls: 0, publicDocumented: 0, privateDecls: 0, privateDocumented: 0 },
     errors: { tryCatch: 0, runCatching: 0, resultType: 0, forceUnwrap: 0 },
     kotlin: { when3: 0, ifElseChain3: 0, sealedInterface: 0, sealedClass: 0, extensionFunctions: 0, dataClasses: 0, composables: 0, modifierParamFirst: 0, modifierParamLater: 0, remember: 0 },
+    typescript: { arrowFunctions: 0, functionDeclarations: 0, typeAliases: 0, interfaces: 0, optionalChains: 0, anyTypes: 0 },
   };
 }
+
+export const EXTENSIONS: Record<Language, string[]> = { kotlin: [".kt", ".kts"], typescript: [".ts", ".tsx"] };
+export const allExtensions = () => Object.values(EXTENSIONS).flat();
+/** Language of a source path, undefined for files Idiolect does not analyze. Type declarations are nobody's style. */
+export function languageOf(path: string): Language | undefined {
+  if (path.endsWith(".d.ts")) return undefined;
+  return (Object.keys(EXTENSIONS) as Language[]).find((l) => EXTENSIONS[l].some((e) => path.endsWith(e)));
+}
+export const grammarFor = (lang: Language, path?: string): SupportedLanguage => (lang === "typescript" && path?.endsWith(".tsx") ? "tsx" : lang);
 
 /** Deep-sums two objects of the same shape. Works for LanguageStats, CommitStats and any nested counter. */
 export function mergeStats<T>(a: T, b: T): T {
@@ -45,13 +57,18 @@ export function mergeStats<T>(a: T, b: T): T {
   return out as T;
 }
 
-const bump = (h: Histogram, key: string | number, by = 1) => { h[key] = (h[key] ?? 0) + by; };
+// hasOwn, so a key like "constructor" or "valueOf" does not read Object.prototype
+export const bump = (h: Histogram, key: string | number, by = 1) => { h[key] = (Object.hasOwn(h, key) ? h[key]! : 0) + by; };
 
 /** Test files keep structural stats but route function names to `naming.testNames` so sentence-style test names never pollute verb stats. */
-export const isTestPath = (path: string) => /(^|\/)(test|androidTest|commonTest|jvmTest|iosTest|unitTest)\/|(Test|Tests|Spec)\.kts?$/.test(path);
+export const isTestPath = (path: string) => /(^|\/)(test|tests|__tests__|androidTest|commonTest|jvmTest|iosTest|unitTest)\/|(Test|Tests|Spec)\.kts?$|\.(test|spec)\.tsx?$/.test(path);
 
-export async function analyzeKotlin(code: string, owned?: LineRange[], opts: { test?: boolean } = {}): Promise<LanguageStats> {
-  const tree = await parse(code, "kotlin");
+export type AnalyzeOptions = { test?: boolean; path?: string };
+export type Counter2 = (n: Node, s: LanguageStats, test: boolean) => void;
+
+/** One tree walk counting only nodes whose first line the developer owns. Each language supplies its own node counter. */
+export async function analyzeTree(code: string, grammar: SupportedLanguage, counter: Counter2, owned?: LineRange[], opts: AnalyzeOptions = {}): Promise<LanguageStats> {
+  const tree = await parse(code, grammar);
   const s = emptyStats();
   s.files = 1;
   const test = !!opts.test;
@@ -60,13 +77,15 @@ export async function analyzeKotlin(code: string, owned?: LineRange[], opts: { t
   code.split("\n").forEach((l, i) => { if (l.trim() && isOwned(i)) { s.loc++; if (test) s.tests.loc++; } });
 
   const visit = (n: Node) => {
-    if (isOwned(n.startPosition.row)) count(n, s, test);
+    if (isOwned(n.startPosition.row)) counter(n, s, test);
     for (const c of n.namedChildren) if (c) visit(c);
   };
   visit(tree.rootNode);
   tree.delete();
   return s;
 }
+
+export const analyzeKotlin = (code: string, owned?: LineRange[], opts: AnalyzeOptions = {}) => analyzeTree(code, "kotlin", count, owned, opts);
 
 const NEST = new Set(["if_expression", "when_expression", "for_statement", "while_statement", "do_while_statement", "try_expression", "lambda_literal"]);
 const TYPE_NODES = new Set(["user_type", "nullable_type", "parenthesized_type"]);
@@ -170,10 +189,10 @@ function countFunction(n: Node, s: LanguageStats, test: boolean) {
   if (early) f.earlyReturn++;
 }
 
-function countComment(n: Node, s: LanguageStats) {
+export function countComment(n: Node, s: LanguageStats) {
   const c = s.comments;
   const isDoc = n.text.startsWith("/**");
-  if (n.type === "line_comment") c.line++; else if (isDoc) c.doc++; else c.block++;
+  if (n.text.startsWith("//")) c.line++; else if (isDoc) c.doc++; else c.block++;
   const text = commentText(n.text);
   c.chars += text.length;
   const firstLetter = text.match(/[A-Za-z]/)?.[0];
@@ -194,7 +213,7 @@ export const TODO_TAG = /\b(TODO|FIXME|HACK)\b(\s*\([^)]*\))?(\s*:)?/;
 export const RESTATES = /^(this (function|method|class|file|property)|the (function|method) )/i;
 export const BUZZWORDS = /\b(robust|seamless(ly)?|leverag(e|es|ing)|comprehensive(ly)?|utiliz(e|es|ing)|ensur(e|es|ing) that|streamlin(e|ed)|cutting[- ]edge|delve|crucial|facilitat(e|es))\b/i;
 export const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2705}\u{274C}]/u;
-const GENERIC_NAME = /^(handle|process|manage|do)(Data|Item|Items|Input|Request|Response|Result|Stuff|Logic|It)$|^(helper|util|utility|data|temp|result|value|item)\d*$/i;
+export const GENERIC_NAME = /^(handle|process|manage|do)(Data|Item|Items|Input|Request|Response|Result|Stuff|Logic|It)$|^(helper|util|utility|data|temp|result|value|item)\d*$/i;
 
 function countDoc(n: Node, s: LanguageStats) {
   const parent = n.parent?.type;
@@ -209,7 +228,7 @@ function countDoc(n: Node, s: LanguageStats) {
 
 const SHORT_OK = new Set(["id", "ok", "io", "os", "ui", "db", "to", "in", "is", "at", "by", "of", "on", "or", "up", "as", "an", "it", "if", "no", "dp", "px", "sp", "api", "url", "uri", "key", "max", "min", "sum", "add", "get", "set", "put", "run", "new", "old", "end", "map", "row", "col", "tag", "log", "raw", "all", "has", "can", "use", "ids", "dto", "sdk", "app", "tab", "bar", "top", "box", "fab", "job", "pin", "age", "sub", "pre", "any", "not", "and", "for", "one", "two", "now", "day", "hex", "jwt", "sql", "xml", "css", "ttl", "cpu", "gpu", "ram", "yes", "mid", "low", "big", "red", "dir", "src", "out", "err", "ack", "nav", "arg", "fun", "val", "var", "lhs", "rhs", "pos", "len", "idx"]);
 
-function countName(id: string | undefined, kind: NameKind, s: LanguageStats) {
+export function countName(id: string | undefined, kind: NameKind, s: LanguageStats) {
   if (!id) return;
   const n = s.naming;
   n.identifiers++;
@@ -239,7 +258,7 @@ export function casing(id: string): Casing {
 }
 
 const words = (id: string) => id.replace(/^_+/, "").split(/(?=[A-Z])|_/).map((w) => w.toLowerCase()).filter(Boolean);
-const firstWord = (id: string) => words(id)[0] ?? id;
+export const firstWord = (id: string) => words(id)[0] ?? id;
 const name = (n: Node) => n.namedChildren.find((c) => c?.type === "identifier")?.text;
 const modifierTexts = (n: Node) => new Set(n.namedChildren.find((c) => c?.type === "modifiers")?.namedChildren.map((c) => c?.text ?? "") ?? []);
 function hasAncestor(n: Node, pred: (p: Node) => boolean) {

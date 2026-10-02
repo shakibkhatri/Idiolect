@@ -10,4 +10,6 @@ while read -r lang pkg ver; do
   echo "$lang <- $pkg@$ver"
 done <<TABLE
 kotlin @tree-sitter-grammars/tree-sitter-kotlin 1.1.0
+typescript tree-sitter-typescript 0.23.2
+tsx tree-sitter-typescript 0.23.2
 TABLE

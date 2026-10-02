@@ -52,6 +52,10 @@ export const METRICS: Record<string, MetricFn> = {
   "kotlin.data-class-ratio": (s) => ratio(s.kotlin.dataClasses, s.naming.casing.class.pascal),
   "kotlin.composable-ratio": (s) => ratio(s.kotlin.composables, s.functions.count),
   "kotlin.modifier-first-ratio": (s) => ratio(s.kotlin.modifierParamFirst, s.kotlin.modifierParamFirst + s.kotlin.modifierParamLater),
+  "typescript.arrow-ratio": (s) => ratio(s.typescript.arrowFunctions, s.typescript.arrowFunctions + s.typescript.functionDeclarations),
+  "typescript.type-alias-ratio": (s) => ratio(s.typescript.typeAliases, s.typescript.typeAliases + s.typescript.interfaces),
+  "typescript.optional-chain-per-kloc": (s) => perKloc(s.typescript.optionalChains, s),
+  "typescript.any-per-kloc": (s) => perKloc(s.typescript.anyTypes, s),
 };
 
 export const COMMIT_METRICS: Record<string, (c: CommitStats) => Metric> = {

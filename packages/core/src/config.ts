@@ -13,7 +13,7 @@ export type UserConfig = z.infer<typeof UserConfigSchema>;
 
 /** Repo-level settings. Nothing personal, safe to commit, every field has a default so the file is optional. */
 export const RepoConfigSchema = z.object({
-  languages: z.array(z.enum(["kotlin"])).default(["kotlin"]),
+  languages: z.array(z.enum(["kotlin", "typescript"])).default(["kotlin", "typescript"]),
   sampling: z.object({ maxTokens: z.number().default(40000) }).prefault({}),
   confidenceThreshold: z.number().default(0.6),
   minSampleSize: z.number().default(20),

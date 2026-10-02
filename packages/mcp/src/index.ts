@@ -1,4 +1,4 @@
-import { checkStyle, git, loadRepoConfig, renderStyleMd, rewriteLikeMe, appliesTo, isServed, type Language, type LlmProvider, type Profile } from "@idiolect/core";
+import { checkStyle, git, languageOf, loadRepoConfig, renderStyleMd, rewriteLikeMe, appliesTo, isServed, type LlmProvider, type Profile } from "@idiolect/core";
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { dirname, relative, resolve } from "node:path";
 import { z } from "zod";
@@ -9,8 +9,7 @@ export type ServerDeps = {
   cwd?: string;
 };
 
-const LANGUAGES = ["kotlin"] as const;
-const languageOf = (file?: string): Language | undefined => (file && /\.kts?$/.test(file) ? "kotlin" : undefined);
+const LANGUAGES = ["kotlin", "typescript"] as const;
 
 export const WRITE_LIKE_ME = `This developer has a style profile served by the idiolect MCP server.
 Before writing or editing code for them, call get_style with the file path so you get the rules for that language and repo.
@@ -43,7 +42,7 @@ export function createIdiolectServer(deps: ServerDeps): McpServer {
   }, async ({ file_path, language }) => {
     try {
       const c = await context(file_path);
-      return text(renderStyleMd(c.profile, { threshold: c.threshold, repo: c.repo, file: c.file, language: language ?? languageOf(file_path) }));
+      return text(renderStyleMd(c.profile, { threshold: c.threshold, repo: c.repo, file: c.file, language: language ?? (file_path ? languageOf(file_path) : undefined) }));
     } catch (e) { return fail(e); }
   });
 

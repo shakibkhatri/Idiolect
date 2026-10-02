@@ -21,7 +21,8 @@ Typecheck: `pnpm typecheck`.
 Build: `pnpm build`, which must run before the global `idiolect` command picks up changes.
 The CLI is linked globally with `npm link` from `packages/cli`, so `idiolect` on this machine runs `packages/cli/dist/index.js`.
 
-Not built: M9 team mode, M10 dashboard, the other languages.
+TypeScript support landed on 2026-10-02 too, verified on the Firebase functions in Dissent.
+Not built: M9 team mode, M10 dashboard, Swift, Python, Go.
 Spec step 6, launch, has its README. Posting it is Shakib's call.
 
 ## Repo layout
@@ -33,9 +34,10 @@ packages/eval    task loading, with/without generation, judge, metric distance, 
 packages/mcp     createIdiolectServer: four tools, one resource, one prompt, transport-agnostic
 data/ai-tells.json       AI writing habits, each tied to a metric id
 data/eval-tasks/*.yaml   15 Kotlin tasks, two of them commit messages
-fixtures/kotlin          one Kotlin file used by parser and analyzer tests
+fixtures/kotlin          Sample.kt for parser and analyzer tests, AiWritten.kt for unbot
+fixtures/typescript      Sample.ts for the TypeScript analyzer test
 scripts/update-grammars.sh   refreshes vendored tree-sitter wasm grammars from npm
-packages/core/grammars   vendored kotlin.wasm plus license
+packages/core/grammars   vendored kotlin.wasm, typescript.wasm, tsx.wasm plus licenses
 ```
 
 Only `core`, `cli`, `eval` and `mcp` exist.
@@ -47,12 +49,15 @@ Collector (`core/src/collector.ts`): `git ls-tree` at HEAD for files, `git blame
 Cache per file by blob hash in `<repo>/.idiolect/cache/collector.json`, so warm rescans take about 100 ms.
 
 Analyzer (`core/src/analyzer.ts`): one tree-sitter walk per file producing counts and histograms only, never ratios.
+`analyzeTree` is the shared walk, `count` in analyzer.ts is the Kotlin counter, `analyzer-ts.ts` the TypeScript one, `languages.ts` dispatches by language. `languageOf(path)` and `EXTENSIONS` decide which files are scanned.
+Stats have a `kotlin` and a `typescript` block, both always present. `loadProfile` fills missing blocks with zeros so old profiles keep working.
 `mergeStats` is a generic deep sum.
 Test files, detected by `isTestPath`, keep structural stats but route function names to `naming.testNames`.
 Only nodes whose first line the developer owns are counted.
 
 Metrics (`core/src/metrics.ts`): named ratio and percentile functions over stats.
 Baseline (`core/src/baseline.ts`): deterministic rules from metrics, high fires at ratio >= 0.8, low at <= 0.2, value rules always.
+`COMMON_DEFS` apply to every language, `KOTLIN_DEFS` and `TYPESCRIPT_DEFS` add idioms. A tell in `ai-tells.json` can carry `language` to apply to one language only.
 Confidence is the 95% Wilson lower bound.
 A metric that disagrees by 0.4 or more between repos halves confidence and appends "Varies by repo".
 Avoid rules come from `data/ai-tells.json` when the developer basically never does the thing.
@@ -166,7 +171,8 @@ He uses a global `~/.claude/CLAUDE.md` with his general rules, read it.
 3. Shakib runs `claude mcp add idiolect -- idiolect mcp` and tries `get_style` and `check_style` from Claude Code inside Dissent.
 4. Shakib runs `idiolect sync` and `idiolect hooks install` inside Dissent and commits what he likes. `.idiolect/` is still untracked there.
 5. Shakib reads README.md and decides about posting.
-6. Next build: more languages (Swift needs its grammar built, suggestion 3), or suggestion 15 if real use shows the unbot numbers are wrong for someone. M9 and M10 only after real usage, per the spec.
+6. Shakib runs `idiolect scan` in Dissent once to add TypeScript to his profile. The agent's test scan was restored to the reviewed 55-rule profile.
+7. Next build: Swift (grammar must be built, suggestion 3), Python or Go the same way as TypeScript, or suggestions 17 to 19. M9 and M10 only after real usage, per the spec.
 
 ## Things that bit us, so you do not repeat them
 

@@ -101,3 +101,21 @@ It passed the check and read right by eye, but nobody ran the judge on a before 
 `deepCheck` returns what is wrong (message) and how the line should read (suggestion).
 The CLI prints only the suggestion for violations with a line, because for metric rules the message is boilerplate.
 A `--verbose` flag, or printing the message when it is not the metric sentence, would give the why back.
+
+## 17. TypeScript test names live in it() strings (open)
+
+The analyzer counts `function` declarations in test files as test functions and routes their names to `naming.testNames`.
+Vitest and Jest tests are `it("does x", () => ...)` callbacks, so a TypeScript test suite shows up as a handful of helper functions.
+Read the first string argument of `it`, `test` and `describe` calls as the test name, and classify its style (sentence, should-style, given/when/then).
+
+## 18. Ratio rules from bimodal habits flag whole files (open)
+
+The author's TypeScript has JSDoc on 16% of comments overall, but some files are fully documented and others have none.
+The merged ratio produces a "doc comments are rare" rule that then fires on every fully documented file.
+Unbot no longer lists each doc comment for that rule, but the rule itself is still weak evidence.
+Per-file counts during the scan would allow a spread check: a habit that varies this much between files is not a rule, or gets its confidence halved like a habit that varies between repos.
+
+## 19. TypeScript eval tasks (open)
+
+`idiolect eval` generates and judges Kotlin only, the task schema fixes the language.
+Add a few TypeScript tasks and let the task language pick the analyzer for the metric distance.

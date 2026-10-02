@@ -131,12 +131,12 @@ Pure counting with tree-sitter, no LLM. Per language, at least:
 - **Language-specific:**
   - Kotlin: `when` vs if/else chains (3+ branches), sealed interface vs sealed class, extension functions, data classes, Compose modifier param position, `remember` usage
   - Swift: guard vs if-let, structs vs classes, trailing closures
-  - TS: arrow vs function declarations, `type` vs `interface`, optional chaining
+  - TS: arrow vs function declarations, `type` vs `interface`, optional chaining, `any`. Non-null `!` feeds the same force-unwrap counter as Kotlin `!!`. Only named functions count as functions, a callback is a lambda. Module-level non-exported declarations count as private for the doc ratios. Test functions are the `function` declarations in test files, `it()` callbacks are not counted, see suggestion 17
 - **Commits:** length, lowercase ratio, conventional prefix ratio, tense
 
-Start with **Kotlin only**, add others after M5.
+Start with **Kotlin only**, add others after M5. TypeScript added 2026-10-02, the shared walk is `analyzeTree` and each language supplies a node counter. `.d.ts` files are ignored, `.tsx` uses the tsx grammar.
 
-**Done when:** stats are deterministic and unit-tested against fixtures with known values.
+**Done when:** stats are deterministic and unit-tested against fixtures with known values. TypeScript verified on the author's Firebase functions in Dissent: 148 function declarations by grep versus 147 counted, interfaces and type aliases exact
 
 ### M3 Profile writer (`core`)
 - Input: stats + sampled snippets (stratified: ~30 functions, ~100 comments, ~100 commit messages, configurable token budget)
@@ -220,7 +220,7 @@ After publishing: `claude mcp add idiolect -- npx -y idiolect mcp`. Config snipp
 - `idiolect unbot [files]` checks for AI habits and profile violations. Without files it checks Kotlin files changed since HEAD plus untracked ones, `--staged` checks the index for hooks, `--all` every tracked Kotlin file
 - Two modes: fast (`checkStyle`, AST + regex, no LLM) and deep (`--llm`, the LLM checks the example-backed voice rules and returns line-level violations, unknown rule ids and lines outside the file are dropped)
 - Examples of AI tells: comments restating the code, "This function...", words like "robust", "seamless", "leverage", "comprehensive", docblocks on trivial private functions, over-generic names (`handleData`, `processItem`), try/catch around everything, emoji in comments. These come from the profile's avoid rules, so a tell the developer actually does is not flagged for them
-- Quantity rules only fire with enough data in the file: at least 10 items for medians and ratios, 100 lines for densities, and a value rule needs 2x the developer's number. Avoid rules fire on a single occurrence. Calibrated on the author's repo: 41 of 799 of his own files flagged, 18 of those real `!!`, emoji and TODO occurrences
+- Quantity rules only fire with enough data in the file: at least 10 items for medians and ratios, 100 lines for densities, 3 items for ratio rules that point at lines, and a value rule needs 2x the developer's number. Avoid rules fire on a single occurrence. Calibrated on the author's repo: 41 of 799 of his own files flagged, 18 of those real `!!`, emoji and TODO occurrences
 - `--fix` rewrites each flagged file with the same `rewriteLikeMe` the MCP tool uses and re-checks it
 - `idiolect hooks install` writes a pre-commit hook running `idiolect unbot --staged`, appends to `.husky/pre-commit` when present, and points at lefthook.yml instead of editing it
 - Default: warn only. `--strict`: non-zero exit
@@ -325,7 +325,7 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
 4b. `idiolect rules` done 2026-10-02. Verified in Dissent: reject, approve and edit all survived `idiolect scan --no-llm`
 5. **M7 Unbot linter**. Done 2026-10-02, verified in Dissent, see M7
 6. **Launch:** README with before/after examples, post on Hacker News, r/programming, r/ClaudeAI
-7. Add languages (Swift, TS, Python, Go), **M8 Auto refresh**
+7. Add languages (Swift, TS, Python, Go), **M8 Auto refresh**. M8 done 2026-10-02. TypeScript done 2026-10-02, verified in Dissent
 8. **M9 Team mode**, **M10 Dashboard** - only after real usage
 
 ## 12. Out of scope for v1

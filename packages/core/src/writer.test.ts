@@ -29,8 +29,8 @@ test("baseline rules fire on extreme ratios, with evidence, and detect repo dive
   expect(ids).toContain("kotlin.comments.lowercase-start-ratio.low");
   expect(ids).toContain("kotlin.errors.run-catching-share.high");
   expect(ids).toContain("kotlin.kotlin.when-ratio.high");
-  expect(ids).toContain("avoid.comments.private-docblocks");
-  expect(ids).toContain("avoid.errors.force-unwrap");
+  expect(ids).toContain("avoid.kotlin.comments.private-docblocks");
+  expect(ids).toContain("avoid.kotlin.errors.force-unwrap");
   expect(ids).toContain("any.commits.conventional-ratio.low");
   expect(ids).not.toContain("kotlin.comments.lowercase-start-ratio.high");
   for (const r of rules) expect(r.evidence.metric?.sampleSize).toBeGreaterThanOrEqual(20);
@@ -86,12 +86,12 @@ test("writer keeps only LLM rules whose examples were actually sent, and reconci
   const prev = [
     { ...llm[0]!, status: "approved" as const },
     { ...rules.find((r) => r.id === "kotlin.comments.trailing-period-ratio.high")!, status: "edited" as const, text: "My own wording." },
-    { ...rules.find((r) => r.id === "avoid.errors.force-unwrap")!, status: "rejected" as const },
+    { ...rules.find((r) => r.id === "avoid.kotlin.errors.force-unwrap")!, status: "rejected" as const },
   ];
   const next = reconcile(prev, rules.map((r) => (r.id === "kotlin.comments.terse" ? { ...r, text: "changed" } : r)));
   expect(next.find((r) => r.id === "kotlin.comments.terse")!.status).toBe("pending");
   expect(next.find((r) => r.id === "kotlin.comments.trailing-period-ratio.high")).toMatchObject({ status: "edited", text: "My own wording." });
-  expect(next.find((r) => r.id === "avoid.errors.force-unwrap")!.status).toBe("rejected");
+  expect(next.find((r) => r.id === "avoid.kotlin.errors.force-unwrap")!.status).toBe("rejected");
 
   const md = renderStyleMd({ ...p, rules: next }, { threshold: 0.6 });
   expect(md).toContain("## Comments");

@@ -10,7 +10,7 @@ type Def = { metric: string; category: Rule["category"]; kind: Kind; min?: numbe
 const n = (x: number) => Math.round(x * 10) / 10;
 
 /** Deterministic rules, one per metric, phrased from the number itself. "high" fires at >= 0.8, "low" at <= 0.2, "value" always. */
-const KOTLIN_DEFS: Def[] = [
+const COMMON_DEFS: Def[] = [
   { metric: "functions.expression-body-ratio", category: "structure", kind: "high", text: () => "Use expression bodies for single-expression functions." },
   { metric: "functions.expression-body-ratio", category: "structure", kind: "low", text: () => "Use block bodies, even for short functions." },
   { metric: "functions.early-return-ratio", category: "structure", kind: "high", text: () => "Prefer guard clauses and early returns over nested conditionals." },
@@ -24,15 +24,18 @@ const KOTLIN_DEFS: Def[] = [
   { metric: "naming.test-backtick-ratio", category: "naming", kind: "high", text: () => "Name tests as backtick sentences: fun `shows error when offline`()." },
   { metric: "naming.test-camel-sentence-ratio", category: "naming", kind: "high", text: () => "Name tests as camelCase sentences: fun aDeviceWithoutPowerIsRejected()." },
   { metric: "comments.per-100-loc", category: "comments", kind: "value", text: (m) => `Comment sparingly. About ${n(m.value)} comments per 100 lines of code.` },
-  { metric: "comments.doc-ratio", category: "comments", kind: "high", text: () => "Most comments are KDoc blocks on declarations, not inline comments." },
-  { metric: "comments.doc-ratio", category: "comments", kind: "low", text: () => "Use inline // comments. KDoc is rare." },
+  { metric: "comments.doc-ratio", category: "comments", kind: "high", text: () => "Most comments are doc comments on declarations, not inline comments." },
+  { metric: "comments.doc-ratio", category: "comments", kind: "low", text: () => "Use inline // comments. Doc comments are rare." },
   { metric: "comments.lowercase-start-ratio", category: "comments", kind: "high", text: () => "Start comments in lowercase." },
   { metric: "comments.lowercase-start-ratio", category: "comments", kind: "low", text: () => "Start comments with a capital letter." },
   { metric: "comments.trailing-period-ratio", category: "comments", kind: "high", text: () => "End comments with a period." },
   { metric: "comments.trailing-period-ratio", category: "comments", kind: "low", text: () => "No trailing period on comments." },
   { metric: "comments.avg-chars", category: "comments", kind: "value", text: (m) => `Comments average ${m.value} characters.` },
-  { metric: "comments.public-doc-ratio", category: "comments", kind: "high", text: () => "Document public declarations with KDoc." },
-  { metric: "comments.public-doc-ratio", category: "comments", kind: "low", text: () => "Do not add KDoc to public declarations by default. The name should carry the meaning." },
+  { metric: "comments.public-doc-ratio", category: "comments", kind: "high", text: () => "Document public declarations with a doc comment." },
+  { metric: "comments.public-doc-ratio", category: "comments", kind: "low", text: () => "Do not add doc comments to public declarations by default. The name should carry the meaning." },
+];
+
+const KOTLIN_DEFS: Def[] = [
   { metric: "errors.run-catching-share", category: "errors", kind: "high", text: () => "Wrap failures with runCatching and return Result instead of try/catch." },
   { metric: "errors.run-catching-share", category: "errors", kind: "low", text: () => "Use try/catch. runCatching and Result are rare." },
   { metric: "kotlin.when-ratio", category: "structure", kind: "high", text: () => "Use when instead of if/else chains with three or more branches." },
@@ -41,6 +44,15 @@ const KOTLIN_DEFS: Def[] = [
   { metric: "kotlin.extension-per-kloc", category: "structure", kind: "value", min: 2, text: (m) => `Extension functions are common, about ${n(m.value)} per 1000 lines.` },
   { metric: "kotlin.data-class-ratio", category: "structure", kind: "high", text: () => "Model data with data classes." },
 ];
+
+const TYPESCRIPT_DEFS: Def[] = [
+  { metric: "typescript.arrow-ratio", category: "structure", kind: "high", text: () => "Write functions as const arrow functions, not function declarations." },
+  { metric: "typescript.arrow-ratio", category: "structure", kind: "low", text: () => "Use function declarations. Arrow functions are for callbacks, not named functions." },
+  { metric: "typescript.type-alias-ratio", category: "structure", kind: "high", text: () => "Declare object shapes with type aliases, not interfaces." },
+  { metric: "typescript.type-alias-ratio", category: "structure", kind: "low", text: () => "Declare object shapes with interfaces, not type aliases." },
+  { metric: "typescript.optional-chain-per-kloc", category: "structure", kind: "value", min: 2, text: (m) => `Optional chaining is common, about ${n(m.value)} per 1000 lines.` },
+];
+const DEFS: Record<Language, Def[]> = { kotlin: [...COMMON_DEFS, ...KOTLIN_DEFS], typescript: [...COMMON_DEFS, ...TYPESCRIPT_DEFS] };
 
 const COMMIT_DEFS: Def[] = [
   { metric: "commits.conventional-ratio", category: "commits", kind: "high", text: () => "Use conventional commit prefixes: feat:, fix:, refactor:." },
@@ -55,7 +67,7 @@ const COMMIT_DEFS: Def[] = [
   { metric: "commits.subject-p50", category: "commits", kind: "value", text: (m) => `Commit subjects are about ${m.value} characters.` },
 ];
 
-type Tell = { id: string; metric: string; text: string };
+type Tell = { id: string; metric: string; text: string; language?: Language };
 const TELLS: Tell[] = JSON.parse(readFileSync(fileURLToPath(new URL("../../../data/ai-tells.json", import.meta.url)), "utf8"));
 
 export type BaselineOptions = { minSampleSize: number };
@@ -64,18 +76,20 @@ export function baselineRules(profile: Profile, opts: BaselineOptions): Rule[] {
   const rules: Rule[] = [];
   for (const lang of Object.keys(profile.stats) as Language[]) {
     const stats = profile.stats[lang]!;
-    for (const def of KOTLIN_DEFS) {
+    for (const def of DEFS[lang]) {
       const r = ruleFromDef(def, lang, metric(def.metric, stats), stats, opts, profile.sources.map((s) => s.stats[lang]).filter((x): x is LanguageStats => !!x).map((s) => metric(def.metric, s)));
       if (r) rules.push(r);
     }
     for (const tell of TELLS) {
+      if (tell.language && tell.language !== lang) continue;
       const m = metric(tell.metric, stats);
       if (m.sampleSize < opts.minSampleSize) continue;
       const perKloc = tell.metric.endsWith("per-kloc");
       if (perKloc ? m.value > 0.5 : m.value > 0.05) continue;
       // per-kloc values are occurrences per 1000 lines, so the "never" rate is per line
       const never = perKloc ? 1 - m.value / 1000 : 1 - m.value;
-      rules.push(mk(`avoid.${tell.id}`, "avoid", lang, tell.text, tell.metric, m, wilsonLower(never, m.sampleSize)));
+      // the language sits in the id so a tell that two languages never do yields two rules, not one id twice
+      rules.push(mk(`avoid.${lang}.${tell.id}`, "avoid", lang, tell.text, tell.metric, m, wilsonLower(never, m.sampleSize)));
     }
   }
   const c = profile.commitStats;

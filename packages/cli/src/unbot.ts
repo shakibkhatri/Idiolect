@@ -1,27 +1,25 @@
-import { createProvider, git, loadProfile, loadRepoConfig, loadUserConfig, rewriteLikeMe, unbot, userConfigPath, type Violation } from "@idiolect/core";
+import { allExtensions, createProvider, git, languageOf, loadProfile, loadRepoConfig, loadUserConfig, rewriteLikeMe, unbot, userConfigPath, type Violation } from "@idiolect/core";
 import { Command } from "commander";
 import { access, readFile, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 
-const KOTLIN = /\.kts?$/;
-
-/** No files: changed and untracked Kotlin files. --staged: the index. --all: every tracked Kotlin file. */
+/** No files: changed and untracked source files. --staged: the index. --all: every tracked source file. */
 async function pickFiles(repo: string, given: string[], o: { staged?: boolean; all?: boolean }): Promise<string[]> {
   if (given.length) return given.map((f) => relative(repo, resolve(f)));
-  const out = o.all ? await git(repo, ["ls-files", "*.kt", "*.kts"])
+  const out = o.all ? await git(repo, ["ls-files", ...allExtensions().map((e) => `*${e}`)])
     : o.staged ? await git(repo, ["diff", "--cached", "--name-only", "--diff-filter=ACMR"])
     : `${await git(repo, ["diff", "--name-only", "--diff-filter=ACMR", "HEAD"])}\n${await git(repo, ["ls-files", "--others", "--exclude-standard"])}`;
-  return [...new Set(out.split("\n").filter((f) => KOTLIN.test(f)))].sort();
+  return [...new Set(out.split("\n").filter((f) => languageOf(f)))].sort();
 }
 
 const show = (v: Violation) => `  ${String(v.line ?? "-").padStart(5)}  ${v.suggestion}${v.line ? "" : ` ${v.message}`}  [${v.ruleId}]`;
 
 export function unbotCommand(): Command {
   return new Command("unbot").description("flag code that breaks your measured habits or sounds like AI. Warns only, --strict fails")
-    .argument("[files...]", "Kotlin files, default is what changed since HEAD")
+    .argument("[files...]", "source files, default is what changed since HEAD")
     .option("--repo <path>", "repository path", ".")
     .option("--staged", "check the files staged for commit, for hooks")
-    .option("--all", "check every tracked Kotlin file")
+    .option("--all", "check every tracked source file")
     .option("--llm", "deep mode: the LLM also checks the voice rules")
     .option("--fix", "rewrite each flagged file in your style with the LLM and write it back")
     .option("--strict", "exit 1 when anything is flagged")
@@ -36,13 +34,14 @@ export function unbotCommand(): Command {
       if ((o.llm || o.fix) && !provider) throw new Error("--llm and --fix need an LLM provider, run: idiolect init");
 
       const picked = await pickFiles(repo, files, o);
-      if (!picked.length) { console.log("no Kotlin files to check"); return; }
+      if (!picked.length) { console.log("no source files to check"); return; }
       let total = 0, flagged = 0, fixed = 0;
       for (const file of picked) {
         const abs = join(repo, file);
+        const language = languageOf(file);
         let code = await readFile(abs, "utf8").catch(() => undefined);
-        if (code === undefined) continue;
-        const opts = { language: "kotlin" as const, threshold, repo, file };
+        if (code === undefined || !language) continue;
+        const opts = { language, threshold, repo, file };
         let found = await unbot(profile, code, opts, o.llm ? provider : undefined);
         if (!found.length) continue;
         flagged++;
@@ -74,13 +73,13 @@ export async function installHook(repo: string, name: keyof typeof HOOKS): Promi
   const target = (await access(husky).then(() => true, () => false)) ? husky : join(repo, (await git(repo, ["rev-parse", "--git-path", "hooks"])).trim(), name);
   const existing = await readFile(target, "utf8").catch(() => undefined);
   if (existing?.includes(line)) return `already installed in ${relative(repo, target)}`;
-  await writeFile(target, `${existing ?? "#!/bin/sh\n"}\n# idiolect: ${name === "pre-commit" ? "lint staged Kotlin against your style profile, warn only" : "rescan in the background every refresh.everyCommits commits"}\n${line}\n`, { mode: 0o755 });
+  await writeFile(target, `${existing ?? "#!/bin/sh\n"}\n# idiolect: ${name === "pre-commit" ? "lint staged files against your style profile, warn only" : "rescan in the background every refresh.everyCommits commits"}\n${line}\n`, { mode: 0o755 });
   return `${existing ? "appended to" : "created"} ${relative(repo, target)}`;
 }
 
 export function hooksCommand(): Command {
   const hooks = new Command("hooks").description("git hooks that run unbot and the background refresh");
-  hooks.command("install").description("pre-commit runs unbot on staged Kotlin, warn only. post-commit rescans every N commits. Uses .husky when present")
+  hooks.command("install").description("pre-commit runs unbot on staged files, warn only. post-commit rescans every N commits. Uses .husky when present")
     .option("--repo <path>", "repository path", ".")
     .action(async (o: { repo: string }) => {
       const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"])).trim();
