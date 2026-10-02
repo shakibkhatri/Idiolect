@@ -122,7 +122,7 @@ Reports go to `<repo>/.idiolect/eval/<timestamp>.{json,md}`.
 ## Publishing
 
 Published 2026-10-02: `idiolect@0.0.1` plus `@shakibkhatri/idiolect-core`, `-eval` and `-mcp` at 0.0.1. The org name `idiolect` was taken, so the internal packages sit under Shakib's own user scope, which needs no org.
-Verified from a clean directory: `npm i idiolect@0.0.1`, then init, scan and unbot on a one-file repo.
+Verified from a clean directory: `npm i idiolect@0.0.1`, then init, scan and unbot on a one-file repo. Shakib then installed it with `npm install -g idiolect` on his second laptop on 2026-10-02 and reported it working.
 Every package has `files`, `license`, `repository` and `publishConfig.access: public`. Grammars and `ai-tells.json` live inside `packages/core`, eval tasks inside `packages/eval/tasks`, so nothing resolves outside its package once installed. The CLI copies the root README in `prepack`.
 Next release: bump the version in all four package.json files together, `pnpm -r publish`, tag. On this machine the global `idiolect` is still the npm-linked dev build from `packages/cli`, not the published one.
 
