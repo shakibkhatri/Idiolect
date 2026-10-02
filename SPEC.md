@@ -40,7 +40,7 @@ Later: **team mode**, which learns team rules from PR review comments.
   Longer term: an MCP prompt `learn_my_style` lets any agent do the writing itself through the MCP server, no CLI needed.
   The `openai-compatible` adapter covers Ollama, LM Studio, vLLM, llama.cpp server and corporate gateways, so local needs no dedicated code.
 - Default model per provider lives in one table in `core`. Anthropic default is `claude-opus-5-5`. `model` in config is optional and overrides it
-- Dashboard: Vite + React, served locally by the CLI
+- Dashboard: one HTML page served by the CLI from Node's http module, vanilla JS, no framework and no build step. It grew out of the quiz page, which shares its design tokens in `cli/src/theme.ts`
 
 ## 4. Repo structure
 
@@ -253,12 +253,14 @@ Published 2026-10-02 as `idiolect@0.0.1` on npm. The org name `idiolect` was tak
 
 **Done when:** on a real repo with reviews, the top 5 team rules match what the team would say.
 
-### M10 Dashboard (`dashboard`)
-- `idiolect ui` starts a local web server
-- View rules with evidence, approve / reject / edit, filter by language and category
-- See pending diffs after rescans
-- Run eval and view reports
-- Local only, no login
+### M10 Dashboard (`cli`)
+- `idiolect ui` starts a local web server and opens the browser, `--no-open` and `--port` for scripts
+- Rules: every rule with its status, confidence, language and whether it is served here, filter by status, language and category, search, expand for the metric or the code examples, approve, reject and edit in place. A pending rule shows the approved text it replaced, which the profile keeps as `previousText` until a decision is made
+- Profile: the STYLE.md as served in this repo, or one language alone, rendered from the live profile so a decision shows up on the next load
+- Evals: every run in the repo with judge, quiz and metric distance, open one to read the pairs with the verdict and the pick. The quiz itself stays a command because it must stay blind
+- Status: rule counts, languages with their share of lines, repos with commits since their scan
+- Local only, no login. Not a package of its own: it is `cli/src/ui.ts`, one file, because the MCP server and the CLI already hold every function it calls
+- Built 2026-10-02 against the author's live profile in Dissent, the first day the author asked for it. The spec said after real usage, and the author reviewing 82 rules was the real usage. Unbot in the browser and running an eval from it are not built
 
 ## 7. CLI
 
@@ -275,7 +277,7 @@ idiolect status
 idiolect refresh [--force]
 idiolect team scan            # team mode
 idiolect mcp                  # start MCP server
-idiolect ui                   # dashboard
+idiolect ui [--repo] [--port] [--no-open]   # dashboard
 ```
 
 ## 8. Config
@@ -335,7 +337,7 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
 5. **M7 Unbot linter**. Done 2026-10-02, verified in Dissent, see M7
 6. **Launch:** README with before/after examples, post on Hacker News, r/programming, r/ClaudeAI
 7. Add languages (Swift, TS, Python, Go), **M8 Auto refresh**. M8 done 2026-10-02. TypeScript, Python and Go done 2026-10-02, TypeScript and Python verified in Dissent, Go on its fixture. Swift still needs its grammar built
-8. **M9 Team mode**, **M10 Dashboard** - only after real usage
+8. **M9 Team mode**, **M10 Dashboard** - only after real usage. M10 built 2026-10-02 as one page in the CLI, see M10
 
 ## 12. Out of scope for v1
 

@@ -2,6 +2,7 @@ import type { Report } from "@shakibkhatri/idiolect-eval";
 import { execFile } from "node:child_process";
 import { createServer } from "node:http";
 import { createInterface } from "node:readline/promises";
+import { THEME } from "./theme.js";
 
 type Quiz = NonNullable<Report["quiz"]>;
 type Pick = Quiz["picks"][number];
@@ -88,10 +89,7 @@ export function page(pairs: Omit<Pair, "flip">[], subtitle = ""): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Idiolect quiz</title>
 <style>
-  :root { --bg: #f4f4f6; --card: #fff; --fg: #1b1b1f; --muted: #6b6b76; --line: #e2e2e8; --accent: #4f5bd5; --accent-soft: #eceefb; --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(20,20,40,.06); }
-  @media (prefers-color-scheme: dark) { :root { --bg: #0f0f12; --card: #19191e; --fg: #ececf1; --muted: #8a8a96; --line: #2a2a32; --accent: #8c96ff; --accent-soft: #23243a; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35); } }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+${THEME}
   .wrap { max-width: 1440px; margin: 0 auto; padding: 20px 24px 120px; }
   header { display: flex; align-items: center; gap: 20px; margin-bottom: 18px; }
   header h1 { font-size: 20px; margin: 0; font-weight: 650; letter-spacing: -.01em; }
@@ -104,7 +102,7 @@ export function page(pairs: Omit<Pair, "flip">[], subtitle = ""): string {
   .task p { margin: 0; white-space: pre-wrap; }
   .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   @media (max-width: 900px) { .pair { grid-template-columns: 1fr; } }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); cursor: pointer; transition: border-color .15s, transform .15s, box-shadow .15s; overflow: hidden; animation: in .25s ease-out; }
+  .card { cursor: pointer; transition: border-color .15s, transform .15s, box-shadow .15s; overflow: hidden; animation: in .25s ease-out; }
   .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,.06), 0 14px 32px rgba(20,20,40,.12); }
   .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .card h2 { display: flex; align-items: center; gap: 10px; margin: 0; padding: 12px 16px; font-size: 13px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); }
@@ -115,7 +113,6 @@ export function page(pairs: Omit<Pair, "flip">[], subtitle = ""): string {
   pre .same { opacity: .4; }
   pre .diff { box-shadow: inset 3px 0 0 var(--accent); margin-left: -16px; padding-left: 13px; display: inline-block; width: calc(100% + 16px); }
   .foot { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; gap: 18px; padding: 14px; background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(8px); border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
-  kbd { font: 12px ui-monospace, monospace; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; background: var(--card); color: var(--fg); }
   .foot button { font: inherit; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; cursor: pointer; }
   .foot button:hover { color: var(--fg); border-color: var(--accent); }
   .result { max-width: 640px; margin: 48px auto; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 32px; box-shadow: var(--shadow); animation: in .3s ease-out; }
@@ -128,7 +125,6 @@ export function page(pairs: Omit<Pair, "flip">[], subtitle = ""): string {
   .legend { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin: 6px 0 24px; }
   .list { display: grid; grid-template-columns: 1fr auto; gap: 6px 24px; font-size: 14px; }
   .list .with { color: var(--accent); font-weight: 600; } .list .without, .list .skip { color: var(--muted); }
-  @keyframes in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 </style>
 </head>
 <body>

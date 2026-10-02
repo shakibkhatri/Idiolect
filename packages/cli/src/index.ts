@@ -7,6 +7,7 @@ import { rulesCommand, writeStyle } from "./rules.js";
 import { hooksCommand, unbotCommand } from "./unbot.js";
 import { refreshCommand, statusCommand } from "./refresh.js";
 import { ttyQuiz, webQuiz } from "./quiz.js";
+import { uiCommand } from "./ui.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Command } from "commander";
 import { mkdir, readdir, readFile } from "node:fs/promises";
@@ -198,6 +199,7 @@ program.addCommand(unbotCommand());
 program.addCommand(hooksCommand());
 program.addCommand(statusCommand());
 program.addCommand(refreshCommand());
+program.addCommand(uiCommand());
 
 program.command("eval")
   .description("generate code with and without your profile and score which sounds more like you")
