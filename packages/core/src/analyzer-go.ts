@@ -1,9 +1,9 @@
 import type { Node } from "web-tree-sitter";
-import { analyzeTree, bump, countComment, countName, firstWord, GENERIC_NAME, testNameStyle, type AnalyzeOptions, type LanguageStats, type NameKind } from "./analyzer.js";
+import { analyzeTree, bump, commentText, countComment, countCommentText, countName, firstWord, GENERIC_NAME, testNameStyle, type AnalyzeOptions, type LanguageStats, type NameKind } from "./analyzer.js";
 import type { LineRange } from "./collector.js";
 
 const NEST = new Set(["if_statement", "for_statement", "expression_switch_statement", "type_switch_statement", "select_statement", "func_literal"]);
-const DECLS = new Set(["function_declaration", "method_declaration", "type_declaration", "var_declaration", "const_declaration"]);
+const DECLS = new Set(["function_declaration", "method_declaration", "type_declaration", "var_declaration", "const_declaration", "package_clause"]);
 
 export const analyzeGo = (code: string, owned?: LineRange[], opts: AnalyzeOptions = {}) => analyzeTree(code, "go", count, owned, opts);
 
@@ -42,7 +42,12 @@ function count(n: Node, s: LanguageStats, test: boolean) {
       if (id && n.parent?.parent?.type !== "method_elem") countName(id, "parameter", s);
       return;
     }
-    case "comment": return countComment(n, s);
+    case "comment": {
+      // Go doc comments are plain // comments above a declaration, so they count as doc, not line
+      if (!isGoDocComment(n)) return countComment(n, s);
+      s.comments.doc++;
+      return countCommentText(commentText(n.text), s);
+    }
     case "if_statement": if (/\berr\s*!=\s*nil\b/.test(field(n, "condition")?.text ?? "")) s.go.errChecks++; return;
     case "type_assertion_expression": {
       // v, ok := x.(T) is checked, anything else can panic

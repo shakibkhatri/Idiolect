@@ -21,7 +21,8 @@ Typecheck: `pnpm typecheck`.
 Build: `pnpm build`, which must run before the global `idiolect` command picks up changes.
 The CLI is linked globally with `npm link` from `packages/cli`, so `idiolect` on this machine runs `packages/cli/dist/index.js`.
 
-TypeScript, Python and Go landed on 2026-10-02 too. TypeScript was verified on the Firebase functions in Dissent, Python on its six scripts, Go on the fixture only because the author has no Go on this machine.
+TypeScript, Python and Go landed on 2026-10-02 too. TypeScript was verified on the Firebase functions in Dissent, Python on its six scripts and on dabeaz/sly against the stdlib `ast` module, Go on tidwall/gjson against a regex count because this machine has no Go toolchain.
+`scripts/verify/README.md` says how: an independent counter per language plus a scan with an isolated `HOME` so nobody's profile is touched. Use it for Swift.
 Not built: M9 team mode, M10 dashboard, Swift.
 Spec step 6, launch, has its README. Posting it is Shakib's call.
 
@@ -39,6 +40,7 @@ fixtures/typescript      Sample.ts for the TypeScript analyzer test
 fixtures/python          sample.py
 fixtures/go              sample.go
 scripts/update-grammars.sh   refreshes vendored tree-sitter wasm grammars from npm
+scripts/verify/              second-opinion counters and the recipe for checking a language on a real repo
 packages/core/grammars   vendored kotlin, typescript, tsx, python and go wasm plus licenses
 ```
 
@@ -175,7 +177,7 @@ He uses a global `~/.claude/CLAUDE.md` with his general rules, read it.
 4. Shakib runs `idiolect sync` and `idiolect hooks install` inside Dissent and commits what he likes. `.idiolect/` is still untracked there.
 5. Shakib reads README.md and decides about posting.
 6. Shakib runs `idiolect scan` in Dissent once to add TypeScript to his profile. The agent's test scan was restored to the reviewed 55-rule profile.
-7. Next build: Swift (grammar must be built, suggestion 3), or suggestions 17 to 20. M9 and M10 only after real usage, per the spec. Go needs a real repo before anyone trusts its numbers.
+7. Next build: Swift (grammar must be built, suggestion 3), or suggestions 17 to 20. M9 and M10 only after real usage, per the spec.
 
 ## Things that bit us, so you do not repeat them
 

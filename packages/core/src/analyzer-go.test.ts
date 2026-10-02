@@ -20,7 +20,8 @@ test("Go analyzer counts functions, names, doc comments, errors and idioms with 
   expect(s.naming.casing.constant).toEqual({ camel: 1, pascal: 1, snake: 0, screaming: 0, backtick: 0, other: 0 });
   expect(s.naming.casing.class.pascal).toBe(3);
   expect(s.naming.booleanPrefix).toEqual({ is: 2 });
-  expect(s.comments.line).toBe(8);
+  expect(s.comments.line).toBe(2); // the IsOnline field comment and the one inside GetUser
+  expect(s.comments.doc).toBe(6); // package, User, Fetcher, UserRepository, GetUser, Describe
   // top level: MaxRetries, cacheTTLMs, User, Fetcher, UserRepository, GetUser, isCached, evict, Describe, toSlug, firstLine, mustUser
   expect(s.comments.publicDecls).toBe(6);
   expect(s.comments.publicDocumented).toBe(5); // all exported but MaxRetries

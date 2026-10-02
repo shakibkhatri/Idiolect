@@ -28,7 +28,7 @@ const COMMON_DEFS: Def[] = [
   { metric: "naming.test-camel-sentence-ratio", category: "naming", kind: "high", text: () => "Name tests as camelCase sentences: fun aDeviceWithoutPowerIsRejected()." },
   { metric: "comments.per-100-loc", category: "comments", kind: "value", text: (m) => `Comment sparingly. About ${n(m.value)} comments per 100 lines of code.` },
   { metric: "comments.doc-ratio", category: "comments", kind: "high", text: () => "Most comments are doc comments on declarations, not inline comments." },
-  { metric: "comments.doc-ratio", category: "comments", kind: "low", text: () => "Use inline // comments. Doc comments are rare." },
+  { metric: "comments.doc-ratio", category: "comments", kind: "low", text: () => "Use short inline comments. Doc comments are rare." },
   { metric: "comments.lowercase-start-ratio", category: "comments", kind: "high", text: () => "Start comments in lowercase." },
   { metric: "comments.lowercase-start-ratio", category: "comments", kind: "low", text: () => "Start comments with a capital letter." },
   { metric: "comments.trailing-period-ratio", category: "comments", kind: "high", text: () => "End comments with a period." },
@@ -88,7 +88,7 @@ const COMMIT_DEFS: Def[] = [
   { metric: "commits.subject-p50", category: "commits", kind: "value", text: (m) => `Commit subjects are about ${m.value} characters.` },
 ];
 
-type Tell = { id: string; metric: string; text: string; language?: Language };
+type Tell = { id: string; metric: string; text: string; language?: Language | Language[] };
 const TELLS: Tell[] = JSON.parse(readFileSync(fileURLToPath(new URL("../../../data/ai-tells.json", import.meta.url)), "utf8"));
 
 export type BaselineOptions = { minSampleSize: number };
@@ -102,7 +102,7 @@ export function baselineRules(profile: Profile, opts: BaselineOptions): Rule[] {
       if (r) rules.push(r);
     }
     for (const tell of TELLS) {
-      if (tell.language && tell.language !== lang) continue;
+      if (tell.language && ![tell.language].flat().includes(lang)) continue;
       const m = metric(tell.metric, stats);
       if (m.sampleSize < opts.minSampleSize) continue;
       const perKloc = tell.metric.endsWith("per-kloc");

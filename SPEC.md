@@ -138,7 +138,7 @@ Pure counting with tree-sitter, no LLM. Per language, at least:
 
 Start with **Kotlin only**, add others after M5. TypeScript, Python and Go added 2026-10-02, the shared walk is `analyzeTree` and each language supplies a node counter in `analyzer-<lang>.ts`. `.d.ts` files are ignored, `.tsx` uses the tsx grammar. Expression-body rules exist only for Kotlin and TypeScript.
 
-**Done when:** stats are deterministic and unit-tested against fixtures with known values. TypeScript verified on the author's Firebase functions in Dissent: 148 function declarations by grep versus 147 counted, interfaces and type aliases exact. Python verified on the six scripts in Dissent: files, lines, functions, classes and try count exact. Go has no real repo on the author's machine, it is verified on its fixture only
+**Done when:** stats are deterministic and unit-tested against fixtures with known values. TypeScript verified on the author's Firebase functions in Dissent: 148 function declarations by grep versus 147 counted, interfaces and type aliases exact. Python verified on the six scripts in Dissent and on dabeaz/sly against the stdlib `ast` module: every count exact except f-strings, where `ast` also counts nested format specs. Go verified on tidwall/gjson against a regex count: functions, types, error checks and panics exact. `scripts/verify/` holds the counters and the isolated-home recipe, so a language nobody here writes can still be checked on a real repo
 
 ### M3 Profile writer (`core`)
 - Input: stats + sampled snippets (stratified: ~30 functions, ~100 comments, ~100 commit messages, configurable token budget)
