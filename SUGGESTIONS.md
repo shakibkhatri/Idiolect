@@ -75,13 +75,23 @@ Options: judge with a different provider when two are configured, or add a contr
 Seven tasks give a handful of functions and one commit message, so per-metric numbers like commits.body-ratio swing between 0 and 1.
 Weight each metric by its output sample size, or require a minimum before it counts, and say in the report how many samples each number rests on.
 
-## 13. Profile over-application: cap voice rules per section (open, next up)
+## 13. Profile over-application: cap voice rules per section (done 2026-10-02, quiz stopped at chance)
 
 Metric table from the first eval: with the profile the agent wrote more comments per line than the developer does, without it fewer.
 Reordering quantities first was the cheap precaution and it was not enough: the real quiz on 2026-10-02 came out 5 of 15 for the profile, below chance, and the author stands by it after several runs.
 Where he picked the plain output the profile output usually carried more comments and doc blocks (extension-parse 9 comment lines against 2, flow-mapper 6 against 0, json-migration 5 against 2), which matches the over-application finding.
 Next: cap example-backed rules to the top N per section by confidence, ask the LLM for fewer, sharper rules, and consider dropping comment-voice rules when the quantity rule already says comments are rare. Re-run `idiolect eval --quiz` after each change, the quiz is the number.
 Also consider a "do less" rule family learned from what the developer does NOT do in the samples: no KDoc on private members, no preview composables, no sealed error hierarchies.
+Done: the render caps voice rules at three per section, the writer asks for at most twelve rules with confidence as the share of samples, and commit bodies get a hard-wrap rule.
+Round 1, cap only: quiz 7 of 15, judge 11 of 15, profile output now carries fewer comment lines than the plain output.
+Round 2, rescanned with the new writer: judge 13 of 15, metric distance 0.136 against 0.140, commit bodies wrapped. The author stopped quizzing before grading it, so round 2 has no quiz. The report is `2026-10-02T21-29-38-667Z` in Dissent.
+The "do less" family and the Python noise below are still open.
+
+## 23. A small secondary language adds its own metric rules to the profile (open)
+
+Dissent has six Python scripts. After the scan they produce "Python: Start comments with a capital letter" and two more Python comment rules in a profile that is 95% Kotlin, and `idiolect show` prints them in Dissent next to the Kotlin rules.
+Options: a per-language floor on lines owned before a language gets metric rules, or render only the languages that make up more than a few percent of the repo unless asked with `--lang`.
+
 
 ## 14. check_style cannot point at lines for naming and structure rules (open)
 
