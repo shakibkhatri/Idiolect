@@ -15,14 +15,14 @@ The first commit still carries his work email because the amend needed a force-p
 ## State of the build
 
 Spec section 11 lists the build order.
-M1 collector, M2 analyzer, M3 profile writer and M4 eval harness are built, tested and committed.
-Tests: `pnpm test` runs 19 vitest tests, all green.
+M1 collector, M2 analyzer, M3 profile writer, M4 eval harness and M5 MCP server are built, tested and committed.
+Tests: `pnpm test` runs 22 vitest tests, all green.
 Typecheck: `pnpm typecheck`.
 Build: `pnpm build`, which must run before the global `idiolect` command picks up changes.
 The CLI is linked globally with `npm link` from `packages/cli`, so `idiolect` on this machine runs `packages/cli/dist/index.js`.
 
-Not built: M5 MCP server, M6 sync, M7 Unbot linter, M8 auto refresh, M9 team mode, M10 dashboard.
-M5 and M6 are the obvious next steps once the eval verdict is in.
+Not built: M6 sync, M7 Unbot linter, M8 auto refresh, M9 team mode, M10 dashboard.
+M6 is the obvious next step.
 
 ## Repo layout
 
@@ -30,6 +30,7 @@ M5 and M6 are the obvious next steps once the eval verdict is in.
 packages/core    collector, analyzer, metrics, baseline rules, sampler, redact, llm providers, writer, render, config, profile
 packages/cli     idiolect init | scan | show | eval
 packages/eval    task loading, with/without generation, judge, metric distance, report
+packages/mcp     createIdiolectServer: four tools, one resource, one prompt, transport-agnostic
 data/ai-tells.json       AI writing habits, each tied to a metric id
 data/eval-tasks/*.yaml   15 Kotlin tasks, two of them commit messages
 fixtures/kotlin          one Kotlin file used by parser and analyzer tests
@@ -37,7 +38,7 @@ scripts/update-grammars.sh   refreshes vendored tree-sitter wasm grammars from n
 packages/core/grammars   vendored kotlin.wasm plus license
 ```
 
-Only `core`, `cli` and `eval` exist.
+Only `core`, `cli`, `eval` and `mcp` exist.
 The spec lists more packages, they get created when their module is built, not before.
 
 ## How the pipeline works
@@ -69,6 +70,15 @@ Existing personal rules from other repos are shown to the model, which confirms 
 
 Render (`core/src/render.ts`): STYLE.md with sections Naming, Comments, Structure, Errors, Framework, Commits, Avoid, then Project conventions for the current repo.
 Metric rules come first in each section, and the preamble tells the agent to match quantities before voice.
+
+Check (`core/src/check.ts`): `checkStyle` runs the analyzer on a snippet and compares each served metric rule to it, deterministic, no LLM.
+Comment and `!!` rules get line numbers from a second tree walk, everything else is one aggregate violation.
+The same function will be Unbot's fast mode.
+
+MCP (`packages/mcp/src/index.ts`): `createIdiolectServer(deps)` takes a profile loader and a provider factory so tests pass a fixture profile.
+`idiolect mcp` wires it to stdio and reads `~/.idiolect` on every call.
+Repo comes from `git rev-parse --show-toplevel` on the file's directory, falling back to the cwd Claude Code started the server in.
+Installed locally with `claude mcp add idiolect -- idiolect mcp`, not yet done on this machine.
 
 LLM providers (`core/src/llm.ts`): `claude-cli` runs the user's installed Claude Code headless with `--json-schema`, no API key.
 Also `anthropic` via the official SDK, `openai` and `openai-compatible` via fetch, `gemini` via fetch.
@@ -137,8 +147,7 @@ He uses a global `~/.claude/CLAUDE.md` with his general rules, read it.
 
 1. Get the real blind quiz result from Shakib and record it in the spec M4 line.
 2. If the quiz is near chance, work `SUGGESTIONS.md` item 13: cap voice rules, ask for fewer sharper rules.
-3. M5 MCP server: `get_style`, `check_style`, `rewrite_like_me`, `get_team_rules`, resource and prompt, stdio transport, install via `claude mcp add`.
-   `renderStyleMd` with `repo` already produces what `get_style` needs.
+3. Shakib runs `claude mcp add idiolect -- idiolect mcp` and tries `get_style` and `check_style` from Claude Code inside Dissent.
 4. M6 sync: write STYLE.md between `<!-- idiolect:start -->` and `<!-- idiolect:end -->` in CLAUDE.md, AGENTS.md, Cursor and Copilot files, idempotent.
 5. `idiolect rules approve|reject|edit` so pending rules have a path (suggestion 7).
 6. Make `.idiolect/eval/` and the cache ignored automatically in the host repo.

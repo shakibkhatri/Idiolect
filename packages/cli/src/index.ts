@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { analyzeKotlin, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, userConfigPath, repoConfigPath, loadProfile, mergeStats, profilePath, saveProfile, upsertSource, analyzeCommits, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type UserConfig, type SampleInput } from "@idiolect/core";
 import { loadTasks, renderReport, runEval, type Report } from "@idiolect/eval";
+import { createIdiolectServer } from "@idiolect/mcp";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Command } from "commander";
 import { mkdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -212,6 +214,17 @@ program.command("eval")
     if (report.quiz) console.log(`quiz:   you picked the profile output ${pct(report.quiz.winRate)} (${report.quiz.withWins}/${report.quiz.total})`);
     console.log(`metric distance: with ${report.metricDistance.with}, without ${report.metricDistance.without} (lower is closer to you)`);
     console.log(`report: ${join(dir, `${stamp}.md`)}`);
+  });
+
+program.command("mcp")
+  .description("serve your style to MCP clients over stdio. Install: claude mcp add idiolect -- idiolect mcp")
+  .action(async () => {
+    const user = () => loadUserConfig();
+    const server = createIdiolectServer({
+      profile: async () => { const u = await user(); return u && loadProfile(u.emails[0]!); },
+      provider: async () => { const u = await user(); return u && createProvider(u.llm); },
+    });
+    await server.connect(new StdioServerTransport());
   });
 
 async function quiz(report: Report) {

@@ -44,6 +44,8 @@ Later: **team mode**, which learns team rules from PR review comments.
 
 ## 4. Repo structure
 
+Target layout. A package is created when its module is built, so only `core`, `cli`, `eval` and `mcp` exist today.
+
 ```
 packages/
   core/        # collector, analyzer, profile model, profile writer, LLM adapters
@@ -75,7 +77,7 @@ type Profile = {
 
 type Rule = {
   id: string                       // e.g. "kotlin.comments.lowercase-start"
-  scope: "personal" | "team"
+  scope: "personal" | "team"       // project rules are personal rules with `repo` set
   language: Language | "any"
   category: "naming" | "comments" | "structure" | "errors" | "framework" | "commits" | "avoid"
   text: string                     // the rule as the agent reads it
@@ -87,6 +89,8 @@ type Rule = {
   confidence: number               // 0..1
   status: "auto" | "pending" | "approved" | "rejected" | "edited"
   paths?: string[]                 // optional glob scope, e.g. "shared/src/**"
+  learnedIn?: string               // repo the examples came from, so a rescan replaces only its own rules
+  repo?: string                    // set on project rules: served only inside this repo
 }
 ```
 
@@ -171,20 +175,29 @@ stdio transport. Tools:
 |---|---|---|
 | `get_style` | `file_path?`, `language?` | Rules that apply to that file (language + path scope + team), as Markdown |
 | `check_style` | `code`, `language`, `file_path?` | Violations: `{rule_id, line, message, suggestion}` |
-| `rewrite_like_me` | `code`, `language`, `scope: comments \| names \| all` | Rewritten code + list of changes |
+| `rewrite_like_me` | `code`, `language`, `scope: comments \| names \| all`, `file_path?` | Rewritten code + list of changes |
 | `get_team_rules` | `path` | Team rules for that path with counts |
 
 Also:
 - Resource: `style://profile/{language}`
 - Prompt: `write_like_me` (instructs the agent to call `get_style` before writing and `check_style` after)
 
-Install:
-```
-claude mcp add idiolect -- npx -y idiolect mcp
-```
-Plus documented config snippets for Cursor and other MCP clients.
+How it works:
+- The repo is detected from `file_path` with `git rev-parse --show-toplevel`, falling back to the directory the client started the server in.
+  Project rules and the repo's confidence threshold come from there, so the server never needs a `--repo` flag.
+- `check_style` is deterministic, no LLM. It runs the analyzer on the code and compares every served metric rule against it.
+  A high rule fires when the code's ratio is under 0.5, a low rule over 0.5, an avoid rule on any occurrence, a value rule when the code is more than 1.5x the developer's number.
+  Comment and `!!` rules report the offending lines, the rest report one aggregate violation. Voice rules backed only by examples are not checked, that is the LLM's job in Unbot deep mode.
+- `rewrite_like_me` needs the configured LLM provider and returns an error that says so otherwise.
+- The profile is re-read on every call, so a rescan shows up without restarting the server.
 
-**Done when:** Claude Code calls `get_style` on a `.kt` file and gets only Kotlin + general rules.
+Install, while the package is unpublished and linked globally:
+```
+claude mcp add idiolect -- idiolect mcp
+```
+After publishing: `claude mcp add idiolect -- npx -y idiolect mcp`. Config snippets for Cursor and other MCP clients go in the README at launch.
+
+**Done when:** Claude Code calls `get_style` on a `.kt` file and gets only Kotlin + general rules. Built 2026-10-02, verified over stdio against the author's profile inside the Dissent repo.
 
 ### M6 Sync (`cli`)
 - `idiolect sync` writes the rendered profile into:
@@ -288,7 +301,7 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
 - Unit tests for every analyzer metric with small fixture files and known expected values
 - Fixture repos with multiple authors for the collector
 - Snapshot tests for `STYLE.md` rendering and sync
-- MCP tests: spawn server, call each tool, validate output schemas
+- MCP tests: in-memory transport, call each tool, validate output schemas
 - LLM calls mocked in unit tests, real calls only in `eval`
 
 ## 11. Build order
@@ -297,7 +310,7 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
 1. **M1 Collector** + **M2 Analyzer** (Kotlin). Done 2026-10-02
 2. **M3 Profile writer** + `STYLE.md`. Done 2026-10-02, author reviewed the rules from two repos and found them correct
 3. **M4 Eval harness** - prove it works on the author's own repos before going further. Built 2026-10-02. Judge 7/7 for the profile on two repos. Metric table hinted the profile over-comments, so STYLE.md puts quantity rules first. A real blind quiz is still outstanding
-4. **M5 MCP server** + **M6 Sync**
+4. **M5 MCP server** + **M6 Sync**. M5 done 2026-10-02, `get_style` over stdio returns the same 46 rules as `idiolect show` inside the repo
 5. **M7 Unbot linter**
 6. **Launch:** README with before/after examples, post on Hacker News, r/programming, r/ClaudeAI
 7. Add languages (Swift, TS, Python, Go), **M8 Auto refresh**

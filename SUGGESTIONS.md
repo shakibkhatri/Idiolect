@@ -81,3 +81,9 @@ Weak evidence from seven tasks, and the first quiz was answered at random so it 
 Reordering quantities first is the cheap precaution.
 If the quiz still sits near chance, cap example-backed rules to the top N per section by confidence, and ask the LLM for fewer, sharper rules.
 Also consider a "do less" rule family learned from what the developer does NOT do in the samples: no KDoc on private members, no preview composables, no sealed error hierarchies.
+
+## 14. check_style cannot point at lines for naming and structure rules (open)
+
+The analyzer only counts, so `check_style` reports a line for comment rules and `!!` by re-walking the tree in `core/check.ts`, and one aggregate violation for everything else.
+Naming and structure violations (a camelCase constant, a 40-line function) would be more useful with a line.
+Option: let the analyzer optionally collect `{metric, line}` occurrences, then both the checker and Unbot get lines for free.

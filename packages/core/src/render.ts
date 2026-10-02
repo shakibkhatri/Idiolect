@@ -1,3 +1,4 @@
+import { matchesGlob } from "node:path";
 import type { Profile, Rule } from "./profile.js";
 import { isServed } from "./writer.js";
 
@@ -6,11 +7,15 @@ const SECTIONS: [Rule["category"], string][] = [
   ["framework", "Framework"], ["commits", "Commits"], ["avoid", "Avoid"],
 ];
 
-export type RenderOptions = { threshold: number; language?: string; evidence?: boolean; repo?: string };
+/** `file` is relative to the repo and narrows path-scoped rules. */
+export type RenderOptions = { threshold: number; language?: string; evidence?: boolean; repo?: string; file?: string };
+
+export const appliesTo = (r: Rule, opts: { language?: string; file?: string }) =>
+  (!opts.language || r.language === "any" || r.language === opts.language) && (!opts.file || !r.paths?.length || r.paths.some((g) => matchesGlob(opts.file!, g)));
 
 /** Personal rules always. Project rules only when rendering for the repo they were learned in. */
 export function renderStyleMd(profile: Profile, opts: RenderOptions): string {
-  const served = profile.rules.filter((r) => isServed(r, opts.threshold) && (!opts.language || r.language === "any" || r.language === opts.language));
+  const served = profile.rules.filter((r) => isServed(r, opts.threshold) && appliesTo(r, opts));
   const rules = served.filter((r) => !r.repo);
   const project = opts.repo ? served.filter((r) => r.repo === opts.repo) : [];
   const out = [`# Code style: ${profile.developer.name}`, ""];

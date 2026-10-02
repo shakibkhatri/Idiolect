@@ -174,22 +174,26 @@ function countComment(n: Node, s: LanguageStats) {
   const c = s.comments;
   const isDoc = n.text.startsWith("/**");
   if (n.type === "line_comment") c.line++; else if (isDoc) c.doc++; else c.block++;
-  const text = n.text
-    .replace(/^\/\*\*?|\*\/$/g, "").replace(/^\/\/+/, "")
-    .split("\n").map((l) => l.replace(/^\s*\*\s?/, "").trim()).filter(Boolean).join(" ").trim();
+  const text = commentText(n.text);
   c.chars += text.length;
   const firstLetter = text.match(/[A-Za-z]/)?.[0];
   if (firstLetter && firstLetter === firstLetter.toLowerCase() && /^[a-z]/.test(text)) c.lowercaseStart++;
   if (text.endsWith(".")) c.trailingPeriod++;
-  const todo = text.match(/\b(TODO|FIXME|HACK)\b(\s*\([^)]*\))?(\s*:)?/);
+  const todo = text.match(TODO_TAG);
   if (todo) bump(c.todo, `${todo[1]}${todo[2] ? "(x)" : ""}${todo[3] ? ":" : ""}`);
   if (BUZZWORDS.test(text)) bump(c.tells, "buzzword");
-  if (/^(this (function|method|class|file|property)|the (function|method) )/i.test(text)) bump(c.tells, "restates");
+  if (RESTATES.test(text)) bump(c.tells, "restates");
   if (EMOJI.test(text)) bump(c.tells, "emoji");
 }
 
-const BUZZWORDS = /\b(robust|seamless(ly)?|leverag(e|es|ing)|comprehensive(ly)?|utiliz(e|es|ing)|ensur(e|es|ing) that|streamlin(e|ed)|cutting[- ]edge|delve|crucial|facilitat(e|es))\b/i;
-const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2705}\u{274C}]/u;
+/** Comment body without the // or /** markers and leading asterisks, joined to one line. */
+export const commentText = (raw: string) => raw
+  .replace(/^\/\*\*?|\*\/$/g, "").replace(/^\/\/+/, "")
+  .split("\n").map((l) => l.replace(/^\s*\*\s?/, "").trim()).filter(Boolean).join(" ").trim();
+export const TODO_TAG = /\b(TODO|FIXME|HACK)\b(\s*\([^)]*\))?(\s*:)?/;
+export const RESTATES = /^(this (function|method|class|file|property)|the (function|method) )/i;
+export const BUZZWORDS = /\b(robust|seamless(ly)?|leverag(e|es|ing)|comprehensive(ly)?|utiliz(e|es|ing)|ensur(e|es|ing) that|streamlin(e|ed)|cutting[- ]edge|delve|crucial|facilitat(e|es))\b/i;
+export const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2705}\u{274C}]/u;
 const GENERIC_NAME = /^(handle|process|manage|do)(Data|Item|Items|Input|Request|Response|Result|Stuff|Logic|It)$|^(helper|util|utility|data|temp|result|value|item)\d*$/i;
 
 function countDoc(n: Node, s: LanguageStats) {
