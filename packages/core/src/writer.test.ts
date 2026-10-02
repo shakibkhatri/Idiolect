@@ -101,6 +101,25 @@ test("writer keeps only LLM rules whose examples were actually sent, and reconci
   expect(md).toContain("## Avoid");
 });
 
+test("render serves every metric rule but only the top voice rules per section, plus the developer's decisions", () => {
+  const p = upsertSource(emptyProfile("me", ["me@x"]), source("/a", () => {}));
+  const voice = (i: number, confidence: number, status: "auto" | "approved" = "auto") => ({
+    id: `kotlin.comments.v${i}`, scope: "personal" as const, language: "kotlin" as const, category: "comments" as const, text: `Voice rule ${i}.`,
+    evidence: { examples: [{ file: "A.kt", line: 1, snippet: "x" }] }, confidence, status,
+  });
+  const rules = [...baselineRules(p, opts), voice(1, 0.9), voice(2, 0.7), voice(3, 0.8), voice(4, 0.85), voice(5, 0.65, "approved")];
+  const md = renderStyleMd({ ...p, rules }, { threshold: 0.6 });
+  const comments = md.split("## Comments")[1]!.split("## ")[0]!;
+  expect(comments).toContain("Start comments with a capital letter.");
+  expect(comments).toContain("When a comment is warranted, it reads like this:");
+  expect(comments).toContain("Voice rule 1.");
+  expect(comments).toContain("Voice rule 4.");
+  expect(comments).toContain("Voice rule 3.");
+  expect(comments).not.toContain("Voice rule 2.");
+  expect(comments).toContain("Voice rule 5."); // approved rules are always served
+  expect(comments.indexOf("capital letter")).toBeLessThan(comments.indexOf("Voice rule 1."));
+});
+
 test("redact strips key-like strings and keeps the rest", () => {
   expect(redact('val key = "sk-ant-abcdefghijklmnopqrstuvwxyz0123"')).toBe('val key = "[REDACTED]"');
   expect(redact("password = hunter2!!x")).toBe("password = [REDACTED]");

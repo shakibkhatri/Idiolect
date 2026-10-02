@@ -8,6 +8,9 @@ const SECTIONS: [Rule["category"], string][] = [
   ["framework", "Framework"], ["commits", "Commits"], ["avoid", "Avoid"],
 ];
 
+/** Example-backed rules served per section. The first quiz showed that more voice rules get applied everywhere, so fewer wins. */
+const VOICE_RULES_PER_SECTION = 3;
+
 /** `file` is relative to the repo and narrows path-scoped rules. */
 export type RenderOptions = { threshold: number; language?: string; evidence?: boolean; repo?: string; file?: string };
 
@@ -26,18 +29,23 @@ export function renderStyleMd(profile: Profile, opts: RenderOptions): string {
   out.push(`Rules with numbers say how much. Match those quantities first: do not add comments, docs or structure beyond them. The other rules describe voice and apply only where you would write something anyway. Plain code with no comment is often the right answer.`, "");
   for (const [category, title] of SECTIONS) {
     // metric-backed rules first: they bound how much, the example-backed ones describe how
-    const own = rules.filter((r) => r.category === category && r.scope === "personal").sort((a, b) => Number(!!b.evidence.metric) - Number(!!a.evidence.metric) || b.confidence - a.confidence);
+    const own = capVoice(rules.filter((r) => r.category === category && r.scope === "personal").sort((a, b) => Number(!!b.evidence.metric) - Number(!!a.evidence.metric) || b.confidence - a.confidence));
     if (!own.length) continue;
     out.push(`## ${title}`, "");
     // the same text learned for two languages, like an avoid rule, is one line without a language label
     const byText = new Map<string, Rule[]>();
     for (const r of own) byText.set(r.text, [...(byText.get(r.text) ?? []), r]);
-    for (const [text, rs] of byText) out.push(`- ${rs.length > 1 ? "" : label(rs[0]!)}${text}${opts.evidence ? evidence(rs[0]!) : ""}`);
+    // comment voice rules are the ones agents over-apply, so they get a lead-in that ties them to the quantities above
+    let leadIn = category === "comments" && !!own[0]!.evidence.metric;
+    for (const [text, rs] of byText) {
+      if (leadIn && !rs[0]!.evidence.metric) { out.push("", "Those numbers bound how many. When a comment is warranted, it reads like this:", ""); leadIn = false; }
+      out.push(`- ${rs.length > 1 ? "" : label(rs[0]!)}${text}${opts.evidence ? evidence(rs[0]!) : ""}`);
+    }
     out.push("");
   }
   if (project.length) {
     out.push(`## Project conventions (${opts.repo!.split("/").pop()})`, "", "These hold in this repo only. They come from its vocabulary, libraries and team habits.", "");
-    for (const r of project.sort((a, b) => b.confidence - a.confidence)) out.push(`- ${label(r)}${r.text}${opts.evidence ? evidence(r) : ""}`);
+    for (const r of capVoice(project.sort((a, b) => b.confidence - a.confidence))) out.push(`- ${label(r)}${r.text}${opts.evidence ? evidence(r) : ""}`);
     out.push("");
   }
   const team = rules.filter((r) => r.scope === "team");
@@ -47,6 +55,12 @@ export function renderStyleMd(profile: Profile, opts: RenderOptions): string {
     out.push("");
   }
   return out.join("\n");
+}
+
+/** Keeps every metric rule and every rule the developer approved or edited, then the top voice rules by confidence. */
+function capVoice(sorted: Rule[]): Rule[] {
+  let voice = 0;
+  return sorted.filter((r) => r.evidence.metric || r.status !== "auto" || ++voice <= VOICE_RULES_PER_SECTION);
 }
 
 function evidence(r: Rule): string {

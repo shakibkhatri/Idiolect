@@ -38,7 +38,7 @@ export type EvalOptions = { profile: Profile; provider: LlmProvider; references:
 export async function runEval(o: EvalOptions): Promise<Report> {
   const style = renderStyleMd(o.profile, { threshold: o.threshold, repo: o.repo });
   const baseSystem = "You are a senior Kotlin developer writing production code for a real app. Return only what is asked.";
-  const styledSystem = `${baseSystem}\n\nWrite exactly the way this developer writes. Follow their style profile strictly, including comments and commit messages:\n\n${style}`;
+  const styledSystem = `${baseSystem}\n\nWrite the way this developer writes. Their style profile:\n\n${style}`;
 
   const generations = await pool(o.tasks, o.concurrency ?? 3, async (task): Promise<Generation> => {
     const gen = async (system: string) => task.kind === "commit"
