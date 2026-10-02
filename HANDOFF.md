@@ -1,199 +1,169 @@
 # Handoff
 
 Read this first, then `SPEC.md`, then `SUGGESTIONS.md` and `bugs/`.
-It was written on 2026-10-02 at the end of the first day of work and updated the same evening after the rules command and M7.
+Written on 2026-10-02 at the end of the first day of work, rewritten the same night after the release.
 Every statement here was true at that point.
 Verify against the code before relying on anything that could have moved.
 
 ## What Idiolect is
 
-A local-first CLI that learns how one developer writes Kotlin, comments and commits from their own git history, turns that into a style profile, and feeds it to AI coding agents.
-The owner is Shakib Khatri, personal GitHub `shakibkhatri`, repo `github.com/shakibkhatri/Idiolect`.
-This is a personal project, so commits use `shakibkhatri@gmail.com`, set in the repo-local git config.
-The first commit still carries his work email because the amend needed a force-push he has to run himself.
+A local-first CLI that learns how one developer writes code, comments and commits from their own git history, turns that into a style profile, and feeds it to AI coding agents through instruction files and an MCP server.
+Unbot is its linter: flags code that breaks the developer's measured habits or sounds like AI, and can rewrite it.
+The owner is Shakib Khatri, GitHub `shakibkhatri`, repo `github.com/shakibkhatri/Idiolect`.
+Commits use `shakibkhatri@gmail.com`, set in the repo-local git config.
+The first commit still carries his work email because the amend needs a force-push he has to run himself.
 
-## State of the build
+## Where things stand
 
-Spec section 11 lists the build order.
-M1 collector, M2 analyzer, M3 profile writer, M4 eval harness, M5 MCP server, M6 sync, the `rules` command, M7 Unbot, the README and M8 auto refresh are built, tested and committed.
-Tests: `pnpm test` runs 27 vitest tests, all green.
-Typecheck: `pnpm typecheck`.
-Build: `pnpm build`, which must run before the global `idiolect` command picks up changes.
-The CLI is linked globally with `npm link` from `packages/cli`, so `idiolect` on this machine runs `packages/cli/dist/index.js`.
+Published on npm as `idiolect@0.0.1` with `@shakibkhatri/idiolect-core`, `-eval` and `-mcp` at 0.0.1, tagged `v0.0.1`, pushed to GitHub.
+Shakib installed it with `npm install -g idiolect` on a second laptop and it worked.
+Everything in the spec build order up to and including M8 exists: collector, analyzer, profile writer, eval, MCP server, sync, Unbot, auto refresh, plus the `rules` command.
+Languages: Kotlin, TypeScript, Python, Go. Swift is the only spec language left and needs its grammar built with the tree-sitter CLI.
+Not built: M9 team mode, M10 dashboard. The spec says only after real usage, and that still holds.
+Tests: `pnpm test`, 37 vitest tests, all green. `pnpm typecheck`. `pnpm build` must run before the global `idiolect` picks up changes.
+On this machine `idiolect` is the npm-linked dev build from `packages/cli`, not the published one. Keep it that way while developing.
 
-TypeScript, Python and Go landed on 2026-10-02 too. TypeScript was verified on the Firebase functions in Dissent, Python on its six scripts and on dabeaz/sly against the stdlib `ast` module, Go on tidwall/gjson against a regex count because this machine has no Go toolchain.
-All four languages were then checked the same way on a well-known single-author repo: sly, gjson, ky and picnic. `scripts/verify/README.md` has the counters, the isolated-`HOME` recipe and the results. Use it for Swift.
-Not built: M9 team mode, M10 dashboard, Swift.
-Spec step 6, launch, has its README. Posting it is Shakib's call.
+## The verdict and the next build
+
+The quiz is the headline metric: the developer sees the profile output and the plain output blind and picks which sounds like them.
+Shakib took it on the stored Dissent report on 2026-10-02 and picked the profile output 5 of 15 times, while the LLM judge picked it 15 of 15.
+He took it several times and stands by the result. Treat it as ground truth.
+Below chance means the profile as served makes agent output read less like him. The judge is flattering its own styled output, as the spec predicted.
+
+So the next build is `SUGGESTIONS.md` item 13: fewer, sharper rules.
+Where he picked the plain output, the profile output usually carried more comments and doc blocks, which matches the over-application finding from the first eval.
+Concrete starting points: cap example-backed rules per section by confidence, ask the writer for fewer rules, and drop comment-voice rules when the quantity rule already says comments are rare.
+After each change run `idiolect eval` in Dissent and have Shakib take `idiolect eval --from <report.json> --quiz`. The quiz is the number, nothing else counts.
+Context: much of Dissent was itself written by agents Shakib steered, with co-author trailers stripped by his own rules. Only 42 of 537 commits and 7% of blamed lines carry a trailer. The profile partly describes an accepted agent style. Suggestions 21 and 22 record two ideas that follow from that.
 
 ## Repo layout
 
 ```
-packages/core    collector, analyzer, metrics, baseline rules, sampler, redact, llm providers, writer, render, config, profile
+packages/core    collector, analyzers, metrics, baseline rules, sampler, redact, llm providers, writer, render, check, unbot, config, profile
 packages/cli     idiolect init | scan | show | rules | unbot | hooks | status | refresh | eval | mcp | sync
-packages/eval    task loading, with/without generation, judge, metric distance, report
-packages/mcp     createIdiolectServer: four tools, one resource, one prompt, transport-agnostic
-packages/core/data/ai-tells.json   AI writing habits, each tied to a metric id, some per language
-packages/eval/tasks/*.yaml         15 Kotlin tasks, two of them commit messages
-fixtures/kotlin          Sample.kt for parser and analyzer tests, AiWritten.kt for unbot
-fixtures/typescript      Sample.ts for the TypeScript analyzer test
-fixtures/python          sample.py
-fixtures/go              sample.go
-scripts/update-grammars.sh   refreshes vendored tree-sitter wasm grammars from npm
-scripts/verify/              second-opinion counters and the recipe for checking a language on a real repo
-packages/core/grammars   vendored kotlin, typescript, tsx, python and go wasm plus licenses
+packages/eval    task loading, with/without generation, judge, metric distance, report; tasks/ holds 15 Kotlin tasks
+packages/mcp     createIdiolectServer: get_style, check_style, rewrite_like_me, get_team_rules, one resource, one prompt
+packages/core/grammars   vendored kotlin, typescript, tsx, python, go wasm plus licenses
+packages/core/data/ai-tells.json   AI writing habits tied to metric ids, some per language
+fixtures/kotlin|typescript|python|go   one parallel sample program per language, plus AiWritten.kt for Unbot
+scripts/update-grammars.sh   refreshes the vendored grammars from npm, edit the table, run, commit
+scripts/verify/              second-opinion counters per language and the recipe for checking a language on a real repo
 ```
-
-Only `core`, `cli`, `eval` and `mcp` exist.
-The spec lists more packages, they get created when their module is built, not before.
 
 ## How the pipeline works
 
 Collector (`core/src/collector.ts`): `git ls-tree` at HEAD for files, `git blame -w --line-porcelain` per file for owned line ranges, `git log` for the author's commits.
-Cache per file by blob hash in `<repo>/.idiolect/cache/collector.json`, so warm rescans take about 100 ms. The cache also records the email list and is discarded when it changes, found when a third author email on picnic changed nothing.
+Cache per file by blob hash in `<repo>/.idiolect/cache/collector.json`. The cache records the email list it was built for and is discarded when the list changes.
+`.d.ts` files and the usual build and vendor dirs are ignored by default, plus `.idiolectignore`.
 
-Analyzer (`core/src/analyzer.ts`): one tree-sitter walk per file producing counts and histograms only, never ratios.
-`analyzeTree` is the shared walk, `count` in analyzer.ts is the Kotlin counter, `analyzer-ts.ts`, `analyzer-py.ts` and `analyzer-go.ts` the others, `languages.ts` dispatches by language. `languageOf(path)` and `EXTENSIONS` decide which files are scanned.
-Stats have one block per language, all always present. `loadProfile` fills missing blocks with zeros so old profiles keep working.
-Python docstrings go through `countCommentText`, the same voice counters as comments, and the check's second walk treats them as doc comments. Go doc comments are the comment block right above a top-level declaration, `isGoDocComment`.
-`mergeStats` is a generic deep sum.
-Test files, detected by `isTestPath`, keep structural stats but route function names to `naming.testNames`.
-Only nodes whose first line the developer owns are counted.
+Analyzer (`core/src/analyzer.ts` and `analyzer-ts.ts`, `analyzer-py.ts`, `analyzer-go.ts`): `analyzeTree` is one tree-sitter walk, each language supplies a node counter, `languages.ts` dispatches.
+Output is counts and histograms only, never ratios, so `mergeStats` is a plain deep sum.
+Only nodes whose first line the developer owns are counted. Test files, detected by `isTestPath`, keep structural stats but route names to `naming.testNames`.
+TypeScript test files count `it()` and `test()` calls as test functions named by their string.
+Python docstrings run through the same voice counters as comments and count as doc comments. Go doc comments are the comment block right above a top-level declaration.
+Stats have one block per language, all always present. `loadProfile` fills missing blocks with zeros so older profiles keep working.
 
-Metrics (`core/src/metrics.ts`): named ratio and percentile functions over stats.
-Baseline (`core/src/baseline.ts`): deterministic rules from metrics, high fires at ratio >= 0.8, low at <= 0.2, value rules always.
-`COMMON_DEFS` apply to every language, `EXPRESSION_BODY_DEFS` to Kotlin and TypeScript, and each language has its own idiom defs. A tell in `ai-tells.json` can carry `language` to apply to one language only. Avoid rule ids carry the language.
+Metrics (`core/src/metrics.ts`): named ratio and percentile functions over stats. `fileSpread` counts, per ratio metric, how many files sit over and under 0.5.
+
+Baseline (`core/src/baseline.ts`): deterministic rules from metrics. High fires at ratio >= 0.8, low at <= 0.2, value rules always, each language has common defs plus idiom defs.
 Confidence is the 95% Wilson lower bound.
-A metric that disagrees by 0.4 or more between repos halves confidence and appends "Varies by repo".
-Avoid rules come from `data/ai-tells.json` when the developer basically never does the thing.
+Confidence is halved and the text annotated when a metric disagrees by 0.4 between repos ("Varies by repo") or when 15% or more of files do the opposite ("Varies by file").
+Avoid rules come from `ai-tells.json` when the developer basically never does the thing. Their ids carry the language.
 
-The scan also keeps per-file stats and stores a per-file spread of every ratio metric on the source. `baseline.ts` halves the confidence of a high or low rule where 15% or more of files do the opposite (the other side of 0.5) and appends "Varies by file".
-TypeScript test files count `it()` and `test()` calls as test functions, named by their string, with a should-versus-statement metric.
+Sampler (`core/src/sampler.ts`): deterministic stratified samples, 30 production functions, 100 comments, 100 commits, under a token budget, through `redact.ts`.
 
-Sampler (`core/src/sampler.ts`): deterministic stratified samples, 30 production functions, 100 comments, 100 commits, under a token budget, run through `redact.ts`.
+Writer (`core/src/writer.ts`): sends metrics, baseline rules, existing personal rules and samples to the LLM. Output is zod validated.
+Every LLM rule must cite a sample that was actually sent or it is dropped. Rules are personal or project. Project rules carry `repo` and are served only inside that repo.
+Each LLM rule carries `learnedIn`, a rescan replaces only rules learned in that repo, existing personal rules are confirmed by id instead of duplicated.
+`reconcile` keeps approved, edited and rejected statuses across rescans. An approved rule whose text changed becomes pending. Auto rules are replaced in place.
 
-Writer (`core/src/writer.ts`): sends metrics, baseline rules, existing personal rules and samples to the LLM.
-Output is zod validated.
-Every LLM rule must cite a sample by file and line that was actually sent, or it is dropped.
-Each rule is labelled personal or project.
-Project rules carry `repo` and are served only inside that repo.
-Each LLM rule carries `learnedIn`, and a rescan with a provider replaces only rules learned in that repo.
-Existing personal rules from other repos are shown to the model, which confirms them by id instead of duplicating.
-`reconcile` keeps approved, edited and rejected statuses across rescans and turns changed approved text into pending.
+Render (`core/src/render.ts`): STYLE.md with Naming, Comments, Structure, Errors, Framework, Commits, Avoid, then Project conventions. Metric rules first in each section.
+When more than one language is served, language-specific rules get a language label, and identical texts print once.
 
-Render (`core/src/render.ts`): STYLE.md with sections Naming, Comments, Structure, Errors, Framework, Commits, Avoid, then Project conventions for the current repo.
-Metric rules come first in each section, and the preamble tells the agent to match quantities before voice.
+Check (`core/src/check.ts`): `checkStyle` compares every served metric rule against a snippet, deterministic. Comment, force-unwrap and `any` rules get line numbers from a second walk, the rest are one aggregate violation.
+Floors: avoid rules fire on one occurrence, located ratio rules need 3 items, aggregates need 10 items or 100 lines, value rules need 2x the developer's number. Calibrated so about 5% of Shakib's own files are flagged.
 
-Check (`core/src/check.ts`): `checkStyle` runs the analyzer on a snippet and compares each served metric rule to it, deterministic, no LLM.
-Comment and `!!` rules get line numbers from a second tree walk, everything else is one aggregate violation.
-Aggregate rules need 10 items or 100 lines in the snippet and value rules need 2x the developer's number, otherwise a per-file median is noise. Calibrated so 41 of 799 Dissent files are flagged, 18 of them real tells.
-It is Unbot's fast mode.
+Unbot (`core/src/unbot.ts`, `cli/src/unbot.ts`): fast mode is `checkStyle`, `--llm` adds `deepCheck` where the LLM checks the example-backed voice rules with line numbers, `--fix` rewrites with `rewriteLikeMe`, which the MCP tool shares.
+Default files are what changed since HEAD, `--staged` for hooks, `--all` for everything. `--strict` exits 1.
+`hooks install` writes a warn-only pre-commit hook and a post-commit refresh hook, honours `.husky`, points at lefthook.yml instead of editing it.
 
-Unbot (`core/src/unbot.ts`, `cli/src/unbot.ts`): `unbot()` is `checkStyle` plus `deepCheck`, where the LLM checks example-backed voice rules and returns line-level violations, filtered to known rule ids and lines inside the file.
-`rewriteLikeMe` is shared by the MCP tool and `unbot --fix`.
-The CLI picks changed Kotlin files by default, `--staged` for hooks, `--all` for everything. `hooks install` writes a warn-only pre-commit hook.
-`fixtures/kotlin/AiWritten.kt` is the AI-written sample the test and the Dissent check use.
+Rules (`cli/src/rules.ts`): `list|show|approve|reject|edit` over `updateRules`. Decisions survive rescans.
 
-Rules (`cli/src/rules.ts`): `list|show|approve|reject|edit` over `updateRules` in core. Decisions survive `scan`, verified in Dissent.
+Refresh (`cli/src/refresh.ts`): `status` and `refresh`. Commits since the last scan come from `git rev-list --count <source.head>..HEAD`. At `refresh.everyCommits` it spawns `scan` detached and logs to `.idiolect/cache/refresh.log`.
 
-Refresh (`cli/src/refresh.ts`): `status` and `refresh`. The commit count comes from `git rev-list --count <source.head>..HEAD`, so no extra state is stored.
-`refresh` spawns `scan` detached with `process.execPath` and `process.argv[1]`, logging to `.idiolect/cache/refresh.log`, and prints nothing below the count so the post-commit hook stays quiet.
-`hooks install` writes both hooks and is idempotent.
+MCP (`packages/mcp/src/index.ts`): `createIdiolectServer(deps)` takes a profile loader and a provider factory. `idiolect mcp` wires it to stdio and re-reads `~/.idiolect` on every call.
+Repo comes from `git rev-parse --show-toplevel` on the file's directory, falling back to the cwd the client started in.
 
-MCP (`packages/mcp/src/index.ts`): `createIdiolectServer(deps)` takes a profile loader and a provider factory so tests pass a fixture profile.
-`idiolect mcp` wires it to stdio and reads `~/.idiolect` on every call.
-Repo comes from `git rev-parse --show-toplevel` on the file's directory, falling back to the cwd Claude Code started the server in.
-Installed locally with `claude mcp add idiolect -- idiolect mcp`, not yet done on this machine.
+Sync (`cli/src/sync.ts`): writes between `<!-- idiolect:start -->` and `<!-- idiolect:end -->` only. Updates the four known files when they exist, creates only AGENTS.md unless targets are explicit.
 
-Sync (`cli/src/sync.ts`): `syncBlock` replaces or appends the marked block and returns everything else byte for byte.
-`syncTargets` updates the four known files when they exist and creates only AGENTS.md, unless targets are explicit.
-`ensureRepoDir` in `core/src/config.ts` writes `.idiolect/.gitignore` so cache and eval output never show up in the host repo.
+LLM providers (`core/src/llm.ts`): `claude-cli` runs the installed Claude Code headless with `--json-schema`, no API key. Also `anthropic`, `openai`, `openai-compatible`, `gemini`. OpenAI and Gemini need `llm.model`.
 
-LLM providers (`core/src/llm.ts`): `claude-cli` runs the user's installed Claude Code headless with `--json-schema`, no API key.
-Also `anthropic` via the official SDK, `openai` and `openai-compatible` via fetch, `gemini` via fetch.
-OpenAI and Gemini have no default model, the user must set `llm.model`.
-
-Eval (`packages/eval/src/index.ts`): each task generated twice, with STYLE.md in the system prompt and without.
-A judge sees reference samples from the developer's real code and picks blind.
-Metric distance compares ratio metrics of all outputs merged against the developer's stats.
-Reports go to `<repo>/.idiolect/eval/<timestamp>.{json,md}`.
-`idiolect eval --from <report.json> --quiz` replays a stored run for the human quiz without new LLM calls.
+Eval (`packages/eval/src/index.ts`): each task generated with and without STYLE.md, a judge picks blind against reference samples, metric distance compares outputs to the developer's stats. `--from <report> --quiz` replays a stored run for the human quiz.
+Kotlin only, suggestion 19 covers other languages.
 
 ## Publishing
 
-Published 2026-10-02: `idiolect@0.0.1` plus `@shakibkhatri/idiolect-core`, `-eval` and `-mcp` at 0.0.1. The org name `idiolect` was taken, so the internal packages sit under Shakib's own user scope, which needs no org.
-Verified from a clean directory: `npm i idiolect@0.0.1`, then init, scan and unbot on a one-file repo. Shakib then installed it with `npm install -g idiolect` on his second laptop on 2026-10-02 and reported it working.
-Every package has `files`, `license`, `repository` and `publishConfig.access: public`. Grammars and `ai-tells.json` live inside `packages/core`, eval tasks inside `packages/eval/tasks`, so nothing resolves outside its package once installed. The CLI copies the root README in `prepack`.
-Next release: bump the version in all four package.json files together, `pnpm -r publish`, tag. On this machine the global `idiolect` is still the npm-linked dev build from `packages/cli`, not the published one.
+`pnpm -r publish` after bumping the version in all four package.json files together, then tag and push with `--follow-tags`.
+Every package has `files`, `license`, `repository`, `publishConfig.access: public`, and excludes compiled tests. Grammars and tells ship inside core, tasks inside eval, so nothing resolves outside its package. The CLI copies the root README in `prepack`.
+The npm org name `idiolect` is taken by someone else, which is why the internal packages sit under Shakib's user scope.
 
 ## Config and storage
 
-`~/.idiolect/config.json`: name, all emails, LLM provider.
-This is the developer and must never live inside a repo.
+`~/.idiolect/config.json`: name, all emails, LLM provider. Never inside a repo. `init` accumulates emails, it never removes one.
 `<repo>/.idiolect/config.json`: languages, ignore, sync targets, thresholds, all optional, safe to commit.
-`~/.idiolect/profiles/<first email>.json`: the one profile per developer, merged over every repo scanned.
-`<first email>.STYLE.md` sits next to it.
-Shakib's profile is under `shakib.khatri@ires.de` because that was the first email in his list.
-A stray profile for a colleague exists at `kenediid.ali@ires.de.json` from a mis-click, safe to delete.
+`~/.idiolect/profiles/<first email>.json` and `.STYLE.md` next to it: one profile per developer, merged over every repo.
+Shakib's profile is under `shakib.khatri@ires.de`. A stray `kenediid.ali@ires.de.json` from a mis-click is safe to delete.
 
 ## Real data so far
 
-Two repos scanned: `~/AndroidStudioProjects/Dissent` (personal, 794 Kotlin files, 523 commits) and `~/StudioProjects/device-manager-app` (work, four authors, 449 files owned, 391 commits).
-Profile: 55 rules, about 23 personal example-backed, 8 or 9 project rules per repo, the rest metric and avoid rules.
-Shakib reviewed the rules and said they are mostly correct.
+Dissent, personal, 794 Kotlin files, 56 TypeScript, 6 Python, 523 commits. device-manager-app, work, four authors, 449 Kotlin files owned, 391 commits.
+Shakib's live profile has 79 rules from his own rescan of Dissent on 2026-10-02 with the LLM. He has not rescanned since the per-file spread, the `it()` test names and the Python analyzer landed, so one `idiolect scan` in Dissent picks those up.
+Shakib reviewed the earlier 55 rules and called them mostly correct.
+Eval on Dissent, 15 tasks: judge 15/15, quiz 5/15. Eval on the work repo, 7 tasks: judge 7/7, no quiz.
 
-Eval on Dissent, 15 tasks: judge 15/15 for the profile, metric distance 0.15 with versus 0.181 without, comment density 0.387 with versus developer 0.394.
-Eval on the work repo, 7 tasks: judge 7/7, distance 0.166 versus 0.179.
-The one quiz taken so far was answered at random by his own account and means nothing.
-A real quiz is the outstanding verdict, report `Dissent/.idiolect/eval/2026-10-02T15-08-05-753Z.json`.
+Other developers' repos, scanned with an isolated `HOME` so nothing of Shakib's was touched: tidwall/gjson (Go), dabeaz/sly (Python), sindresorhus/ky (TypeScript), JakeWharton/picnic (Kotlin). Each analyzer matched an independent counter within a few percent and exactly on the idiom counters. `scripts/verify/README.md` has the numbers and the recipe.
 
 ## Decisions and why
 
-tree-sitter grammars are vendored wasm files, not npm packages.
-`tree-sitter-wasms` is stale (legacy dylink section, rejected by current web-tree-sitter) and the official grammar packages run node-gyp on install.
-Kotlin, TypeScript, Python and Go publish a modern wasm on npm, Swift does not and must be built once.
-
-Node floor is 22, because 20 is end of life and 22 has `path.matchesGlob`.
-
-No API key by default.
-Most developers have a plan, not a key, and asking for one would kill adoption.
-The default provider is the agent they already have, run headless.
-
-Identity split out of the repo config after a personal email showed up as an untracked file in the work repo.
-
-Project versus personal rule scope exists because team conventions (commit prefixes, product vocabulary, wrappers) leaked into the personal profile and replaced rules from the other repo.
-
-The quiz, not the judge, is the headline eval metric, because the judge shares a model with the generator.
-
-Fixture repo for the collector test is generated in a temp dir at test time, not committed, to avoid a nested git repo.
+tree-sitter grammars are vendored wasm files. `tree-sitter-wasms` is stale and the official grammar packages run node-gyp. Swift publishes no wasm and must be built once.
+Node floor is 22: 20 is end of life and 22 has `path.matchesGlob`.
+No API key by default. Most developers have a plan, not a key. The default provider is the agent they already have, run headless.
+Identity lives outside the repo after a personal email showed up untracked in the work repo.
+Project versus personal rule scope exists because team conventions leaked into the personal profile.
+The quiz, not the judge, is the headline eval metric, because the judge shares a model with the generator. The first real quiz proved the point: 15/15 judge, 5/15 human.
+Unbot has no `lint` package. The pieces live in core because the MCP server shares them.
+Quantity rules in the check have floors because a per-file median over three functions is noise. Located ratio rules have a lower floor because each located line is concrete.
+The doc-ratio rule has no line finder on purpose: a developer who documents some files fully and others not at all would see every doc comment flagged.
+Avoid rule ids carry the language because the same tell for two languages produced one id twice.
 
 ## Working agreements with Shakib
 
-The spec is a draft.
-Question it, change it, and say what changed.
-Keep moving: out-of-scope bugs go to `bugs/NNN-title.md`, ideas to `SUGGESTIONS.md`, and only bugs inside the module being built get fixed on the spot.
-Never add an agent name as commit co-author, never use em dashes, plain hyphen instead.
-Commit at module boundaries and after real fixes, with a short imperative subject and a prose body.
-He tests things himself as an end user and sends screenshots or pasted terminal output.
-Treat anything he pastes as the ground truth over unit tests.
-When numbers look surprising, check them against the real repo before trusting them.
+The spec is a draft. Question it, change it, say what changed.
+Keep moving: out-of-scope bugs go to `bugs/NNN-title.md`, ideas to `SUGGESTIONS.md`, only bugs inside the module being built get fixed on the spot.
+Never add an agent name as commit co-author. Never use em dashes, plain hyphen instead. Short comments, two lines at most.
+Commit at module boundaries and after real fixes, short imperative subject, prose body.
+He tests as an end user and pastes terminal output or screenshots. Treat what he pastes as ground truth over unit tests. When numbers look surprising, check them against the real repo.
+He wants modules built, verified in `~/AndroidStudioProjects/Dissent`, committed, and the next one started without waiting for him. Restore anything you change there, and back up `~/.idiolect/profiles/` before a test scan and restore it after.
+Never run anything that changes his repos or his Claude Code config without asking. Scanning is read-only apart from `.idiolect/` inside the repo.
 He uses a global `~/.claude/CLAUDE.md` with his general rules, read it.
 
 ## Open items, in order
 
-1. Quiz taken on 2026-10-02: 5 of 15 for the profile, judge 15 of 15. Not a verdict, see SPEC M4: Dissent is mostly agent-written under Shakib's name with trailers stripped, so he has no reference for "sounds like me" there. Open question: does he have a repo he wrote by hand to run the eval and quiz on, or should the quiz ask "which would you merge as-is" (suggestion 22).
-2. Suggestion 13 stays parked until a meaningful quiz lands near chance.
-3. Shakib runs `claude mcp add idiolect -- idiolect mcp` and tries `get_style` and `check_style` from Claude Code inside Dissent.
-4. Shakib runs `idiolect sync` and `idiolect hooks install` inside Dissent and commits what he likes. `.idiolect/` is still untracked there.
-5. Shakib reads README.md and decides about posting.
-6. Shakib runs `idiolect scan` in Dissent once to add TypeScript to his profile. The agent's test scan was restored to the reviewed 55-rule profile.
-7. Launch post, Shakib's call, once the quiz has a number. Then Swift (grammar must be built, suggestion 3), or suggestions 15, 16, 19, 20. M9 and M10 only after real usage, per the spec.
+1. Suggestion 13: fewer, sharper rules. Change, `idiolect eval` in Dissent, Shakib takes the quiz, repeat until the quiz is clearly above chance. Back up his profile before any scan you run.
+2. Shakib runs `idiolect scan` in Dissent once to pick up Python, the `it()` test names and the per-file spread, then `idiolect sync`, `idiolect hooks install`, and `claude mcp add idiolect -- npx -y idiolect mcp`. None of that has been done on his machine yet. `.idiolect/` is still untracked in Dissent.
+3. Launch post once the quiz has a number worth posting. README has the before and after.
+4. Then Swift (suggestion 3), suggestions 15, 16, 19, 20, 21, 22, or M9 and M10 after real usage.
 
 ## Things that bit us, so you do not repeat them
 
-Running `idiolect scan --no-llm` used to wipe LLM rules, fixed, but any change to `writeRules` should keep the test that covers it.
+`idiolect scan --no-llm` once wiped LLM rules. Fixed, keep the test on `writeRules`.
 Backtick and camelCase sentence test names pollute verb stats unless routed to `testNames`.
 `claude -p --bare` cannot see the user's login, do not add `--bare`.
 Claude Code's `--json-schema` rejects the `$schema` key zod emits, `jsonSchema()` strips it.
 zod is v4 because the Anthropic helper needs it, use `.prefault({})` not `.default({})` for nested objects.
-The vendored Kotlin grammar errors on semicolon-separated class members, see `bugs/001`.
+The vendored Kotlin grammar errors on semicolon-separated class members, `bugs/001`.
+The blame cache ignored the email list until picnic's third author email changed nothing. Any new cache key input belongs in `readCache`.
+`bump()` on a plain object read `Object.prototype.constructor` for a method named `constructor`. It uses `hasOwn` now.
+A per-file ratio over a handful of items is noise. Every time Unbot flagged half of Shakib's own files, the fix was a floor, not a threshold.
+zsh does not word-split `$files`. Pipe `git ls-files` into `xargs` or loop with `while read` in verification scripts.
+`init` accumulates emails in `~/.idiolect/config.json`, so a test with fewer emails needs a fresh `HOME`.

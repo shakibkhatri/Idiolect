@@ -75,12 +75,12 @@ Options: judge with a different provider when two are configured, or add a contr
 Seven tasks give a handful of functions and one commit message, so per-metric numbers like commits.body-ratio swing between 0 and 1.
 Weight each metric by its output sample size, or require a minimum before it counts, and say in the report how many samples each number rests on.
 
-## 13. Profile over-application: cap voice rules per section (open)
+## 13. Profile over-application: cap voice rules per section (open, next up)
 
 Metric table from the first eval: with the profile the agent wrote more comments per line than the developer does, without it fewer.
-Weak evidence from seven tasks, and the first quiz was answered at random so it says nothing.
-Reordering quantities first is the cheap precaution.
-If the quiz still sits near chance, cap example-backed rules to the top N per section by confidence, and ask the LLM for fewer, sharper rules.
+Reordering quantities first was the cheap precaution and it was not enough: the real quiz on 2026-10-02 came out 5 of 15 for the profile, below chance, and the author stands by it after several runs.
+Where he picked the plain output the profile output usually carried more comments and doc blocks (extension-parse 9 comment lines against 2, flow-mapper 6 against 0, json-migration 5 against 2), which matches the over-application finding.
+Next: cap example-backed rules to the top N per section by confidence, ask the LLM for fewer, sharper rules, and consider dropping comment-voice rules when the quantity rule already says comments are rare. Re-run `idiolect eval --quiz` after each change, the quiz is the number.
 Also consider a "do less" rule family learned from what the developer does NOT do in the samples: no KDoc on private members, no preview composables, no sealed error hierarchies.
 
 ## 14. check_style cannot point at lines for naming and structure rules (open)
@@ -139,6 +139,6 @@ It does not help the author's own repos, whose rules strip the trailers, which i
 
 "Which sounds like you?" assumes the developer wrote the history by hand.
 For the author's Dissent most of the code came from agents he steered, so the quiz came out 5 of 15 with nothing to learn from it.
-For such a developer the honest question is "Which would you merge into this repo as-is?", which measures what the profile is for in practice: fewer edits before accepting agent output.
-Offer it as `--quiz-merge`, keep the picks in the same report shape, and say in the report which question was asked.
-Suggestion 13 stays parked until a quiz with a meaningful question comes out near chance.
+A second question, "Which would you merge into this repo as-is?", measures what the profile is for in practice: fewer edits before accepting agent output.
+Offer it as `--quiz-merge` alongside the existing quiz, keep the picks in the same report shape, and say in the report which question was asked.
+The author stands by the existing quiz, so this is an addition, not a replacement.
