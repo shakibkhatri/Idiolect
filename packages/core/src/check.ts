@@ -5,6 +5,9 @@ import type { Language, Profile } from "./profile.js";
 import { appliesTo } from "./render.js";
 import { isServed } from "./writer.js";
 
+// ponytail: calibrated on the author's repo so about one file in ten of his own code is flagged, make these repo config if others disagree
+const MIN_ITEMS = 10, MIN_LINES = 100, EXCESS = 2;
+
 export type Violation = { ruleId: string; line?: number; message: string; suggestion: string };
 /** `file` is relative to the repo, used for test detection and path-scoped rules. */
 export type CheckOptions = { language: Language; threshold: number; repo?: string; file?: string };
@@ -19,17 +22,19 @@ export async function checkStyle(profile: Profile, code: string, opts: CheckOpti
   for (const r of rules) {
     const dev = r.evidence.metric!;
     const here = metric(dev.name, stats);
-    if (!here.sampleSize) continue;
     const kind = r.id.startsWith("avoid.") ? "avoid" : r.id.split(".").at(-1)!;
+    // an aggregate over a handful of items is noise. Avoid rules and rules that point at lines are concrete, so no floor
+    const locate = LOCATE[`${dev.name}.${kind}`];
+    if (!here.sampleSize || (kind !== "avoid" && !locate && here.sampleSize < (dev.name.includes("loc") ? MIN_LINES : MIN_ITEMS))) continue;
     // value rules are "keep it small" quantities except the per-kloc ones, which say the developer does a lot of something
     const bad = kind === "high" ? here.value < 0.5
       : kind === "low" ? here.value > 0.5
       : kind === "avoid" ? here.value > 0
-      : kind === "value" ? !dev.name.endsWith("per-kloc") && here.value > dev.value * 1.5
+      : kind === "value" ? !dev.name.endsWith("per-kloc") && here.value > dev.value * EXCESS
       : false;
     if (!bad) continue;
     const message = `${dev.name} is ${fmt(dev.name, here.value)} here (n = ${here.sampleSize}), ${fmt(dev.name, dev.value)} in your code (n = ${dev.sampleSize})`;
-    const lines = LOCATE[`${dev.name}.${kind}`]?.(comments, code) ?? [];
+    const lines = locate?.(comments, code) ?? [];
     if (lines.length) for (const line of lines) out.push({ ruleId: r.id, line, message, suggestion: r.text });
     else out.push({ ruleId: r.id, message, suggestion: r.text });
   }

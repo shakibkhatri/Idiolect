@@ -1,4 +1,4 @@
-import { checkStyle, git, loadRepoConfig, renderStyleMd, appliesTo, isServed, type Language, type LlmProvider, type Profile } from "@idiolect/core";
+import { checkStyle, git, loadRepoConfig, renderStyleMd, rewriteLikeMe, appliesTo, isServed, type Language, type LlmProvider, type Profile } from "@idiolect/core";
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { dirname, relative, resolve } from "node:path";
 import { z } from "zod";
@@ -65,12 +65,6 @@ export function createIdiolectServer(deps: ServerDeps): McpServer {
     } catch (e) { return fail(e); }
   });
 
-  const Rewrite = z.object({ code: z.string().describe("the rewritten code, nothing else"), changes: z.array(z.string()).describe("one line per change, what and why") });
-  const SCOPE = {
-    comments: "Change only comments and doc comments: add, remove, reword or recase them. Leave the code itself untouched.",
-    names: "Change only identifier names. Leave logic, comments and structure untouched.",
-    all: "Change comments, names and structure where the profile asks for it.",
-  };
   server.registerTool("rewrite_like_me", {
     title: "Rewrite code in the developer's style",
     description: "Rewrites code so it reads as if the developer wrote it, keeping behaviour identical. Needs the LLM provider from idiolect init.",
@@ -81,11 +75,7 @@ export function createIdiolectServer(deps: ServerDeps): McpServer {
       const provider = await deps.provider?.();
       if (!provider) throw new Error("rewrite_like_me needs an LLM provider. Run: idiolect init");
       const c = await context(file_path);
-      const style = renderStyleMd(c.profile, { threshold: c.threshold, repo: c.repo, file: c.file, language });
-      const out = await provider.complete({
-        system: `You rewrite code so it reads as if one developer wrote it. Behaviour must stay identical. ${SCOPE[scope]} Do not add anything the profile does not ask for.\n\n${style}`,
-        user: code, schema: Rewrite,
-      });
+      const out = await rewriteLikeMe(c.profile, code, { language, threshold: c.threshold, repo: c.repo, file: c.file, scope }, provider);
       return { ...text(`${out.code}\n\nChanges:\n${out.changes.map((x) => `- ${x}`).join("\n") || "- none"}`), structuredContent: out };
     } catch (e) { return fail(e); }
   });

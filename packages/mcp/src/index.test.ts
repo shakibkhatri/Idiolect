@@ -50,10 +50,11 @@ test("check_style finds the lines that break metric rules", async () => {
   const v = (res.structuredContent as { violations: { rule_id: string; line?: number }[] }).violations;
   expect(v).toContainEqual(expect.objectContaining({ rule_id: "kotlin.comments.lowercase-start-ratio.high", line: 1 }));
   expect(v).toContainEqual(expect.objectContaining({ rule_id: "avoid.errors.force-unwrap", line: 3 }));
-  expect(v).toContainEqual(expect.objectContaining({ rule_id: "kotlin.comments.per-100-loc.value" }));
+  // four lines are too few for a density rule to say anything
+  expect(v).not.toContainEqual(expect.objectContaining({ rule_id: "kotlin.comments.per-100-loc.value" }));
   expect(textOf(res)).toContain("line 1: Start comments in lowercase.");
   const clean = await client.callTool({ name: "check_style", arguments: { code: `// loads the user\nfun load(id: String) = repo.find(id)\n` } });
-  expect((clean.structuredContent as { violations: unknown[] }).violations.filter((x) => (x as { rule_id: string }).rule_id !== "kotlin.comments.per-100-loc.value")).toEqual([]);
+  expect((clean.structuredContent as { violations: unknown[] }).violations).toEqual([]);
 });
 
 test("get_team_rules filters by path, rewrite needs a provider, resource and prompt answer", async () => {

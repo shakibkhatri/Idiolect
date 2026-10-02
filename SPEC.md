@@ -45,13 +45,13 @@ Later: **team mode**, which learns team rules from PR review comments.
 ## 4. Repo structure
 
 Target layout. A package is created when its module is built, so only `core`, `cli`, `eval` and `mcp` exist today.
+Unbot did not get its own package: its fast mode is `checkStyle` in core, its deep mode and rewrite are `unbot.ts` in core because the MCP server shares them, and the command is one file in `cli`.
 
 ```
 packages/
   core/        # collector, analyzer, profile model, profile writer, LLM adapters
   cli/         # `idiolect` command
   mcp/         # MCP server
-  lint/        # AI-tell linter + git hooks
   eval/        # eval harness
   team/        # PR review mining (team mode)
   dashboard/   # local web UI
@@ -216,15 +216,17 @@ After publishing: `claude mcp add idiolect -- npx -y idiolect mcp`. Config snipp
 
 **Done when:** running sync twice changes nothing, and user content outside markers is untouched. Done 2026-10-02, verified on the author's Dissent repo: 78 inserted lines in CLAUDE.md, second run unchanged.
 
-### M7 Unbot, the AI-tell linter (`lint`)
-- `idiolect unbot [files]` checks for AI habits and profile violations
-- Two modes: fast (AST + regex, no LLM) and deep (`--llm`)
-- Examples of AI tells: comments restating the code, "This function...", words like "robust", "seamless", "leverage", "comprehensive", docblocks on trivial private functions, over-generic names (`handleData`, `processItem`), try/catch around everything, emoji in comments
-- `--fix` uses `rewrite_like_me`
-- `idiolect hooks install` adds a pre-commit hook (works with husky / lefthook if present)
+### M7 Unbot, the AI-tell linter (`core` + `cli`)
+- `idiolect unbot [files]` checks for AI habits and profile violations. Without files it checks Kotlin files changed since HEAD plus untracked ones, `--staged` checks the index for hooks, `--all` every tracked Kotlin file
+- Two modes: fast (`checkStyle`, AST + regex, no LLM) and deep (`--llm`, the LLM checks the example-backed voice rules and returns line-level violations, unknown rule ids and lines outside the file are dropped)
+- Examples of AI tells: comments restating the code, "This function...", words like "robust", "seamless", "leverage", "comprehensive", docblocks on trivial private functions, over-generic names (`handleData`, `processItem`), try/catch around everything, emoji in comments. These come from the profile's avoid rules, so a tell the developer actually does is not flagged for them
+- Quantity rules only fire with enough data in the file: at least 10 items for medians and ratios, 100 lines for densities, and a value rule needs 2x the developer's number. Avoid rules fire on a single occurrence. Calibrated on the author's repo: 41 of 799 of his own files flagged, 18 of those real `!!`, emoji and TODO occurrences
+- `--fix` rewrites each flagged file with the same `rewriteLikeMe` the MCP tool uses and re-checks it
+- `idiolect hooks install` writes a pre-commit hook running `idiolect unbot --staged`, appends to `.husky/pre-commit` when present, and points at lefthook.yml instead of editing it
 - Default: warn only. `--strict`: non-zero exit
+- Unbot needs a profile, `idiolect scan --no-llm` makes one without any LLM
 
-**Done when:** a file of typical AI-written Kotlin gets flagged and `--fix` produces something the eval judge prefers.
+**Done when:** a file of typical AI-written Kotlin gets flagged and `--fix` produces something that passes the check and reads like the developer. Done 2026-10-02: `fixtures/kotlin/AiWritten.kt` gets 7 fast and 11 deep violations in Dissent, `--fix` left 0 and produced elvis guards, expression bodies and a one-line KDoc. The judge was not run on it, see suggestion 15
 
 ### M8 Auto refresh (`cli`)
 - Post-commit hook counts commits, every N commits (default 50) runs incremental scan in background
@@ -319,7 +321,7 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
 3. **M4 Eval harness** - prove it works on the author's own repos before going further. Built 2026-10-02. Judge 7/7 for the profile on two repos. Metric table hinted the profile over-comments, so STYLE.md puts quantity rules first. Blind quiz: not done yet as of 2026-10-02, the author will take it later on the stored Dissent report
 4. **M5 MCP server** + **M6 Sync**. Both done 2026-10-02. `get_style` over stdio returns the same 46 rules as `idiolect show` inside the repo, sync is idempotent on the author's repo
 4b. `idiolect rules` done 2026-10-02. Verified in Dissent: reject, approve and edit all survived `idiolect scan --no-llm`
-5. **M7 Unbot linter**
+5. **M7 Unbot linter**. Done 2026-10-02, verified in Dissent, see M7
 6. **Launch:** README with before/after examples, post on Hacker News, r/programming, r/ClaudeAI
 7. Add languages (Swift, TS, Python, Go), **M8 Auto refresh**
 8. **M9 Team mode**, **M10 Dashboard** - only after real usage

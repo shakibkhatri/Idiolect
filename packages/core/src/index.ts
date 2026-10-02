@@ -11,3 +11,4 @@ export { createProvider, type LlmProvider, type LlmRequest } from "./llm.js";
 export { writeRules, buildPrompt, reconcile, isServed, SYSTEM_PROMPT } from "./writer.js";
 export { renderStyleMd, appliesTo, type RenderOptions } from "./render.js";
 export { checkStyle, type Violation, type CheckOptions } from "./check.js";
+export { unbot, deepCheck, voiceRules, rewriteLikeMe, type RewriteScope } from "./unbot.js";

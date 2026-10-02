@@ -88,3 +88,16 @@ Also consider a "do less" rule family learned from what the developer does NOT d
 The analyzer only counts, so `check_style` reports a line for comment rules and `!!` by re-walking the tree in `core/check.ts`, and one aggregate violation for everything else.
 Naming and structure violations (a camelCase constant, a 40-line function) would be more useful with a line.
 Option: let the analyzer optionally collect `{metric, line}` occurrences, then both the checker and Unbot get lines for free.
+
+## 15. Unbot calibration knobs and judge check (open)
+
+`core/check.ts` hard-codes the sample floors (10 items, 100 lines) and the 2x excess for value rules, tuned so about 5% of the author's own Dissent files are flagged.
+Another developer with a flatter or spikier distribution may want them in `.idiolect/config.json`.
+The M7 done criterion also asked for the eval judge to prefer the `--fix` output over the original.
+It passed the check and read right by eye, but nobody ran the judge on a before and after pair. A `--judge` flag on unbot, or an eval task kind "fix", would close that.
+
+## 16. Deep mode drops the message in CLI output (open)
+
+`deepCheck` returns what is wrong (message) and how the line should read (suggestion).
+The CLI prints only the suggestion for violations with a line, because for metric rules the message is boilerplate.
+A `--verbose` flag, or printing the message when it is not the metric sentence, would give the why back.

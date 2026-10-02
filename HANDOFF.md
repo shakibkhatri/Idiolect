@@ -1,7 +1,7 @@
 # Handoff
 
 Read this first, then `SPEC.md`, then `SUGGESTIONS.md` and `bugs/`.
-It was written on 2026-10-02 at the end of the first day of work.
+It was written on 2026-10-02 at the end of the first day of work and updated the same evening after the rules command and M7.
 Every statement here was true at that point.
 Verify against the code before relying on anything that could have moved.
 
@@ -15,20 +15,20 @@ The first commit still carries his work email because the amend needed a force-p
 ## State of the build
 
 Spec section 11 lists the build order.
-M1 collector, M2 analyzer, M3 profile writer, M4 eval harness, M5 MCP server and M6 sync are built, tested and committed.
-Tests: `pnpm test` runs 24 vitest tests, all green.
+M1 collector, M2 analyzer, M3 profile writer, M4 eval harness, M5 MCP server, M6 sync, the `rules` command and M7 Unbot are built, tested and committed.
+Tests: `pnpm test` runs 27 vitest tests, all green.
 Typecheck: `pnpm typecheck`.
 Build: `pnpm build`, which must run before the global `idiolect` command picks up changes.
 The CLI is linked globally with `npm link` from `packages/cli`, so `idiolect` on this machine runs `packages/cli/dist/index.js`.
 
-Not built: M7 Unbot linter, M8 auto refresh, M9 team mode, M10 dashboard.
-M7 is the obvious next step, and `checkStyle` in core is already its fast mode.
+Not built: M8 auto refresh, M9 team mode, M10 dashboard.
+Spec step 6 is launch: README with before/after examples, which does not exist yet.
 
 ## Repo layout
 
 ```
 packages/core    collector, analyzer, metrics, baseline rules, sampler, redact, llm providers, writer, render, config, profile
-packages/cli     idiolect init | scan | show | eval | mcp | sync
+packages/cli     idiolect init | scan | show | rules | unbot | hooks | eval | mcp | sync
 packages/eval    task loading, with/without generation, judge, metric distance, report
 packages/mcp     createIdiolectServer: four tools, one resource, one prompt, transport-agnostic
 data/ai-tells.json       AI writing habits, each tied to a metric id
@@ -73,7 +73,15 @@ Metric rules come first in each section, and the preamble tells the agent to mat
 
 Check (`core/src/check.ts`): `checkStyle` runs the analyzer on a snippet and compares each served metric rule to it, deterministic, no LLM.
 Comment and `!!` rules get line numbers from a second tree walk, everything else is one aggregate violation.
-The same function will be Unbot's fast mode.
+Aggregate rules need 10 items or 100 lines in the snippet and value rules need 2x the developer's number, otherwise a per-file median is noise. Calibrated so 41 of 799 Dissent files are flagged, 18 of them real tells.
+It is Unbot's fast mode.
+
+Unbot (`core/src/unbot.ts`, `cli/src/unbot.ts`): `unbot()` is `checkStyle` plus `deepCheck`, where the LLM checks example-backed voice rules and returns line-level violations, filtered to known rule ids and lines inside the file.
+`rewriteLikeMe` is shared by the MCP tool and `unbot --fix`.
+The CLI picks changed Kotlin files by default, `--staged` for hooks, `--all` for everything. `hooks install` writes a warn-only pre-commit hook.
+`fixtures/kotlin/AiWritten.kt` is the AI-written sample the test and the Dissent check use.
+
+Rules (`cli/src/rules.ts`): `list|show|approve|reject|edit` over `updateRules` in core. Decisions survive `scan`, verified in Dissent.
 
 MCP (`packages/mcp/src/index.ts`): `createIdiolectServer(deps)` takes a profile loader and a provider factory so tests pass a fixture profile.
 `idiolect mcp` wires it to stdio and reads `~/.idiolect` on every call.
@@ -149,13 +157,12 @@ He uses a global `~/.claude/CLAUDE.md` with his general rules, read it.
 
 ## Open items, in order
 
-1. Get the real blind quiz result from Shakib and record it in the spec M4 line.
+1. Shakib takes the blind quiz on `Dissent/.idiolect/eval/2026-10-02T15-08-05-753Z.json` and the result goes in the spec M4 line. He said on 2026-10-02 he has no time yet, so build on without waiting.
 2. If the quiz is near chance, work `SUGGESTIONS.md` item 13: cap voice rules, ask for fewer sharper rules.
 3. Shakib runs `claude mcp add idiolect -- idiolect mcp` and tries `get_style` and `check_style` from Claude Code inside Dissent.
-4. Shakib runs `idiolect sync` inside Dissent and commits the block in CLAUDE.md if he likes it.
-   Running `idiolect scan` once more also drops the new `.idiolect/.gitignore`, until then `.idiolect/` shows as untracked there.
-5. `idiolect rules approve|reject|edit` so pending rules have a path (suggestion 7).
-6. Then M7 Unbot: `idiolect unbot [files]` is `checkStyle` per file, `--llm` adds voice, `--fix` calls the rewrite.
+4. Shakib runs `idiolect sync` and `idiolect hooks install` inside Dissent and commits what he likes. `.idiolect/` is still untracked there.
+5. Spec step 6, launch: README with before/after examples. `fixtures/kotlin/AiWritten.kt` and its `unbot --fix` output are a ready-made before/after.
+6. Then M8 auto refresh, or suggestion 15 (unbot calibration in repo config, judge on fix output) if real use shows the fixed numbers are wrong for someone.
 
 ## Things that bit us, so you do not repeat them
 
