@@ -40,10 +40,11 @@ Verify against the provider docs and fill them in.
 Percentile rules like "functions are about 10 lines" get `0.3 + 0.5 * min(1, n/100)`.
 That is fine for serving, but a proper spread measure (how tight the distribution is) would make the number mean something.
 
-## 7. Approve, reject and edit rules from the CLI (open)
+## 7. Approve, reject and edit rules from the CLI (done 2026-10-02)
 
 Reconcile already honours approved, edited and rejected statuses across rescans, but nothing sets them yet.
 `idiolect rules list|approve|reject|edit <id>` is a small addition and unblocks the pending-rule flow before the dashboard exists.
+Built as `packages/cli/src/rules.ts` over `updateRules` in core, plus `rules show <id>` for the evidence.
 
 ## 8. Gemini CLI and Codex CLI providers (open)
 

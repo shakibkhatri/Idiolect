@@ -63,3 +63,13 @@ export function upsertSource(profile: Profile, source: Source): Profile {
 }
 
 export const commitsToStats = (commits: Commit[]) => analyzeCommits(commits);
+
+/** Sets a decision on rules by id. `edit` needs `text`, the other statuses keep the current text. Unknown ids throw. */
+export function updateRules(profile: Profile, ids: string[], status: "approved" | "rejected" | "edited", text?: string): Profile {
+  const known = new Set(profile.rules.map((r) => r.id));
+  const missing = ids.filter((id) => !known.has(id));
+  if (missing.length) throw new Error(`no rule ${missing.join(", ")}, see: idiolect rules list`);
+  if (status === "edited" && !text?.trim()) throw new Error("edit needs the new rule text");
+  const rules = profile.rules.map((r) => (ids.includes(r.id) ? { ...r, status, ...(status === "edited" ? { text: text!.trim() } : {}) } : r));
+  return { ...profile, rules };
+}

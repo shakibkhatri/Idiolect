@@ -3,6 +3,7 @@ import { analyzeKotlin, isTestPath, collect, detectEmail, emptyProfile, emptySta
 import { loadTasks, renderReport, runEval, type Report } from "@idiolect/eval";
 import { createIdiolectServer } from "@idiolect/mcp";
 import { syncTargets } from "./sync.js";
+import { rulesCommand, writeStyle } from "./rules.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Command } from "commander";
 import { mkdir, readFile } from "node:fs/promises";
@@ -128,7 +129,7 @@ program.command("scan")
     if (provider) process.stderr.write(`asking ${provider.name} ${provider.model} (${estimateTokens(buildPrompt(profile, samples, []).user)} tokens)...\n`);
     profile = { ...profile, rules: await writeRules(profile, samples, provider, ruleOpts) };
     await saveProfile(profile);
-    await writeFile(profilePath(primary).replace(/\.json$/, ".STYLE.md"), renderStyleMd(profile, { threshold: config.confidenceThreshold }));
+    await writeStyle(profile, config.confidenceThreshold);
     const project = profile.rules.filter((r) => r.repo === repo).length;
     if (project) process.stderr.write(`${project} project-only rules kept for this repo, shown by idiolect show inside it\n`);
 
@@ -142,9 +143,9 @@ program.command("scan")
       console.log(summarizeCommits(profile.commitStats));
     }
     const by = (st: string) => profile.rules.filter((r) => r.status === st).length;
-    console.log(`\nrules: ${profile.rules.length} (${by("auto")} auto, ${by("approved")} approved, ${by("pending")} pending, ${by("rejected")} rejected)${provider ? "" : ", metric rules only"}`);
+    console.log(`\nrules: ${profile.rules.length} (${by("auto")} auto, ${by("approved")} approved, ${by("edited")} edited, ${by("pending")} pending, ${by("rejected")} rejected)${provider ? "" : ", metric rules only"}`);
     console.log(`profile: ${profilePath(primary)}`);
-    console.log(`next: idiolect show`);
+    console.log(`next: idiolect show, then idiolect rules list to approve, reject or edit`);
   });
 
 program.command("show")
@@ -178,6 +179,8 @@ program.command("sync")
     const results = await syncTargets(repo, body, o.target ?? config.sync.targets);
     for (const r of results) console.log(`${r.status.padEnd(9)} ${r.file}${r.status === "skipped" ? "  (not present, list it in sync.targets or pass --target to create it)" : ""}`);
   });
+
+program.addCommand(rulesCommand());
 
 program.command("eval")
   .description("generate code with and without your profile and score which sounds more like you")

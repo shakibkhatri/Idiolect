@@ -153,6 +153,7 @@ Start with **Kotlin only**, add others after M5.
 - Minimum evidence: a metric-based rule needs `sampleSize >= minSampleSize` (default 20) and a ratio of >= 0.8 or <= 0.2.
   Below that the LLM gets the number but is told it is weak and must not turn it into a rule
 - On rescan: diff old vs new rules, changed rules become `pending`
+- Decisions: `idiolect rules approve|reject|edit <id>` sets the status. Approved and edited rules are served and kept across rescans, rejected rules are stored but never served and a rescan does not revive them. The MCP server reads the profile per call, so a decision is live immediately, `idiolect sync` has to be re-run by hand
 - Render `STYLE.md` (sections: Naming, Comments, Structure, Errors, Framework, Commits, Avoid, Team rules)
 
 **Done when:** running on the author's own repos produces a profile where every rule has evidence and the author agrees with most of it.
@@ -255,6 +256,7 @@ idiolect init                 # detect emails, languages, create config
 idiolect scan [--repo ...]    # collect + analyze + write profile
 idiolect show [--lang kotlin] # print STYLE.md
 idiolect sync                 # write into agent instruction files
+idiolect rules list|show|approve|reject|edit <id>   # decide on pending or wrong rules, decisions survive rescans
 idiolect unbot [files] [--fix] [--llm] [--strict]
 idiolect hooks install
 idiolect eval [--quiz]
@@ -314,8 +316,9 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
 0. **Spike:** parse one real Kotlin file with `web-tree-sitter`, print the AST. Done 2026-10-02, see `packages/core/src/parser.test.ts`
 1. **M1 Collector** + **M2 Analyzer** (Kotlin). Done 2026-10-02
 2. **M3 Profile writer** + `STYLE.md`. Done 2026-10-02, author reviewed the rules from two repos and found them correct
-3. **M4 Eval harness** - prove it works on the author's own repos before going further. Built 2026-10-02. Judge 7/7 for the profile on two repos. Metric table hinted the profile over-comments, so STYLE.md puts quantity rules first. A real blind quiz is still outstanding
+3. **M4 Eval harness** - prove it works on the author's own repos before going further. Built 2026-10-02. Judge 7/7 for the profile on two repos. Metric table hinted the profile over-comments, so STYLE.md puts quantity rules first. Blind quiz: not done yet as of 2026-10-02, the author will take it later on the stored Dissent report
 4. **M5 MCP server** + **M6 Sync**. Both done 2026-10-02. `get_style` over stdio returns the same 46 rules as `idiolect show` inside the repo, sync is idempotent on the author's repo
+4b. `idiolect rules` done 2026-10-02. Verified in Dissent: reject, approve and edit all survived `idiolect scan --no-llm`
 5. **M7 Unbot linter**
 6. **Launch:** README with before/after examples, post on Hacker News, r/programming, r/ClaudeAI
 7. Add languages (Swift, TS, Python, Go), **M8 Auto refresh**
