@@ -201,7 +201,7 @@ Install, while the package is unpublished and linked globally:
 claude mcp add idiolect -- idiolect mcp
 ```
 After publishing: `claude mcp add idiolect -- npx -y idiolect mcp`. Config snippets for Cursor and other MCP clients go in the README at launch.
-Publishing: the name `idiolect` and the `@idiolect` scope were free on npm on 2026-10-02. The four packages carry `files`, `publishConfig` and repository fields, grammars, tells and eval tasks ship inside their packages, and `pnpm -r publish` releases them after `npm login` and creating the `idiolect` org.
+Publishing: the name `idiolect` was free on npm on 2026-10-02 but `idiolect` as an org or user name was taken, so the internal packages live under the author's user scope as `@shakibkhatri/idiolect-core`, `-eval` and `-mcp`. Nobody installs those directly. The four packages carry `files`, `publishConfig` and repository fields, grammars, tells and eval tasks ship inside their packages, and `pnpm -r publish` releases them after `npm login`.
 
 **Done when:** Claude Code calls `get_style` on a `.kt` file and gets only Kotlin + general rules. Built 2026-10-02, verified over stdio against the author's profile inside the Dissent repo.
 

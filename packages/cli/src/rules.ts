@@ -1,4 +1,4 @@
-import { loadProfile, loadRepoConfig, loadUserConfig, profilePath, renderStyleMd, saveProfile, updateRules, userConfigPath, type Profile, type Rule } from "@idiolect/core";
+import { loadProfile, loadRepoConfig, loadUserConfig, profilePath, renderStyleMd, saveProfile, updateRules, userConfigPath, type Profile, type Rule } from "@shakibkhatri/idiolect-core";
 import { Command } from "commander";
 import { spawnSync } from "node:child_process";
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";

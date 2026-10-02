@@ -1,4 +1,4 @@
-import { emptyProfile, type Profile, type Rule } from "@idiolect/core";
+import { emptyProfile, type Profile, type Rule } from "@shakibkhatri/idiolect-core";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { tmpdir } from "node:os";

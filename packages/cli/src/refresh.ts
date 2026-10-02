@@ -1,4 +1,4 @@
-import { ensureRepoDir, git, loadProfile, loadRepoConfig, loadUserConfig, userConfigPath, type Profile } from "@idiolect/core";
+import { ensureRepoDir, git, loadProfile, loadRepoConfig, loadUserConfig, userConfigPath, type Profile } from "@shakibkhatri/idiolect-core";
 import { Command } from "commander";
 import { spawn } from "node:child_process";
 import { openSync } from "node:fs";

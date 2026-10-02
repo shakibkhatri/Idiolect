@@ -1,4 +1,4 @@
-import type { CommitStats, Counter, Histogram, Language, LanguageStats } from "@idiolect/core";
+import type { CommitStats, Counter, Histogram, Language, LanguageStats } from "@shakibkhatri/idiolect-core";
 
 const pct = (a: number, b: number) => (b ? `${Math.round((100 * a) / b)}%` : "n/a");
 const top = (c: Counter, n = 6) => Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, n).map(([k, v]) => `${k} ${v}`).join(", ") || "none";

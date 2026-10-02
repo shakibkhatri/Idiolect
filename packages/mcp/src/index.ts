@@ -1,4 +1,4 @@
-import { checkStyle, git, languageOf, loadRepoConfig, renderStyleMd, rewriteLikeMe, appliesTo, isServed, type LlmProvider, type Profile } from "@idiolect/core";
+import { checkStyle, git, languageOf, loadRepoConfig, renderStyleMd, rewriteLikeMe, appliesTo, isServed, type LlmProvider, type Profile } from "@shakibkhatri/idiolect-core";
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { dirname, relative, resolve } from "node:path";
 import { z } from "zod";

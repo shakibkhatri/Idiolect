@@ -15,10 +15,10 @@
     "prepack": "cp ../../README.md ."
   },
   "dependencies": {
-    "@idiolect/core": "workspace:*",
-    "@idiolect/eval": "workspace:*",
+    "@shakibkhatri/idiolect-core": "workspace:*",
+    "@shakibkhatri/idiolect-eval": "workspace:*",
     "commander": "^13.0.0",
-    "@idiolect/mcp": "workspace:*",
+    "@shakibkhatri/idiolect-mcp": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.31.0"
   },
   "license": "MIT",

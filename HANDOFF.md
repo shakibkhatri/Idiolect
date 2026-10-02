@@ -121,9 +121,9 @@ Reports go to `<repo>/.idiolect/eval/<timestamp>.{json,md}`.
 
 ## Publishing
 
-Not published yet. The name `idiolect` and the `@idiolect` scope were free on 2026-10-02.
+Not published yet. The name `idiolect` was free on 2026-10-02. The org name `idiolect` was taken, so the internal packages are `@shakibkhatri/idiolect-core`, `-eval` and `-mcp` under Shakib's own user scope, which needs no org.
 Every package has `files`, `license`, `repository` and `publishConfig.access: public`. Grammars and `ai-tells.json` live inside `packages/core`, eval tasks inside `packages/eval/tasks`, so nothing resolves outside its package once installed. The CLI copies the root README in `prepack`.
-Steps for Shakib: `npm login`, create the `idiolect` org on npmjs.com (free for public packages), bump versions, `pnpm -r publish`. Then the install line becomes `npx -y idiolect` and the MCP line `claude mcp add idiolect -- npx -y idiolect mcp`.
+Steps for Shakib: `npm login`, bump versions if wanted, `pnpm -r publish`. Then the install line becomes `npx -y idiolect` and the MCP line `claude mcp add idiolect -- npx -y idiolect mcp`.
 
 ## Config and storage
 

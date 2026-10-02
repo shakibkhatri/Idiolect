@@ -20,18 +20,18 @@ importers:
 
   packages/cli:
     dependencies:
-      '@idiolect/core':
-        specifier: workspace:*
-        version: link:../core
-      '@idiolect/eval':
-        specifier: workspace:*
-        version: link:../eval
-      '@idiolect/mcp':
-        specifier: workspace:*
-        version: link:../mcp
       '@modelcontextprotocol/sdk':
         specifier: ^1.31.0
         version: 1.31.0(zod@4.6.5)
+      '@shakibkhatri/idiolect-core':
+        specifier: workspace:*
+        version: link:../core
+      '@shakibkhatri/idiolect-eval':
+        specifier: workspace:*
+        version: link:../eval
+      '@shakibkhatri/idiolect-mcp':
+        specifier: workspace:*
+        version: link:../mcp
       commander:
         specifier: ^13.0.0
         version: 13.1.0
@@ -50,7 +50,7 @@ importers:
 
   packages/eval:
     dependencies:
-      '@idiolect/core':
+      '@shakibkhatri/idiolect-core':
         specifier: workspace:*
         version: link:../core
       yaml:
@@ -62,12 +62,12 @@ importers:
 
   packages/mcp:
     dependencies:
-      '@idiolect/core':
-        specifier: workspace:*
-        version: link:../core
       '@modelcontextprotocol/sdk':
         specifier: ^1.31.0
         version: 1.31.0(zod@4.6.5)
+      '@shakibkhatri/idiolect-core':
+        specifier: workspace:*
+        version: link:../core
       zod:
         specifier: ^4.6.5
         version: 4.6.5

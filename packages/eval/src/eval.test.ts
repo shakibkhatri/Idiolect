@@ -1,4 +1,4 @@
-import { emptyProfile, emptyStats, upsertSource, analyzeCommits, type LlmProvider } from "@idiolect/core";
+import { emptyProfile, emptyStats, upsertSource, analyzeCommits, type LlmProvider } from "@shakibkhatri/idiolect-core";
 import { expect, test } from "vitest";
 import { loadTasks, metricDistance, renderReport, runEval, DEFAULT_TASKS_DIR } from "./index.js";
 

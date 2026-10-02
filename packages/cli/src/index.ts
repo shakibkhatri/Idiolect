@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { analyze, fileSpread, languageOf, EXTENSIONS, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, ensureRepoDir, userConfigPath, repoConfigPath, loadProfile, mergeStats, profilePath, saveProfile, upsertSource, analyzeCommits, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type UserConfig, type SampleInput, type Language, type LanguageStats } from "@idiolect/core";
-import { DEFAULT_TASKS_DIR, loadTasks, renderReport, runEval, type Report } from "@idiolect/eval";
-import { createIdiolectServer } from "@idiolect/mcp";
+import { analyze, fileSpread, languageOf, EXTENSIONS, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, ensureRepoDir, userConfigPath, repoConfigPath, loadProfile, mergeStats, profilePath, saveProfile, upsertSource, analyzeCommits, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type UserConfig, type SampleInput, type Language, type LanguageStats } from "@shakibkhatri/idiolect-core";
+import { DEFAULT_TASKS_DIR, loadTasks, renderReport, runEval, type Report } from "@shakibkhatri/idiolect-eval";
+import { createIdiolectServer } from "@shakibkhatri/idiolect-mcp";
 import { syncTargets } from "./sync.js";
 import { rulesCommand, writeStyle } from "./rules.js";
 import { hooksCommand, unbotCommand } from "./unbot.js";

@@ -1,4 +1,4 @@
-import { analyzeCommits, analyzeKotlin, emptyStats, mergeStats, METRICS, COMMIT_METRICS, renderStyleMd, type CommitStats, type LanguageStats, type LlmProvider, type Profile, type Sample } from "@idiolect/core";
+import { analyzeCommits, analyzeKotlin, emptyStats, mergeStats, METRICS, COMMIT_METRICS, renderStyleMd, type CommitStats, type LanguageStats, type LlmProvider, type Profile, type Sample } from "@shakibkhatri/idiolect-core";
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";

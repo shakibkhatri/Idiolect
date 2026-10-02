@@ -1,4 +1,4 @@
-import { allExtensions, createProvider, git, languageOf, loadProfile, loadRepoConfig, loadUserConfig, rewriteLikeMe, unbot, userConfigPath, type Violation } from "@idiolect/core";
+import { allExtensions, createProvider, git, languageOf, loadProfile, loadRepoConfig, loadUserConfig, rewriteLikeMe, unbot, userConfigPath, type Violation } from "@shakibkhatri/idiolect-core";
 import { Command } from "commander";
 import { access, readFile, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
