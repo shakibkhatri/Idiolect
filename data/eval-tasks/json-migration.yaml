@@ -1,0 +1,4 @@
+id: json-migration
+language: kotlin
+prompt: |
+  Write Kotlin code that migrates a persisted settings JSON from version 1 (a single `theme` string) to version 2 (`appearance.theme` and `appearance.useSystem`), handling unknown versions.

@@ -15,8 +15,10 @@ export function renderStyleMd(profile: Profile, opts: RenderOptions): string {
   const project = opts.repo ? served.filter((r) => r.repo === opts.repo) : [];
   const out = [`# Code style: ${profile.developer.name}`, ""];
   out.push(`Learned from ${profile.sources.length} ${profile.sources.length === 1 ? "repo" : "repos"}, ${profile.sources.reduce((n, s) => n + s.linesOwned, 0)} lines of the developer's own code. Follow these when writing code, comments and commits for them.`, "");
+  out.push(`Rules with numbers say how much. Match those quantities first: do not add comments, docs or structure beyond them. The other rules describe voice and apply only where you would write something anyway. Plain code with no comment is often the right answer.`, "");
   for (const [category, title] of SECTIONS) {
-    const own = rules.filter((r) => r.category === category && r.scope === "personal").sort((a, b) => b.confidence - a.confidence);
+    // metric-backed rules first: they bound how much, the example-backed ones describe how
+    const own = rules.filter((r) => r.category === category && r.scope === "personal").sort((a, b) => Number(!!b.evidence.metric) - Number(!!a.evidence.metric) || b.confidence - a.confidence);
     if (!own.length) continue;
     out.push(`## ${title}`, "");
     for (const r of own) out.push(`- ${r.text}${opts.evidence ? evidence(r) : ""}`);

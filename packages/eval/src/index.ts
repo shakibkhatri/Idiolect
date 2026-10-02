@@ -13,7 +13,7 @@ export type Report = {
   rules: number;
   tasks: number;
   judge: { withWins: number; total: number; winRate: number; verdicts: Judgement[] };
-  quiz?: { withWins: number; total: number; winRate: number };
+  quiz?: { withWins: number; total: number; winRate: number; picks: { task: string; picked: "with" | "without" | "skip" }[] };
   metricDistance: { with: number; without: number; perMetric: { metric: string; developer: number; with: number; without: number }[] };
   generations: Generation[];
 };
@@ -119,7 +119,8 @@ export function renderReport(r: Report): string {
     out.push("");
   }
   out.push(`## Verdicts`, "");
-  for (const v of r.judge.verdicts) out.push(`- **${v.task}**: ${v.winner} profile. ${v.reason}`);
+  const picked = new Map(r.quiz?.picks.map((p) => [p.task, p.picked]));
+  for (const v of r.judge.verdicts) out.push(`- **${v.task}**: judge says ${v.winner} profile${picked.has(v.task) ? `, developer picked ${picked.get(v.task)}` : ""}. ${v.reason}`);
   out.push("", `## Outputs`, "");
   for (const g of r.generations) out.push(`### ${g.task.id}`, "", `**with profile**`, "", "```kotlin", g.with.trim(), "```", "", `**without**`, "", "```kotlin", g.without.trim(), "```", "");
   return out.join("\n");

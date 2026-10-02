@@ -1,0 +1,5 @@
+id: commit-refactor
+language: kotlin
+kind: commit
+prompt: |
+  Write the commit message for this change: the three screens that showed a battery level each had their own copy of the colour and label logic, and they had drifted (one showed "Low" under 20%, the others under 15%). The logic now lives in one `BatteryLevel` value class with a test, and the three screens call it. No visible change except the threshold is now 15% everywhere.

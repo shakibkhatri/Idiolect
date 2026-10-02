@@ -1,0 +1,4 @@
+id: debounce-search
+language: kotlin
+prompt: |
+  Write a state holder for a search field that debounces typing by 300 ms, cancels the previous search when a new query arrives, and exposes loading, results and an error message to the UI.

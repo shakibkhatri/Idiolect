@@ -215,17 +215,18 @@ program.command("eval")
   });
 
 async function quiz(report: Report) {
-  let withWins = 0;
+  const picks: NonNullable<Report["quiz"]>["picks"] = [];
   for (const g of report.generations) {
     const flip = Math.random() < 0.5;
     const [a, b] = flip ? [g.without, g.with] : [g.with, g.without];
     console.log(`\n==== ${g.task.id}\n\n--- A\n${a.trim()}\n\n--- B\n${b.trim()}\n`);
     const pick = (await ask("Which sounds like you? [A/B/skip]: ")).trim().toUpperCase();
-    if (pick !== "A" && pick !== "B") continue;
-    if ((pick === "A") !== flip) withWins++;
+    if (pick !== "A" && pick !== "B") { picks.push({ task: g.task.id, picked: "skip" }); continue; }
+    picks.push({ task: g.task.id, picked: (pick === "A") !== flip ? "with" : "without" });
   }
-  const total = report.generations.length;
-  return { withWins, total, winRate: total ? withWins / total : 0 };
+  const answered = picks.filter((p) => p.picked !== "skip");
+  const withWins = answered.filter((p) => p.picked === "with").length;
+  return { withWins, total: answered.length, winRate: answered.length ? withWins / answered.length : 0, picks };
 }
 
 async function listAuthors(repo: string) {

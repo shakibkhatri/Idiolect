@@ -1,0 +1,4 @@
+id: date-label
+language: kotlin
+prompt: |
+  Write a Kotlin function that turns an Instant into a short relative label for a list row: "just now", "5 min ago", "yesterday", or the date for anything older than a week. Include tests for the boundaries.

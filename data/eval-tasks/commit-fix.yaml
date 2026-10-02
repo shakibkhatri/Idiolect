@@ -1,0 +1,5 @@
+id: commit-fix
+language: kotlin
+kind: commit
+prompt: |
+  Write the commit message for this change: tapping "sign out" waited for the server to acknowledge before leaving the screen, so on a bad connection the button appeared dead for several seconds. Now the app clears the local session and navigates immediately, and the server call runs in the background and is retried on next launch if it failed. Tested on a device in airplane mode.

@@ -1,0 +1,4 @@
+id: permission-flow
+language: kotlin
+prompt: |
+  Write the Android code that requests the location permission before starting a tracking session, handles "denied" and "denied permanently" differently, and exposes the outcome to the UI state.

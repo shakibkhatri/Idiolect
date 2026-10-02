@@ -1,0 +1,4 @@
+id: flow-mapper
+language: kotlin
+prompt: |
+  Write a Kotlin function that takes a `Flow<List<Reading>>` of sensor readings and exposes a `Flow<ReadingSummary>` with min, max and average, skipping empty lists. Add a small unit test.

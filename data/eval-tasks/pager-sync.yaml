@@ -1,0 +1,4 @@
+id: pager-sync
+language: kotlin
+prompt: |
+  In a Compose screen with a tab row and a horizontal pager, write the code that keeps the selected tab and the pager page in sync in both directions without feedback loops.
