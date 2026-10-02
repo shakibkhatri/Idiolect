@@ -15,20 +15,20 @@ The first commit still carries his work email because the amend needed a force-p
 ## State of the build
 
 Spec section 11 lists the build order.
-M1 collector, M2 analyzer, M3 profile writer, M4 eval harness and M5 MCP server are built, tested and committed.
-Tests: `pnpm test` runs 22 vitest tests, all green.
+M1 collector, M2 analyzer, M3 profile writer, M4 eval harness, M5 MCP server and M6 sync are built, tested and committed.
+Tests: `pnpm test` runs 24 vitest tests, all green.
 Typecheck: `pnpm typecheck`.
 Build: `pnpm build`, which must run before the global `idiolect` command picks up changes.
 The CLI is linked globally with `npm link` from `packages/cli`, so `idiolect` on this machine runs `packages/cli/dist/index.js`.
 
-Not built: M6 sync, M7 Unbot linter, M8 auto refresh, M9 team mode, M10 dashboard.
-M6 is the obvious next step.
+Not built: M7 Unbot linter, M8 auto refresh, M9 team mode, M10 dashboard.
+M7 is the obvious next step, and `checkStyle` in core is already its fast mode.
 
 ## Repo layout
 
 ```
 packages/core    collector, analyzer, metrics, baseline rules, sampler, redact, llm providers, writer, render, config, profile
-packages/cli     idiolect init | scan | show | eval
+packages/cli     idiolect init | scan | show | eval | mcp | sync
 packages/eval    task loading, with/without generation, judge, metric distance, report
 packages/mcp     createIdiolectServer: four tools, one resource, one prompt, transport-agnostic
 data/ai-tells.json       AI writing habits, each tied to a metric id
@@ -79,6 +79,10 @@ MCP (`packages/mcp/src/index.ts`): `createIdiolectServer(deps)` takes a profile 
 `idiolect mcp` wires it to stdio and reads `~/.idiolect` on every call.
 Repo comes from `git rev-parse --show-toplevel` on the file's directory, falling back to the cwd Claude Code started the server in.
 Installed locally with `claude mcp add idiolect -- idiolect mcp`, not yet done on this machine.
+
+Sync (`cli/src/sync.ts`): `syncBlock` replaces or appends the marked block and returns everything else byte for byte.
+`syncTargets` updates the four known files when they exist and creates only AGENTS.md, unless targets are explicit.
+`ensureRepoDir` in `core/src/config.ts` writes `.idiolect/.gitignore` so cache and eval output never show up in the host repo.
 
 LLM providers (`core/src/llm.ts`): `claude-cli` runs the user's installed Claude Code headless with `--json-schema`, no API key.
 Also `anthropic` via the official SDK, `openai` and `openai-compatible` via fetch, `gemini` via fetch.
@@ -148,10 +152,10 @@ He uses a global `~/.claude/CLAUDE.md` with his general rules, read it.
 1. Get the real blind quiz result from Shakib and record it in the spec M4 line.
 2. If the quiz is near chance, work `SUGGESTIONS.md` item 13: cap voice rules, ask for fewer sharper rules.
 3. Shakib runs `claude mcp add idiolect -- idiolect mcp` and tries `get_style` and `check_style` from Claude Code inside Dissent.
-4. M6 sync: write STYLE.md between `<!-- idiolect:start -->` and `<!-- idiolect:end -->` in CLAUDE.md, AGENTS.md, Cursor and Copilot files, idempotent.
+4. Shakib runs `idiolect sync` inside Dissent and commits the block in CLAUDE.md if he likes it.
+   Running `idiolect scan` once more also drops the new `.idiolect/.gitignore`, until then `.idiolect/` shows as untracked there.
 5. `idiolect rules approve|reject|edit` so pending rules have a path (suggestion 7).
-6. Make `.idiolect/eval/` and the cache ignored automatically in the host repo.
-7. Then M7 Unbot, which can reuse `data/ai-tells.json` and the metrics.
+6. Then M7 Unbot: `idiolect unbot [files]` is `checkStyle` per file, `--llm` adds voice, `--fix` calls the rewrite.
 
 ## Things that bit us, so you do not repeat them
 

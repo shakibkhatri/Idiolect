@@ -100,7 +100,8 @@ Storage:
   Merge is a plain sum, so it is exact, order-independent and deterministic. Ratios and percentiles are computed at render time.
   Per-repo stats are kept in `sources[]` so a repo that disagrees with the merged profile can be spotted later.
 - Developer config: `~/.idiolect/config.json` (name, all emails across repos, LLM provider). Never inside a repo, so nothing personal can be committed to a team repo
-- Per-repo config and cache: `<repo>/.idiolect/config.json` holds repo settings only (languages, ignore, sync targets, thresholds), safe to commit. `<repo>/.idiolect/cache/` is git-ignored
+- Per-repo config and cache: `<repo>/.idiolect/config.json` holds repo settings only (languages, ignore, sync targets, thresholds), safe to commit.
+  The tool writes `<repo>/.idiolect/.gitignore` with `cache/` and `eval/` the first time it creates the directory, so the host repo's own `.gitignore` is never touched
 - Team rules: `<repo>/.idiolect/team.json` (committed)
 
 Precedence when serving rules:
@@ -205,10 +206,14 @@ After publishing: `claude mcp add idiolect -- npx -y idiolect mcp`. Config snipp
   - `AGENTS.md`
   - `.cursor/rules/idiolect.mdc`
   - `.github/copilot-instructions.md`
-- Only between `<!-- idiolect:start -->` and `<!-- idiolect:end -->`. Never touch anything else
-- Choose targets in config, default: only files that already exist + `AGENTS.md`
+- Only between `<!-- idiolect:start -->` and `<!-- idiolect:end -->`. Never touch anything else.
+  A missing block is appended at the end of the file, an existing block is replaced in place
+- Targets: without `sync.targets` in config, the four known files are updated if they exist and only `AGENTS.md` is created.
+  With `sync.targets` set, or `--target` on the command line, every listed file is written and created if missing.
+  A fresh `.mdc` file gets the Cursor frontmatter with `alwaysApply: true`
+- Project rules are included because sync runs inside one repo, the same as `idiolect show`
 
-**Done when:** running sync twice changes nothing, and user content outside markers is untouched.
+**Done when:** running sync twice changes nothing, and user content outside markers is untouched. Done 2026-10-02, verified on the author's Dissent repo: 78 inserted lines in CLAUDE.md, second run unchanged.
 
 ### M7 Unbot, the AI-tell linter (`lint`)
 - `idiolect unbot [files]` checks for AI habits and profile violations
@@ -281,7 +286,7 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
   "sampling": { "maxTokens": 40000 },
   "confidenceThreshold": 0.6,
   "minSampleSize": 20,
-  "sync": { "targets": ["AGENTS.md", "CLAUDE.md"] },
+  "sync": { "targets": ["AGENTS.md", "CLAUDE.md", ".cursor/rules/idiolect.mdc"] },
   "refresh": { "everyCommits": 50 },
   "ignore": ["**/build/**", "**/generated/**"]
 }
@@ -310,7 +315,7 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
 1. **M1 Collector** + **M2 Analyzer** (Kotlin). Done 2026-10-02
 2. **M3 Profile writer** + `STYLE.md`. Done 2026-10-02, author reviewed the rules from two repos and found them correct
 3. **M4 Eval harness** - prove it works on the author's own repos before going further. Built 2026-10-02. Judge 7/7 for the profile on two repos. Metric table hinted the profile over-comments, so STYLE.md puts quantity rules first. A real blind quiz is still outstanding
-4. **M5 MCP server** + **M6 Sync**. M5 done 2026-10-02, `get_style` over stdio returns the same 46 rules as `idiolect show` inside the repo
+4. **M5 MCP server** + **M6 Sync**. Both done 2026-10-02. `get_style` over stdio returns the same 46 rules as `idiolect show` inside the repo, sync is idempotent on the author's repo
 5. **M7 Unbot linter**
 6. **Launch:** README with before/after examples, post on Hacker News, r/programming, r/ClaudeAI
 7. Add languages (Swift, TS, Python, Go), **M8 Auto refresh**

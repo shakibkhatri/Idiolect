@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { analyzeKotlin, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, userConfigPath, repoConfigPath, loadProfile, mergeStats, profilePath, saveProfile, upsertSource, analyzeCommits, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type UserConfig, type SampleInput } from "@idiolect/core";
+import { analyzeKotlin, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, ensureRepoDir, userConfigPath, repoConfigPath, loadProfile, mergeStats, profilePath, saveProfile, upsertSource, analyzeCommits, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type UserConfig, type SampleInput } from "@idiolect/core";
 import { loadTasks, renderReport, runEval, type Report } from "@idiolect/eval";
 import { createIdiolectServer } from "@idiolect/mcp";
+import { syncTargets } from "./sync.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Command } from "commander";
 import { mkdir, readFile } from "node:fs/promises";
@@ -162,6 +163,22 @@ program.command("show")
     console.log(renderStyleMd(profile, { threshold: confidenceThreshold, language: o.lang, evidence: o.evidence, repo }));
   });
 
+program.command("sync")
+  .description("write your STYLE.md into agent instruction files, between idiolect markers only")
+  .option("--repo <path>", "repository path", ".")
+  .option("--target <file...>", "files to write, overrides sync.targets in .idiolect/config.json")
+  .action(async (o: { repo: string; target?: string[] }) => {
+    const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"])).trim();
+    const user = await loadUserConfig();
+    if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
+    const profile = await loadProfile(user.emails[0]!);
+    if (!profile) throw new Error("no profile, run: idiolect scan");
+    const config = await loadRepoConfig(repo);
+    const body = renderStyleMd(profile, { threshold: config.confidenceThreshold, repo });
+    const results = await syncTargets(repo, body, o.target ?? config.sync.targets);
+    for (const r of results) console.log(`${r.status.padEnd(9)} ${r.file}${r.status === "skipped" ? "  (not present, list it in sync.targets or pass --target to create it)" : ""}`);
+  });
+
 program.command("eval")
   .description("generate code with and without your profile and score which sounds more like you")
   .option("--repo <path>", "repository path, used for reference samples and project rules", ".")
@@ -204,7 +221,7 @@ program.command("eval")
     const report: Report = await runEval({ profile, provider, references, tasks, repo, threshold: config.confidenceThreshold, concurrency: Number(o.concurrency), onProgress: (m) => process.stderr.write(`  ${m}\n`) });
     if (o.quiz) report.quiz = await quiz(report);
 
-    const dir = join(repo, ".idiolect", "eval");
+    const dir = join(await ensureRepoDir(repo), "eval");
     await mkdir(dir, { recursive: true });
     const stamp = report.generatedAt.replace(/[:.]/g, "-");
     await writeFile(join(dir, `${stamp}.json`), JSON.stringify(report, null, 2));

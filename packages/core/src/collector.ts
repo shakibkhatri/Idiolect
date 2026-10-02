@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { ensureRepoDir } from "./config.js";
 import { matchesGlob } from "node:path";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -60,6 +61,7 @@ export async function collect(opts: CollectOptions): Promise<Collection> {
     cache.files = blamed;
     cache.commits = commits;
     cache.commitsHead = head;
+    await ensureRepoDir(repo);
     await writeCache(cachePath, cache);
   }
   return { repo, head, emails, files, commits };

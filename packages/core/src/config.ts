@@ -17,7 +17,7 @@ export const RepoConfigSchema = z.object({
   sampling: z.object({ maxTokens: z.number().default(40000) }).prefault({}),
   confidenceThreshold: z.number().default(0.6),
   minSampleSize: z.number().default(20),
-  sync: z.object({ targets: z.array(z.string()).default(["AGENTS.md", "CLAUDE.md"]) }).prefault({}),
+  sync: z.object({ targets: z.array(z.string()).optional() }).prefault({}),
   refresh: z.object({ everyCommits: z.number().default(50) }).prefault({}),
   ignore: z.array(z.string()).default([]),
 });
@@ -41,7 +41,15 @@ export async function loadRepoConfig(repo: string): Promise<RepoConfig> {
   return RepoConfigSchema.parse(JSON.parse(raw));
 }
 
+/** Creates <repo>/.idiolect and ignores cache and eval output inside it, so config.json stays the only committable file. */
+export async function ensureRepoDir(repo: string): Promise<string> {
+  const dir = join(repo, ".idiolect");
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, ".gitignore"), "cache/\neval/\n", { flag: "wx" }).catch(() => undefined);
+  return dir;
+}
+
 export async function saveRepoConfig(repo: string, config: Partial<RepoConfig>) {
-  await mkdir(join(repo, ".idiolect"), { recursive: true });
+  await ensureRepoDir(repo);
   await writeFile(repoConfigPath(repo), JSON.stringify(config, null, 2) + "\n");
 }
