@@ -71,9 +71,11 @@ export function baselineRules(profile: Profile, opts: BaselineOptions): Rule[] {
     for (const tell of TELLS) {
       const m = metric(tell.metric, stats);
       if (m.sampleSize < opts.minSampleSize) continue;
-      const never = tell.metric.endsWith("per-kloc") ? m.value <= 0.5 : m.value <= 0.05;
-      if (!never) continue;
-      rules.push(mk(`avoid.${tell.id}`, "avoid", lang, tell.text, tell.metric, m, wilsonLower(1 - Math.min(1, m.value), m.sampleSize)));
+      const perKloc = tell.metric.endsWith("per-kloc");
+      if (perKloc ? m.value > 0.5 : m.value > 0.05) continue;
+      // per-kloc values are occurrences per 1000 lines, so the "never" rate is per line
+      const never = perKloc ? 1 - m.value / 1000 : 1 - m.value;
+      rules.push(mk(`avoid.${tell.id}`, "avoid", lang, tell.text, tell.metric, m, wilsonLower(never, m.sampleSize)));
     }
   }
   const c = profile.commitStats;
