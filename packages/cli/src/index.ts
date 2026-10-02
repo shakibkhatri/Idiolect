@@ -6,6 +6,7 @@ import { syncTargets } from "./sync.js";
 import { rulesCommand, writeStyle } from "./rules.js";
 import { hooksCommand, unbotCommand } from "./unbot.js";
 import { refreshCommand, statusCommand } from "./refresh.js";
+import { ttyQuiz, webQuiz } from "./quiz.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Command } from "commander";
 import { mkdir, readFile } from "node:fs/promises";
@@ -202,11 +203,13 @@ program.command("eval")
   .option("--repo <path>", "repository path, used for reference samples and project rules", ".")
   .option("--tasks <dir>", "task directory", DEFAULT_TASKS_DIR)
   .option("--only <ids...>", "run only these task ids")
-  .option("--quiz", "after the judge, show pairs blind and let you pick")
+  .option("--quiz", "after the judge, show pairs blind in your browser and let you pick")
+  .option("--tty", "take the quiz in the terminal instead of the browser")
   .option("--from <report.json>", "skip generation, quiz an existing report and update it")
   .option("--concurrency <n>", "parallel LLM calls", "3")
-  .action(async (o: { repo: string; tasks: string; only?: string[]; quiz?: boolean; from?: string; concurrency: string }) => {
+  .action(async (o: { repo: string; tasks: string; only?: string[]; quiz?: boolean; tty?: boolean; from?: string; concurrency: string }) => {
     const repo = resolve(o.repo);
+    const quiz = (report: Report) => (o.tty ? ttyQuiz(report) : webQuiz(report));
     if (o.from) {
       const path = resolve(o.from);
       const report = JSON.parse(await readFile(path, "utf8")) as Report;
@@ -261,21 +264,6 @@ program.command("mcp")
     });
     await server.connect(new StdioServerTransport());
   });
-
-async function quiz(report: Report) {
-  const picks: NonNullable<Report["quiz"]>["picks"] = [];
-  for (const g of report.generations) {
-    const flip = Math.random() < 0.5;
-    const [a, b] = flip ? [g.without, g.with] : [g.with, g.without];
-    console.log(`\n==== ${g.task.id}\n\n--- A\n${a.trim()}\n\n--- B\n${b.trim()}\n`);
-    const pick = (await ask("Which sounds like you? [A/B/skip]: ")).trim().toUpperCase();
-    if (pick !== "A" && pick !== "B") { picks.push({ task: g.task.id, picked: "skip" }); continue; }
-    picks.push({ task: g.task.id, picked: (pick === "A") !== flip ? "with" : "without" });
-  }
-  const answered = picks.filter((p) => p.picked !== "skip");
-  const withWins = answered.filter((p) => p.picked === "with").length;
-  return { withWins, total: answered.length, winRate: answered.length ? withWins / answered.length : 0, picks };
-}
 
 async function listAuthors(repo: string) {
   const out = await git(repo, ["shortlog", "-sne", "--all", "--no-merges"]);
