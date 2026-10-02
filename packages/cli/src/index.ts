@@ -16,7 +16,8 @@ import { writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 
-const program = new Command().name("idiolect").description("Learn your coding style and feed it to AI agents");
+const VERSION = (JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8")) as { version: string }).version;
+const program = new Command().name("idiolect").description("Learn your coding style and feed it to AI agents").version(VERSION);
 const PROVIDERS = ["claude-cli", "anthropic", "openai", "gemini", "openai-compatible", "none"] as const;
 type Provider = UserConfig["llm"]["provider"];
 
