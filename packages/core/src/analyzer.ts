@@ -23,7 +23,7 @@ export type LanguageStats = {
   go: { errChecks: number; namedReturns: number; structs: number; interfaces: number; panics: number };
 };
 
-export type CommitStats = { count: number; subjectLength: Histogram; lowercaseStart: number; conventionalPrefix: number; trailingPeriod: number; withBody: number; tense: Counter };
+export type CommitStats = { count: number; subjectLength: Histogram; lowercaseStart: number; conventionalPrefix: number; trailingPeriod: number; withBody: number; bodyLines: number; bodyLinesWrapped: number; tense: Counter };
 
 const KINDS: NameKind[] = ["function", "class", "property", "local", "parameter", "constant"];
 
@@ -282,7 +282,7 @@ function hasAncestor(n: Node, pred: (p: Node) => boolean) {
 const CONVENTIONAL = /^(feat|fix|chore|docs|refactor|test|style|perf|build|ci|revert)(\([^)]+\))?!?:\s/i;
 
 export function analyzeCommits(commits: Commit[]): CommitStats {
-  const s: CommitStats = { count: 0, subjectLength: {}, lowercaseStart: 0, conventionalPrefix: 0, trailingPeriod: 0, withBody: 0, tense: {} };
+  const s: CommitStats = { count: 0, subjectLength: {}, lowercaseStart: 0, conventionalPrefix: 0, trailingPeriod: 0, withBody: 0, bodyLines: 0, bodyLinesWrapped: 0, tense: {} };
   for (const c of commits) {
     s.count++;
     bump(s.subjectLength, c.subject.length);
@@ -292,6 +292,8 @@ export function analyzeCommits(commits: Commit[]): CommitStats {
     if (/^[a-z]/.test(rest)) s.lowercaseStart++;
     if (c.subject.endsWith(".")) s.trailingPeriod++;
     if (c.body) s.withBody++;
+    // a hard-wrapped body keeps every line at 72 or so, an unwrapped one has one long line per paragraph
+    for (const line of c.body.split("\n")) { if (!line.trim()) continue; s.bodyLines++; if (line.length <= 80) s.bodyLinesWrapped++; }
     const verb = rest.split(/\s+/)[0]?.toLowerCase() ?? "";
     // ponytail: suffix heuristic, "added" past, "adds" third person, else imperative
     bump(s.tense, /ed$/.test(verb) ? "past" : /[^s]s$/.test(verb) ? "thirdPerson" : "imperative");

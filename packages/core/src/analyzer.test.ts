@@ -89,6 +89,6 @@ test("casing", () => {
 
 test("commit stats", () => {
   const mk = (subject: string, body = "") => ({ hash: "h", email: "e", date: "d", subject, body });
-  const s = analyzeCommits([mk("add login screen", "details"), mk("feat(ui): Added button"), mk("Fixes crash."), mk("refactor repository")]);
-  expect(s).toMatchObject({ count: 4, lowercaseStart: 2, conventionalPrefix: 1, trailingPeriod: 1, withBody: 1, tense: { imperative: 2, past: 1, thirdPerson: 1 } });
+  const s = analyzeCommits([mk("add login screen", "details\n\n" + "x".repeat(81)), mk("feat(ui): Added button"), mk("Fixes crash."), mk("refactor repository")]);
+  expect(s).toMatchObject({ count: 4, lowercaseStart: 2, conventionalPrefix: 1, trailingPeriod: 1, withBody: 1, bodyLines: 2, bodyLinesWrapped: 1, tense: { imperative: 2, past: 1, thirdPerson: 1 } });
 });

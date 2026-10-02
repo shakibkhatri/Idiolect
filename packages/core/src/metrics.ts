@@ -73,6 +73,7 @@ export const COMMIT_METRICS: Record<string, (c: CommitStats) => Metric> = {
   "commits.conventional-ratio": (c) => ratio(c.conventionalPrefix, c.count),
   "commits.trailing-period-ratio": (c) => ratio(c.trailingPeriod, c.count),
   "commits.body-ratio": (c) => ratio(c.withBody, c.count),
+  "commits.body-wrap-ratio": (c) => ratio(c.bodyLinesWrapped ?? 0, c.bodyLines ?? 0),
   "commits.imperative-ratio": (c) => ratio(c.tense.imperative ?? 0, c.count),
   "commits.past-ratio": (c) => ratio(c.tense.past ?? 0, c.count),
 };

@@ -87,6 +87,8 @@ const COMMIT_DEFS: Def[] = [
   { metric: "commits.trailing-period-ratio", category: "commits", kind: "low", text: () => "No period at the end of a commit subject." },
   { metric: "commits.body-ratio", category: "commits", kind: "high", text: () => "Commits have a body explaining why." },
   { metric: "commits.body-ratio", category: "commits", kind: "low", text: () => "Subject line only. Commit bodies are rare." },
+  { metric: "commits.body-wrap-ratio", category: "commits", kind: "high", text: () => "Hard-wrap commit body lines at 72 characters." },
+  { metric: "commits.body-wrap-ratio", category: "commits", kind: "low", text: () => "Do not hard-wrap commit bodies. One paragraph per line." },
   { metric: "commits.subject-p50", category: "commits", kind: "value", text: (m) => `Commit subjects are about ${m.value} characters.` },
 ];
 
