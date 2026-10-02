@@ -1,7 +1,7 @@
 # Handoff
 
 Read this first, then `SPEC.md`, then `SUGGESTIONS.md` and `bugs/`.
-Written on 2026-10-02 at the end of the first day of work, rewritten the same night after the release.
+Written on 2026-10-02 at the end of the first day of work, rewritten the same night after the release, and again late that night after suggestion 13 and six smaller items.
 Every statement here was true at that point.
 Verify against the code before relying on anything that could have moved.
 
@@ -20,21 +20,19 @@ Shakib installed it with `npm install -g idiolect` on a second laptop and it wor
 Everything in the spec build order up to and including M8 exists: collector, analyzer, profile writer, eval, MCP server, sync, Unbot, auto refresh, plus the `rules` command.
 Languages: Kotlin, TypeScript, Python, Go. Swift is the only spec language left and needs its grammar built with the tree-sitter CLI.
 Not built: M9 team mode, M10 dashboard. The spec says only after real usage, and that still holds.
-Tests: `pnpm test`, 37 vitest tests, all green. `pnpm typecheck`. `pnpm build` must run before the global `idiolect` picks up changes.
+Tests: `pnpm test`, 43 vitest tests, all green. `pnpm typecheck`. `pnpm build` must run before the global `idiolect` picks up changes.
 On this machine `idiolect` is the npm-linked dev build from `packages/cli`, not the published one. Keep it that way while developing.
 
-## The verdict and the next build
+## The verdict, where it stands
 
 The quiz is the headline metric: the developer sees the profile output and the plain output blind and picks which sounds like them.
-Shakib took it on the stored Dissent report on 2026-10-02 and picked the profile output 5 of 15 times, while the LLM judge picked it 15 of 15.
-He took it several times and stands by the result. Treat it as ground truth.
-Below chance means the profile as served makes agent output read less like him. The judge is flattering its own styled output, as the spec predicted.
-
-So the next build is `SUGGESTIONS.md` item 13: fewer, sharper rules.
-Where he picked the plain output, the profile output usually carried more comments and doc blocks, which matches the over-application finding from the first eval.
-Concrete starting points: cap example-backed rules per section by confidence, ask the writer for fewer rules, and drop comment-voice rules when the quantity rule already says comments are rare.
-After each change run `idiolect eval` in Dissent and have Shakib take `idiolect eval --from <report.json> --quiz`. The quiz is the number, nothing else counts.
-Context: much of Dissent was itself written by agents Shakib steered, with co-author trailers stripped by his own rules. Only 42 of 537 commits and 7% of blamed lines carry a trailer. The profile partly describes an accepted agent style. Suggestions 21 and 22 record two ideas that follow from that.
+First quiz, 55-rule profile, 2026-10-02 afternoon: 5 of 15 for the profile, judge 15 of 15. Below chance.
+Suggestion 13 followed the same night. Round 1 capped voice rules at three per section in the render: quiz 7 of 15, judge 11 of 15, and the profile output stopped carrying more comment lines than the plain one.
+Round 2 rescanned Dissent with a writer prompt that asks for at most twelve rules and defines confidence as the share of samples, plus a new commit-body wrap rule: judge 13 of 15, metric distance 0.136 against 0.140.
+Shakib stopped quizzing before grading round 2, so it has no quiz. The quiz stands at chance. He decided to move on with that known, and the spec says so.
+What the lost pairs taught: once the over-commenting was gone, the two outputs read alike and his picks looked like noise. In composable-card he picked the plain output although it carried the only doc block. The profile needs to add his habits, not only remove noise, and suggestion 22 records that the question itself may be wrong for a repo mostly written by agents he steered.
+The round 2 profile was scanned under a backup and his live profile was restored afterwards. His live profile is still the 79-rule one from before Python, the test names, the spread and the agent-trailer exclusion. One `idiolect scan` in Dissent rebuilds it with everything.
+Reports in Dissent: `2026-10-02T15-08-05-753Z` is the first profile with his 6 of 15 retake, `2026-10-02T20-49-47-640Z` round 1 with 7 of 15, `2026-10-02T21-29-38-667Z` round 2 ungraded, `2026-10-02T21-38-39-950Z` a two-task TypeScript smoke test.
 
 ## Repo layout
 
@@ -53,6 +51,7 @@ scripts/verify/              second-opinion counters per language and the recipe
 ## How the pipeline works
 
 Collector (`core/src/collector.ts`): `git ls-tree` at HEAD for files, `git blame -w --line-porcelain` per file for owned line ranges, `git log` for the author's commits.
+Commits whose message carries an agent trailer (Claude, Copilot, Codex, Gemini, Cursor, Devin, Aider) are listed once per scan with `git log --grep`. Their lines are dropped while parsing blame and their messages from the commit list, and `scan` prints how many were excluded. Dissent: 42 commits, owned lines 106792 down to 95536.
 Cache per file by blob hash in `<repo>/.idiolect/cache/collector.json`. The cache records the email list it was built for and is discarded when the list changes.
 `.d.ts` files and the usual build and vendor dirs are ignored by default, plus `.idiolectignore`.
 
@@ -78,10 +77,12 @@ Each LLM rule carries `learnedIn`, a rescan replaces only rules learned in that 
 `reconcile` keeps approved, edited and rejected statuses across rescans. An approved rule whose text changed becomes pending. Auto rules are replaced in place.
 
 Render (`core/src/render.ts`): STYLE.md with Naming, Comments, Structure, Errors, Framework, Commits, Avoid, then Project conventions. Metric rules first in each section.
+Every metric rule and every approved or edited rule is served, then the top three example-backed rules per section by confidence, `VOICE_RULES_PER_SECTION`. The Comments section gets a lead-in tying the voice rules to the quantities above.
+A language under 5% of the developer's lines is left out of the full render and only served when asked for by language or file.
 When more than one language is served, language-specific rules get a language label, and identical texts print once.
 
 Check (`core/src/check.ts`): `checkStyle` compares every served metric rule against a snippet, deterministic. Comment, force-unwrap and `any` rules get line numbers from a second walk, the rest are one aggregate violation.
-Floors: avoid rules fire on one occurrence, located ratio rules need 3 items, aggregates need 10 items or 100 lines, value rules need 2x the developer's number. Calibrated so about 5% of Shakib's own files are flagged.
+Floors: avoid rules fire on one occurrence, located ratio rules need 3 items, aggregates need 10 items or 100 lines, value rules need 2x the developer's number. Calibrated so about 5% of Shakib's own files are flagged. They live in the repo config under `check` and both Unbot and the MCP `check_style` read them.
 
 Unbot (`core/src/unbot.ts`, `cli/src/unbot.ts`): fast mode is `checkStyle`, `--llm` adds `deepCheck` where the LLM checks the example-backed voice rules with line numbers, `--fix` rewrites with `rewriteLikeMe`, which the MCP tool shares.
 Default files are what changed since HEAD, `--staged` for hooks, `--all` for everything. `--strict` exits 1.
@@ -98,8 +99,10 @@ Sync (`cli/src/sync.ts`): writes between `<!-- idiolect:start -->` and `<!-- idi
 
 LLM providers (`core/src/llm.ts`): `claude-cli` runs the installed Claude Code headless with `--json-schema`, no API key. Also `anthropic`, `openai`, `openai-compatible`, `gemini`. OpenAI and Gemini need `llm.model`.
 
-Eval (`packages/eval/src/index.ts`): each task generated with and without STYLE.md, a judge picks blind against reference samples, metric distance compares outputs to the developer's stats. `--from <report> --quiz` replays a stored run for the human quiz.
-Kotlin only, suggestion 19 covers other languages.
+Eval (`packages/eval/src/index.ts`): each task generated with and without STYLE.md, a judge picks blind against reference samples, metric distance compares outputs to the developer's stats per language. 15 Kotlin and 5 TypeScript tasks. The task language picks the persona, the analyzer and the reference samples.
+The eval system prompt says "Write the way this developer writes. Their style profile:" and nothing about following it strictly, because CLAUDE.md gives agents no such push either.
+`--from <report> --quiz` replays a stored run for the human quiz, `--from latest` takes the newest report in the repo. The quiz opens in the browser from `cli/src/quiz.ts`: a localhost server, one HTML string, two clickable cards, shared lines dimmed only when the outputs mostly overlap, keys A, B and S, a result screen with chance marked. The page never learns which side is the profile until the last pick. `--tty` is the old terminal quiz.
+Screenshots for checking the page were taken headless with Playwright's chromium shell under `~/Library/Caches/ms-playwright`, there is no Chrome on this machine. A `--virtual-time-budget` lets the fade-in finish first.
 
 ## Publishing
 
@@ -117,9 +120,9 @@ Shakib's profile is under `shakib.khatri@ires.de`. A stray `kenediid.ali@ires.de
 ## Real data so far
 
 Dissent, personal, 794 Kotlin files, 56 TypeScript, 6 Python, 523 commits. device-manager-app, work, four authors, 449 Kotlin files owned, 391 commits.
-Shakib's live profile has 79 rules from his own rescan of Dissent on 2026-10-02 with the LLM. He has not rescanned since the per-file spread, the `it()` test names and the Python analyzer landed, so one `idiolect scan` in Dissent picks those up.
+Shakib's live profile has 79 rules from his own rescan of Dissent on 2026-10-02 with the LLM. He has not rescanned since the per-file spread, the `it()` test names, the Python analyzer, the fewer-rules writer prompt, the commit wrap rule and the agent-trailer exclusion landed, so one `idiolect scan` in Dissent picks all of that up.
 Shakib reviewed the earlier 55 rules and called them mostly correct.
-Eval on Dissent, 15 tasks: judge 15/15, quiz 5/15. Eval on the work repo, 7 tasks: judge 7/7, no quiz.
+Eval on Dissent, 15 tasks: judge 15/15, quiz 5/15 on the first profile; 11/15 and 7/15 with the capped render; 13/15 and no quiz after the rescan. Eval on the work repo, 7 tasks: judge 7/7, no quiz.
 
 Other developers' repos, scanned with an isolated `HOME` so nothing of Shakib's was touched: tidwall/gjson (Go), dabeaz/sly (Python), sindresorhus/ky (TypeScript), JakeWharton/picnic (Kotlin). Each analyzer matched an independent counter within a few percent and exactly on the idiom counters. `scripts/verify/README.md` has the numbers and the recipe.
 
@@ -149,10 +152,11 @@ He uses a global `~/.claude/CLAUDE.md` with his general rules, read it.
 
 ## Open items, in order
 
-1. Suggestion 13: fewer, sharper rules. Change, `idiolect eval` in Dissent, Shakib takes the quiz, repeat until the quiz is clearly above chance. Back up his profile before any scan you run.
-2. Shakib runs `idiolect scan` in Dissent once to pick up Python, the `it()` test names and the per-file spread, then `idiolect sync`, `idiolect hooks install`, and `claude mcp add idiolect -- npx -y idiolect mcp`. None of that has been done on his machine yet. `.idiolect/` is still untracked in Dissent.
-3. Launch post once the quiz has a number worth posting. README has the before and after.
-4. Then Swift (suggestion 3), suggestions 15, 16, 19, 20, 21, 22, or M9 and M10 after real usage.
+1. Shakib runs `idiolect scan` in Dissent once, then `idiolect sync`, `idiolect hooks install`, and `claude mcp add idiolect -- npx -y idiolect mcp`. None of that has been done on his machine yet. `.idiolect/` is still untracked in Dissent. These touch his repo and his Claude Code config, so they are his to run.
+2. Swift (suggestion 3). `tree-sitter-swift` 0.7.1 ships no wasm and `tree-sitter build --wasm` needs emscripten or docker, neither is installed. Installing emscripten with Homebrew changes his machine, ask first.
+3. Launch post once there is a number worth posting. README has the before and after.
+4. Suggestion 15's judge half, suggestion 22, the "do less" rule family from suggestion 13, then the older open suggestions, or M9 and M10 after real usage.
+5. The quiz page is the seed of the dashboard. If M10 starts, grow it from `cli/src/quiz.ts`, not from a framework.
 
 ## Things that bit us, so you do not repeat them
 
@@ -167,3 +171,6 @@ The blame cache ignored the email list until picnic's third author email changed
 A per-file ratio over a handful of items is noise. Every time Unbot flagged half of Shakib's own files, the fix was a floor, not a threshold.
 zsh does not word-split `$files`. Pipe `git ls-files` into `xargs` or loop with `while read` in verification scripts.
 `init` accumulates emails in `~/.idiolect/config.json`, so a test with fewer emails needs a fresh `HOME`.
+A long timestamped `--from` path sent Shakib to the wrong report, he graded the old profile again and it looked like a result. `--from latest` and the run subtitle on the quiz page exist because of that.
+zsh treats a bare `=word` argument as a command lookup, so `echo ====` fails. Quote it.
+In a Python heredoc, a TypeScript template literal that contains `\\"` needs a raw string or doubled backslashes, otherwise the replacement silently never matches.
