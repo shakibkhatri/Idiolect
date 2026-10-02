@@ -102,18 +102,20 @@ It passed the check and read right by eye, but nobody ran the judge on a before 
 The CLI prints only the suggestion for violations with a line, because for metric rules the message is boilerplate.
 A `--verbose` flag, or printing the message when it is not the metric sentence, would give the why back.
 
-## 17. TypeScript test names live in it() strings (open)
+## 17. TypeScript test names live in it() strings (done 2026-10-02)
 
 The analyzer counts `function` declarations in test files as test functions and routes their names to `naming.testNames`.
 Vitest and Jest tests are `it("does x", () => ...)` callbacks, so a TypeScript test suite shows up as a handful of helper functions.
 Read the first string argument of `it`, `test` and `describe` calls as the test name, and classify its style (sentence, should-style, given/when/then).
+Done for `it` and `test` with two buckets, "should ..." versus a plain statement, and a `naming.test-should-ratio` rule pair.
 
-## 18. Ratio rules from bimodal habits flag whole files (open)
+## 18. Ratio rules from bimodal habits flag whole files (done 2026-10-02)
 
 The author's TypeScript has JSDoc on 16% of comments overall, but some files are fully documented and others have none.
 The merged ratio produces a "doc comments are rare" rule that then fires on every fully documented file.
 Unbot no longer lists each doc comment for that rule, but the rule itself is still weak evidence.
 Per-file counts during the scan would allow a spread check: a habit that varies this much between files is not a rule, or gets its confidence halved like a habit that varies between repos.
+Done: the scan keeps per-file stats, `fileSpread` counts files over and under 0.5 for every ratio metric, the source stores it, and a high or low rule where 15% or more of files do the opposite gets half confidence and says "Varies by file".
 
 ## 19. TypeScript eval tasks (open)
 

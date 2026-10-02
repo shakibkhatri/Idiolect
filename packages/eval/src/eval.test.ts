@@ -1,9 +1,8 @@
 import { emptyProfile, emptyStats, upsertSource, analyzeCommits, type LlmProvider } from "@idiolect/core";
-import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";
-import { loadTasks, metricDistance, renderReport, runEval } from "./index.js";
+import { loadTasks, metricDistance, renderReport, runEval, DEFAULT_TASKS_DIR } from "./index.js";
 
-const tasksDir = fileURLToPath(new URL("../../../data/eval-tasks", import.meta.url));
+const tasksDir = DEFAULT_TASKS_DIR;
 
 test("loads the shipped tasks", async () => {
   const tasks = await loadTasks(tasksDir);

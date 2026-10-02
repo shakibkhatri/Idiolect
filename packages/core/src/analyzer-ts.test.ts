@@ -41,3 +41,13 @@ test("languageOf and isTestPath know TypeScript", () => {
   expect(isTestPath("functions/test/helpers.ts")).toBe(true);
   expect(isTestPath("functions/src/battles/outcome.ts")).toBe(false);
 });
+
+test("TypeScript test files count it() and test() calls as test functions named by their string", async () => {
+  const code = `import { it, test, describe } from "vitest";\ndescribe("users", () => {\n  it("should load a user", () => {});\n  it("rejects an unknown id", () => {});\n  test(\`caches \${1} user\`, () => {});\n  function helper() { return 1; }\n});\n`;
+  const s = await analyzeTypeScript(code, undefined, { test: true });
+  expect(s.tests.functions).toBe(4); // three cases and the helper
+  expect(s.naming.testNames).toEqual({ should: 1, sentence: 2, camel: 1 });
+  expect(metric("naming.test-should-ratio", s).value).toBeCloseTo(1 / 3);
+  const prod = await analyzeTypeScript(code);
+  expect(prod.tests.functions).toBe(0);
+});

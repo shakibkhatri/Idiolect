@@ -114,3 +114,17 @@ test("sampler respects the token budget", async () => {
   expect(s.functions.length).toBeGreaterThan(0);
   expect(s.functions.length).toBeLessThan(50);
 });
+
+test("a ratio habit that one file in six does the opposite way gets half confidence and says so", async () => {
+  const stats = emptyStats();
+  stats.comments.line = 160; stats.comments.doc = 40; // 20% doc comments overall, a "low" rule
+  const base = { ...emptyProfile("me", ["me@x"]), stats: { kotlin: stats } as Profile["stats"] };
+  const plain = baselineRules({ ...base, sources: [] }, { minSampleSize: 20 }).find((r) => r.id === "kotlin.comments.doc-ratio.low")!;
+  const src = { repo: "/r", head: "h", scannedAt: "t", commits: 1, linesOwned: 1, stats: { kotlin: stats }, commitStats: analyzeCommits([]) };
+  const split = baselineRules({ ...base, sources: [{ ...src, spread: { kotlin: { "comments.doc-ratio": { under: 6, over: 2 } } } }] }, { minSampleSize: 20 }).find((r) => r.id === "kotlin.comments.doc-ratio.low")!;
+  expect(split.confidence).toBeCloseTo(plain.confidence / 2, 1);
+  expect(split.text).toContain("Varies by file: 2 of 8 files");
+  // one of nine is under the line
+  const fine = baselineRules({ ...base, sources: [{ ...src, spread: { kotlin: { "comments.doc-ratio": { under: 8, over: 1 } } } }] }, { minSampleSize: 20 }).find((r) => r.id === "kotlin.comments.doc-ratio.low")!;
+  expect(fine.confidence).toBe(plain.confidence);
+});

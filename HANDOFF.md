@@ -33,8 +33,8 @@ packages/core    collector, analyzer, metrics, baseline rules, sampler, redact, 
 packages/cli     idiolect init | scan | show | rules | unbot | hooks | status | refresh | eval | mcp | sync
 packages/eval    task loading, with/without generation, judge, metric distance, report
 packages/mcp     createIdiolectServer: four tools, one resource, one prompt, transport-agnostic
-data/ai-tells.json       AI writing habits, each tied to a metric id
-data/eval-tasks/*.yaml   15 Kotlin tasks, two of them commit messages
+packages/core/data/ai-tells.json   AI writing habits, each tied to a metric id, some per language
+packages/eval/tasks/*.yaml         15 Kotlin tasks, two of them commit messages
 fixtures/kotlin          Sample.kt for parser and analyzer tests, AiWritten.kt for unbot
 fixtures/typescript      Sample.ts for the TypeScript analyzer test
 fixtures/python          sample.py
@@ -66,6 +66,9 @@ Baseline (`core/src/baseline.ts`): deterministic rules from metrics, high fires 
 Confidence is the 95% Wilson lower bound.
 A metric that disagrees by 0.4 or more between repos halves confidence and appends "Varies by repo".
 Avoid rules come from `data/ai-tells.json` when the developer basically never does the thing.
+
+The scan also keeps per-file stats and stores a per-file spread of every ratio metric on the source. `baseline.ts` halves the confidence of a high or low rule where 15% or more of files do the opposite (the other side of 0.5) and appends "Varies by file".
+TypeScript test files count `it()` and `test()` calls as test functions, named by their string, with a should-versus-statement metric.
 
 Sampler (`core/src/sampler.ts`): deterministic stratified samples, 30 production functions, 100 comments, 100 commits, under a token budget, run through `redact.ts`.
 
@@ -115,6 +118,12 @@ A judge sees reference samples from the developer's real code and picks blind.
 Metric distance compares ratio metrics of all outputs merged against the developer's stats.
 Reports go to `<repo>/.idiolect/eval/<timestamp>.{json,md}`.
 `idiolect eval --from <report.json> --quiz` replays a stored run for the human quiz without new LLM calls.
+
+## Publishing
+
+Not published yet. The name `idiolect` and the `@idiolect` scope were free on 2026-10-02.
+Every package has `files`, `license`, `repository` and `publishConfig.access: public`. Grammars and `ai-tells.json` live inside `packages/core`, eval tasks inside `packages/eval/tasks`, so nothing resolves outside its package once installed. The CLI copies the root README in `prepack`.
+Steps for Shakib: `npm login`, create the `idiolect` org on npmjs.com (free for public packages), bump versions, `pnpm -r publish`. Then the install line becomes `npx -y idiolect` and the MCP line `claude mcp add idiolect -- npx -y idiolect mcp`.
 
 ## Config and storage
 
@@ -177,7 +186,7 @@ He uses a global `~/.claude/CLAUDE.md` with his general rules, read it.
 4. Shakib runs `idiolect sync` and `idiolect hooks install` inside Dissent and commits what he likes. `.idiolect/` is still untracked there.
 5. Shakib reads README.md and decides about posting.
 6. Shakib runs `idiolect scan` in Dissent once to add TypeScript to his profile. The agent's test scan was restored to the reviewed 55-rule profile.
-7. Next build: Swift (grammar must be built, suggestion 3), or suggestions 17 to 20. M9 and M10 only after real usage, per the spec.
+7. Publish, see the Publishing section. Then Swift (grammar must be built, suggestion 3), or suggestions 15, 16, 19, 20. M9 and M10 only after real usage, per the spec.
 
 ## Things that bit us, so you do not repeat them
 

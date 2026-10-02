@@ -30,6 +30,7 @@ export const METRICS: Record<string, MetricFn> = {
   "naming.boolean-is-has-ratio": (s) => { const b = s.naming.booleanPrefix; const total = sum(b); return ratio((b.is ?? 0) + (b.has ?? 0) + (b.can ?? 0) + (b.should ?? 0), total); },
   "naming.test-backtick-ratio": (s) => ratio(s.naming.testNames.backtick ?? 0, sum(s.naming.testNames)),
   "naming.test-camel-sentence-ratio": (s) => ratio(s.naming.testNames.camelSentence ?? 0, sum(s.naming.testNames)),
+  "naming.test-should-ratio": (s) => ratio(s.naming.testNames.should ?? 0, (s.naming.testNames.should ?? 0) + (s.naming.testNames.sentence ?? 0)),
   "comments.per-100-loc": (s) => ({ value: s.loc ? (100 * comments(s)) / s.loc : 0, sampleSize: s.loc }),
   "comments.doc-ratio": (s) => ratio(s.comments.doc, comments(s)),
   "comments.lowercase-start-ratio": (s) => ratio(s.comments.lowercaseStart, comments(s)),
@@ -82,4 +83,22 @@ export function metric(id: string, s: LanguageStats | undefined, c?: CommitStats
   if (!fn) throw new Error(`unknown metric ${id}`);
   if (!s) return { value: 0, sampleSize: 0 };
   return fn(s);
+}
+
+/** How a ratio metric splits across files: how many files sit at or under 0.5 and how many over, among files with at least `minItems` items. */
+export type Spread = { under: number; over: number };
+export const isRatioMetric = (id: string) => id.endsWith("-ratio") || id.endsWith("-share");
+
+export function fileSpread(perFile: LanguageStats[], minItems = 5): Record<string, Spread> {
+  const out: Record<string, Spread> = {};
+  for (const id of Object.keys(METRICS).filter(isRatioMetric)) {
+    const sp: Spread = { under: 0, over: 0 };
+    for (const f of perFile) {
+      const m = METRICS[id]!(f);
+      if (m.sampleSize < minItems) continue;
+      sp[m.value > 0.5 ? "over" : "under"]++;
+    }
+    if (sp.under + sp.over) out[id] = sp;
+  }
+  return out;
 }

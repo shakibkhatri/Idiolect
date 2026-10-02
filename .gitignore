@@ -3,3 +3,4 @@ dist/
 *.tsbuildinfo
 .idiolect/cache/
 .DS_Store
+/packages/cli/README.md

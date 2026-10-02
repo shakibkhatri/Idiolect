@@ -1,5 +1,5 @@
 import type { Node } from "web-tree-sitter";
-import { analyzeTree, bump, countComment, countName, firstWord, GENERIC_NAME, grammarFor, testNameStyle, type AnalyzeOptions, type LanguageStats, type NameKind } from "./analyzer.js";
+import { analyzeTree, bump, countComment, countName, firstWord, GENERIC_NAME, grammarFor, testNameStyle, testStringStyle, type AnalyzeOptions, type LanguageStats, type NameKind } from "./analyzer.js";
 import type { LineRange } from "./collector.js";
 
 const FUNCTION_LIKE = new Set(["function_declaration", "generator_function_declaration", "function_expression", "arrow_function", "method_definition"]);
@@ -57,6 +57,14 @@ function count(n: Node, s: LanguageStats, test: boolean) {
       return;
     }
     case "comment": return countComment(n, s);
+    case "call_expression": {
+      // it("does x", () => ...) is the test function in Vitest, Jest and Mocha, its name is the string
+      if (!test) return;
+      const callee = field(n, "function")?.text;
+      const first = field(n, "arguments")?.namedChildren[0];
+      if ((callee === "it" || callee === "test") && (first?.type === "string" || first?.type === "template_string")) { s.tests.functions++; bump(s.naming.testNames, testStringStyle(first.text.slice(1, -1))); }
+      return;
+    }
     case "try_statement": s.errors.tryCatch++; return;
     case "non_null_expression": s.errors.forceUnwrap++; return;
     case "optional_chain": s.typescript.optionalChains++; return;

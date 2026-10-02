@@ -6,10 +6,13 @@
     "idiolect": "dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "!dist/**/*.test.*"
   ],
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "prepack": "cp ../../README.md ."
   },
   "dependencies": {
     "@idiolect/core": "workspace:*",
@@ -17,5 +20,30 @@
     "commander": "^13.0.0",
     "@idiolect/mcp": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.31.0"
-  }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shakibkhatri/Idiolect.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "description": "Learn your coding style from git history and feed it to AI coding agents",
+  "keywords": [
+    "ai",
+    "claude",
+    "cursor",
+    "copilot",
+    "mcp",
+    "code-style",
+    "linter",
+    "kotlin",
+    "typescript",
+    "python",
+    "go"
+  ]
 }

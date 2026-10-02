@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { analyzeCommits, emptyStats, mergeStats, type CommitStats, type LanguageStats } from "./analyzer.js";
+import type { Spread } from "./metrics.js";
 import type { Commit } from "./collector.js";
 
 export type Language = "kotlin" | "typescript" | "python" | "go";
@@ -20,7 +21,7 @@ export type Rule = {
   repo?: string;        // set when the rule is a project convention: served only inside this repo
 };
 
-export type Source = { repo: string; head: string; scannedAt: string; commits: number; linesOwned: number; stats: Partial<Record<Language, LanguageStats>>; commitStats: CommitStats };
+export type Source = { repo: string; head: string; scannedAt: string; commits: number; linesOwned: number; stats: Partial<Record<Language, LanguageStats>>; commitStats: CommitStats; spread?: Partial<Record<Language, Record<string, Spread>>> };
 
 export type Profile = {
   version: 1;

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { CommitStats, LanguageStats } from "./analyzer.js";
-import { metric, type Metric } from "./metrics.js";
+import { metric, type Metric, type Spread } from "./metrics.js";
 import type { Language, Profile, Rule } from "./profile.js";
 
 type Kind = "high" | "low" | "value";
@@ -26,6 +26,8 @@ const COMMON_DEFS: Def[] = [
   { metric: "naming.boolean-is-has-ratio", category: "naming", kind: "high", text: () => "Prefix boolean names with is, has, can or should." },
   { metric: "naming.test-backtick-ratio", category: "naming", kind: "high", text: () => "Name tests as backtick sentences: fun `shows error when offline`()." },
   { metric: "naming.test-camel-sentence-ratio", category: "naming", kind: "high", text: () => "Name tests as camelCase sentences: fun aDeviceWithoutPowerIsRejected()." },
+  { metric: "naming.test-should-ratio", category: "naming", kind: "high", text: () => "Start test names with should: it(\"should reject a device without power\")." },
+  { metric: "naming.test-should-ratio", category: "naming", kind: "low", text: () => "Name tests as plain statements, not \"should ...\": it(\"rejects a device without power\")." },
   { metric: "comments.per-100-loc", category: "comments", kind: "value", text: (m) => `Comment sparingly. About ${n(m.value)} comments per 100 lines of code.` },
   { metric: "comments.doc-ratio", category: "comments", kind: "high", text: () => "Most comments are doc comments on declarations, not inline comments." },
   { metric: "comments.doc-ratio", category: "comments", kind: "low", text: () => "Use short inline comments. Doc comments are rare." },
@@ -89,7 +91,7 @@ const COMMIT_DEFS: Def[] = [
 ];
 
 type Tell = { id: string; metric: string; text: string; language?: Language | Language[] };
-const TELLS: Tell[] = JSON.parse(readFileSync(fileURLToPath(new URL("../../../data/ai-tells.json", import.meta.url)), "utf8"));
+const TELLS: Tell[] = JSON.parse(readFileSync(fileURLToPath(new URL("../data/ai-tells.json", import.meta.url)), "utf8"));
 
 export type BaselineOptions = { minSampleSize: number };
 
@@ -98,7 +100,8 @@ export function baselineRules(profile: Profile, opts: BaselineOptions): Rule[] {
   for (const lang of Object.keys(profile.stats) as Language[]) {
     const stats = profile.stats[lang]!;
     for (const def of DEFS[lang]) {
-      const r = ruleFromDef(def, lang, metric(def.metric, stats), stats, opts, profile.sources.map((s) => s.stats[lang]).filter((x): x is LanguageStats => !!x).map((s) => metric(def.metric, s)));
+      const spread = profile.sources.map((s) => s.spread?.[lang]?.[def.metric]).filter((x): x is Spread => !!x).reduce((a, b) => ({ under: a.under + b.under, over: a.over + b.over }), { under: 0, over: 0 });
+      const r = ruleFromDef(def, lang, metric(def.metric, stats), stats, opts, profile.sources.map((s) => s.stats[lang]).filter((x): x is LanguageStats => !!x).map((s) => metric(def.metric, s)), spread);
       if (r) rules.push(r);
     }
     for (const tell of TELLS) {
@@ -121,7 +124,7 @@ export function baselineRules(profile: Profile, opts: BaselineOptions): Rule[] {
   return rules;
 }
 
-function ruleFromDef(def: Def, lang: Language | "any", m: Metric, stats: LanguageStats | undefined, opts: BaselineOptions, perSource: Metric[]): Rule | undefined {
+function ruleFromDef(def: Def, lang: Language | "any", m: Metric, stats: LanguageStats | undefined, opts: BaselineOptions, perSource: Metric[], spread?: Spread): Rule | undefined {
   if (m.sampleSize < opts.minSampleSize) return;
   let confidence: number;
   if (def.kind === "high") { if (m.value < 0.8) return; confidence = wilsonLower(m.value, m.sampleSize); }
@@ -133,6 +136,14 @@ function ruleFromDef(def: Def, lang: Language | "any", m: Metric, stats: Languag
   if (def.kind !== "value" && strong.length >= 2 && Math.max(...strong.map((p) => p.value)) - Math.min(...strong.map((p) => p.value)) >= 0.4) {
     confidence *= 0.5;
     text += " Varies by repo, follow the repo you are in.";
+  }
+  // a habit the developer does in some files and mostly not in others is a per-file choice, not a rule
+  // ponytail: 15% of files doing the opposite was the line on the author's repo, make it config if others disagree
+  const files = spread ? spread.under + spread.over : 0;
+  const against = def.kind === "high" ? spread?.under ?? 0 : def.kind === "low" ? spread?.over ?? 0 : 0;
+  if (files >= 4 && against / files >= 0.15) {
+    confidence *= 0.5;
+    text += ` Varies by file: ${against} of ${files} files do the opposite.`;
   }
   return mk(`${lang}.${def.metric}.${def.kind}`, def.category, lang, text, def.metric, m, confidence);
 }

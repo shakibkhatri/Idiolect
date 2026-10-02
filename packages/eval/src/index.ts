@@ -1,6 +1,10 @@
 import { analyzeCommits, analyzeKotlin, emptyStats, mergeStats, METRICS, COMMIT_METRICS, renderStyleMd, type CommitStats, type LanguageStats, type LlmProvider, type Profile, type Sample } from "@idiolect/core";
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+/** The task files shipped with the package. */
+export const DEFAULT_TASKS_DIR = fileURLToPath(new URL("../tasks", import.meta.url));
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
 

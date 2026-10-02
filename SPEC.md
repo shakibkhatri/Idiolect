@@ -152,6 +152,7 @@ Start with **Kotlin only**, add others after M5. TypeScript, Python and Go added
 - **LLM rules must cite samples.** The model returns rules with example references (file and line). References that were not in the samples sent are dropped, and a rule left without examples is dropped
 - Confidence for metric rules is the 95% Wilson lower bound of the ratio, so small samples lower confidence without being dropped outright
 - Rules below confidence threshold (default 0.6) are stored but not served
+- Per-file spread: the scan counts, for every ratio metric, how many files sit over 0.5 and how many under, among files with at least 5 items. A high or low rule where 15% or more of the files do the opposite gets half confidence and the text says "Varies by file", the same treatment as a habit that varies between repos. Calibrated on the author's TypeScript, where JSDoc is 16% overall but the majority in 8 of 44 files
 - Minimum evidence: a metric-based rule needs `sampleSize >= minSampleSize` (default 20) and a ratio of >= 0.8 or <= 0.2.
   Below that the LLM gets the number but is told it is weak and must not turn it into a rule
 - On rescan: an approved rule whose text changed becomes `pending`, so a decision is never silently overridden. Auto rules the user never looked at are replaced in place, otherwise a background refresh would drop served rules without anyone deciding
@@ -200,6 +201,7 @@ Install, while the package is unpublished and linked globally:
 claude mcp add idiolect -- idiolect mcp
 ```
 After publishing: `claude mcp add idiolect -- npx -y idiolect mcp`. Config snippets for Cursor and other MCP clients go in the README at launch.
+Publishing: the name `idiolect` and the `@idiolect` scope were free on npm on 2026-10-02. The four packages carry `files`, `publishConfig` and repository fields, grammars, tells and eval tasks ship inside their packages, and `pnpm -r publish` releases them after `npm login` and creating the `idiolect` org.
 
 **Done when:** Claude Code calls `get_style` on a `.kt` file and gets only Kotlin + general rules. Built 2026-10-02, verified over stdio against the author's profile inside the Dissent repo.
 

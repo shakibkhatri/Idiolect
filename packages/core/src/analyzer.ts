@@ -256,6 +256,9 @@ export function testNameStyle(id: string): string {
   return words(id).length >= 4 ? "camelSentence" : "camel";
 }
 
+/** Test names given as strings: "should ..." versus a plain statement. ponytail: two buckets, that is the only common split */
+export const testStringStyle = (name: string) => (/^should\b/i.test(name.trim()) ? "should" : "sentence");
+
 export function casing(id: string): Casing {
   if (id.startsWith("`")) return "backtick";
   // leading underscores and the # of a private class member are not part of the casing

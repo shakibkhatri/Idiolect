@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { analyze, languageOf, EXTENSIONS, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, ensureRepoDir, userConfigPath, repoConfigPath, loadProfile, mergeStats, profilePath, saveProfile, upsertSource, analyzeCommits, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type UserConfig, type SampleInput, type Language, type LanguageStats } from "@idiolect/core";
-import { loadTasks, renderReport, runEval, type Report } from "@idiolect/eval";
+import { analyze, fileSpread, languageOf, EXTENSIONS, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, ensureRepoDir, userConfigPath, repoConfigPath, loadProfile, mergeStats, profilePath, saveProfile, upsertSource, analyzeCommits, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type UserConfig, type SampleInput, type Language, type LanguageStats } from "@idiolect/core";
+import { DEFAULT_TASKS_DIR, loadTasks, renderReport, runEval, type Report } from "@idiolect/eval";
 import { createIdiolectServer } from "@idiolect/mcp";
 import { syncTargets } from "./sync.js";
 import { rulesCommand, writeStyle } from "./rules.js";
@@ -103,6 +103,7 @@ program.command("scan")
     process.stderr.write(`collected ${c.files.length} files, ${linesOwned} owned lines, ${c.commits.length} commits (${Date.now() - t0}ms)\n`);
 
     const stats: Partial<Record<Language, LanguageStats>> = {};
+    const perFile: Partial<Record<Language, LanguageStats[]>> = {};
     const inputs: SampleInput[] = [];
     for (const f of c.files) {
       const lang = languageOf(f.path);
@@ -110,14 +111,17 @@ program.command("scan")
       const code = await git(repo, ["show", `${c.head}:${f.path}`]);
       const test = isTestPath(f.path);
       inputs.push({ path: f.path, code, ranges: f.ranges, test });
-      stats[lang] = mergeStats(stats[lang] ?? emptyStats(), await analyze(code, lang, f.ranges, { test, path: f.path }));
+      const st = await analyze(code, lang, f.ranges, { test, path: f.path });
+      stats[lang] = mergeStats(stats[lang] ?? emptyStats(), st);
+      (perFile[lang] ??= []).push(st);
     }
+    const spread = Object.fromEntries((Object.entries(perFile) as [Language, LanguageStats[]][]).map(([l, xs]) => [l, fileSpread(xs)]));
     const commitStats = analyzeCommits(c.commits);
 
     const primary = user.emails[0]!;
     const name = user.name ?? primary;
     let profile = upsertSource(await loadProfile(primary) ?? emptyProfile(name, user.emails), {
-      repo, head: c.head, scannedAt: new Date().toISOString(), commits: c.commits.length, linesOwned, stats, commitStats,
+      repo, head: c.head, scannedAt: new Date().toISOString(), commits: c.commits.length, linesOwned, stats, commitStats, spread,
     });
     profile = { ...profile, developer: { name, emails: user.emails } };
     await saveProfile(profile);
@@ -196,7 +200,7 @@ program.addCommand(refreshCommand());
 program.command("eval")
   .description("generate code with and without your profile and score which sounds more like you")
   .option("--repo <path>", "repository path, used for reference samples and project rules", ".")
-  .option("--tasks <dir>", "task directory", fileURLToPath(new URL("../../../data/eval-tasks", import.meta.url)))
+  .option("--tasks <dir>", "task directory", DEFAULT_TASKS_DIR)
   .option("--only <ids...>", "run only these task ids")
   .option("--quiz", "after the judge, show pairs blind and let you pick")
   .option("--from <report.json>", "skip generation, quiz an existing report and update it")

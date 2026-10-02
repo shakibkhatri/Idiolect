@@ -11,5 +11,19 @@
     "@anthropic-ai/sdk": "^0.131.0",
     "web-tree-sitter": "^0.27.0",
     "zod": "^4.6.5"
+  },
+  "files": [
+    "dist",
+    "grammars",
+    "data",
+    "!dist/**/*.test.*"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shakibkhatri/Idiolect.git"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

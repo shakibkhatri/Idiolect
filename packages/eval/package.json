@@ -4,10 +4,25 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "scripts": { "build": "tsc -b" },
+  "scripts": {
+    "build": "tsc -b"
+  },
   "dependencies": {
     "@idiolect/core": "workspace:*",
     "yaml": "^2.6.0",
     "zod": "^4.0.0"
+  },
+  "files": [
+    "dist",
+    "tasks",
+    "!dist/**/*.test.*"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shakibkhatri/Idiolect.git"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -80,7 +80,7 @@ Every rule it followed is backed by a number or a cited line from that developer
 ## Install
 
 Needs Node 22 and git.
-Until the package is published, clone and link:
+Not on npm yet. Until then, clone and link:
 
 ```
 pnpm install && pnpm build
