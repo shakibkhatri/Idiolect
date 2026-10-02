@@ -101,7 +101,7 @@ program.command("scan")
     const c = await collect({ repo, emails: user.emails, ignore: config.ignore, cache: o.cache, extensions: config.languages.flatMap((l) => EXTENSIONS[l]) });
     const linesOwned = c.files.reduce((n, f) => n + f.ownedLines, 0);
     if (!c.files.length && !c.commits.length) throw new Error(`none of your emails (${user.emails.join(", ")}) appear in this repo, run: idiolect init`);
-    process.stderr.write(`collected ${c.files.length} files, ${linesOwned} owned lines, ${c.commits.length} commits (${Date.now() - t0}ms)\n`);
+    process.stderr.write(`collected ${c.files.length} files, ${linesOwned} owned lines, ${c.commits.length} commits${c.agentCommits ? `, ${c.agentCommits} agent commits excluded` : ""} (${Date.now() - t0}ms)\n`);
 
     const stats: Partial<Record<Language, LanguageStats>> = {};
     const perFile: Partial<Record<Language, LanguageStats[]>> = {};

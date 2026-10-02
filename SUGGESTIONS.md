@@ -106,7 +106,7 @@ Another developer with a flatter or spikier distribution may want them in `.idio
 The M7 done criterion also asked for the eval judge to prefer the `--fix` output over the original.
 It passed the check and read right by eye, but nobody ran the judge on a before and after pair. A `--judge` flag on unbot, or an eval task kind "fix", would close that.
 
-## 16. Deep mode drops the message in CLI output (open)
+## 16. Deep mode drops the message in CLI output (done 2026-10-02)
 
 `deepCheck` returns what is wrong (message) and how the line should read (suggestion).
 The CLI prints only the suggestion for violations with a line, because for metric rules the message is boilerplate.
@@ -132,18 +132,19 @@ Done: the scan keeps per-file stats, `fileSpread` counts files over and under 0.
 `idiolect eval` generates and judges Kotlin only, the task schema fixes the language.
 Add a few TypeScript tasks and let the task language pick the analyzer for the metric distance.
 
-## 20. Python and Go test names (open)
+## 20. Python and Go test names (done 2026-10-02, both skipped)
 
 Python test functions are `def test_x` in test files, so `naming.testNames` gets their snake style, which is all pytest allows.
 Go test functions are `func TestX`, classified by the camel-sentence heuristic.
 Neither says much about the developer. Worth skipping both languages in the test-name rules, or classifying by the words after the prefix.
 
-## 21. Exclude or down-weight commits with an agent trailer (open)
+## 21. Exclude or down-weight commits with an agent trailer (done 2026-10-02)
 
 A developer who lets Claude Code or Copilot commit under their name has lines in blame that are not theirs.
 Where the trailers survive ("Co-Authored-By: Claude", "Generated with Claude Code", "Co-authored-by: Copilot"), the collector can map blame hashes to commits and drop those lines, with a `scan` line saying how much was excluded.
 It is cheap: `git log --format=%H -i --grep=...` once, then a set lookup per blame line.
 It does not help the author's own repos, whose rules strip the trailers, which is why it is logged and not built.
+Built anyway because it is cheap and it is right: one `git log --grep` per scan, a set lookup per blame line, and the count in the scan output. Dissent still has 42 commits with a trailer, 11% of the owned lines.
 
 ## 22. The quiz question for agent-heavy repos (open)
 

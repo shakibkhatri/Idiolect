@@ -50,6 +50,15 @@ test("returns only author A's lines, commits, and respects ignores", async () =>
   expect(Object.keys(cache.files).sort()).toEqual(["src/Auto.kt", "src/Repo.kt", "src/Util.kt"]);
 });
 
+test("lines and messages from commits with an agent trailer are not the developer's", async () => {
+  await collect({ repo, emails: [A] });
+  commit(A, "agent adds four\n\nCo-Authored-By: Claude <noreply@anthropic.com>", { "src/Agent.kt": "fun four() = 4\n" });
+  const c = await collect({ repo, emails: [A] });
+  expect(c.agentCommits).toBe(1);
+  expect(c.files.map((f) => f.path)).not.toContain("src/Agent.kt");
+  expect(c.commits.map((m) => m.subject)).not.toContain("agent adds four");
+});
+
 test("incremental rescan picks up new commits and changed files", async () => {
   await collect({ repo, emails: [A] });
   commit(A, "alice adds three", { "src/Repo.kt": "class Repo {\n    fun one() = 1\n    fun two() =  22\n    fun three() = 3\n}\n" });

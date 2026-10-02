@@ -10,7 +10,10 @@ const execFileAsync = promisify(execFile);
 export type LineRange = { start: number; end: number };
 export type OwnedFile = { path: string; blob: string; ranges: LineRange[]; ownedLines: number };
 export type Commit = { hash: string; email: string; date: string; subject: string; body: string };
-export type Collection = { repo: string; head: string; emails: string[]; files: OwnedFile[]; commits: Commit[] };
+export type Collection = { repo: string; head: string; emails: string[]; files: OwnedFile[]; commits: Commit[]; agentCommits: number };
+
+/** Trailers coding agents leave when they commit under the developer's name. Those lines are not the developer's. */
+const AGENT_TRAILERS = ["co-authored-by: claude", "co-authored-by: copilot", "co-authored-by: codex", "co-authored-by: gemini", "co-authored-by: cursor", "co-authored-by: devin", "co-authored-by: aider", "generated with claude code", "generated with codex", "generated with copilot"];
 
 export type CollectOptions = {
   repo: string;
@@ -44,18 +47,19 @@ export async function collect(opts: CollectOptions): Promise<Collection> {
   const ignore = [...DEFAULT_IGNORE, ...(opts.ignore ?? []), ...(await readIgnoreFile(repo))];
   const cachePath = join(repo, ".idiolect", "cache", "collector.json");
   const cache = useCache ? await readCache(cachePath, emails) : { files: {}, commits: [] };
+  const agents = await agentCommits(repo, head);
 
   const files: OwnedFile[] = [];
   const blamed: Record<string, OwnedFile> = {};
   await pool(await listFiles(repo, head, extensions, ignore, maxFileBytes), 8, async (f) => {
     const cached = cache.files[f.path];
-    const owned = cached?.blob === f.blob ? cached : await blameFile(repo, head, f, emails);
+    const owned = cached?.blob === f.blob ? cached : await blameFile(repo, head, f, emails, agents);
     blamed[f.path] = owned;
     if (owned.ownedLines > 0) files.push(owned);
   });
   files.sort((a, b) => a.path.localeCompare(b.path));
 
-  const commits = await listCommits(repo, head, emails, cache);
+  const commits = (await listCommits(repo, head, emails, cache)).filter((c) => !agents.has(c.hash));
 
   if (useCache) {
     cache.emails = emails;
@@ -65,7 +69,7 @@ export async function collect(opts: CollectOptions): Promise<Collection> {
     await ensureRepoDir(repo);
     await writeCache(cachePath, cache);
   }
-  return { repo, head, emails, files, commits };
+  return { repo, head, emails, files, commits, agentCommits: agents.size };
 }
 
 async function listFiles(repo: string, head: string, extensions: string[], ignore: string[], maxBytes: number) {
@@ -85,7 +89,12 @@ async function listFiles(repo: string, head: string, extensions: string[], ignor
 
 const GENERATED = /\b(auto-?generated|do not edit)\b/i;
 
-async function blameFile(repo: string, head: string, f: { path: string; blob: string }, emails: string[]): Promise<OwnedFile> {
+async function agentCommits(repo: string, head: string): Promise<Set<string>> {
+  const out = await git(repo, ["log", "--no-merges", "--format=%H", "-i", "--fixed-strings", ...AGENT_TRAILERS.map((t) => `--grep=${t}`), head]);
+  return new Set(out.split("\n").filter(Boolean));
+}
+
+async function blameFile(repo: string, head: string, f: { path: string; blob: string }, emails: string[], agents: Set<string>): Promise<OwnedFile> {
   const empty: OwnedFile = { ...f, ranges: [], ownedLines: 0 };
   const header = await git(repo, ["show", `${head}:${f.path}`]);
   if (GENERATED.test(header.slice(0, 1024))) return empty;
@@ -94,9 +103,10 @@ async function blameFile(repo: string, head: string, f: { path: string; blob: st
   const ranges: LineRange[] = [];
   let line = 0;
   let mine = false;
+  let agent = false;
   for (const l of out.split("\n")) {
-    if (/^[0-9a-f]{40} \d+ \d+/.test(l)) line = Number(l.split(" ")[2]);
-    else if (l.startsWith("author-mail ")) mine = emails.includes(l.slice(13, -1).toLowerCase());
+    if (/^[0-9a-f]{40} \d+ \d+/.test(l)) { const [hash, , n] = l.split(" "); line = Number(n); agent = agents.has(hash!); }
+    else if (l.startsWith("author-mail ")) mine = !agent && emails.includes(l.slice(13, -1).toLowerCase());
     else if (l.startsWith("\t") && mine) {
       const last = ranges.at(-1);
       if (last && last.end === line - 1) last.end = line;

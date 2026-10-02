@@ -116,6 +116,7 @@ Precedence when serving rules:
 - `git log --author` for the user's commits and messages
 - `git blame` per file to find lines the user owns
 - Ignore: build dirs, generated code, lock files, vendored code, files over a size limit, `.gitignore` + `.idiolectignore`
+- Commits with an agent trailer (Co-Authored-By: Claude, Copilot, Codex and friends, "Generated with Claude Code") are not the developer's. Their lines are dropped from blame and their messages from the commit list, and `scan` says how many were excluded. On Dissent that is 42 of 523 commits and 11% of the owned lines
 - Output: list of owned code regions per file + commit messages
 - Incremental: cache by commit hash, rescan only new commits
 
