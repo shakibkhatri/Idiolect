@@ -5,6 +5,7 @@ import { createIdiolectServer } from "@idiolect/mcp";
 import { syncTargets } from "./sync.js";
 import { rulesCommand, writeStyle } from "./rules.js";
 import { hooksCommand, unbotCommand } from "./unbot.js";
+import { refreshCommand, statusCommand } from "./refresh.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Command } from "commander";
 import { mkdir, readFile } from "node:fs/promises";
@@ -184,6 +185,8 @@ program.command("sync")
 program.addCommand(rulesCommand());
 program.addCommand(unbotCommand());
 program.addCommand(hooksCommand());
+program.addCommand(statusCommand());
+program.addCommand(refreshCommand());
 
 program.command("eval")
   .description("generate code with and without your profile and score which sounds more like you")

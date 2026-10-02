@@ -15,20 +15,20 @@ The first commit still carries his work email because the amend needed a force-p
 ## State of the build
 
 Spec section 11 lists the build order.
-M1 collector, M2 analyzer, M3 profile writer, M4 eval harness, M5 MCP server, M6 sync, the `rules` command and M7 Unbot are built, tested and committed.
+M1 collector, M2 analyzer, M3 profile writer, M4 eval harness, M5 MCP server, M6 sync, the `rules` command, M7 Unbot, the README and M8 auto refresh are built, tested and committed.
 Tests: `pnpm test` runs 27 vitest tests, all green.
 Typecheck: `pnpm typecheck`.
 Build: `pnpm build`, which must run before the global `idiolect` command picks up changes.
 The CLI is linked globally with `npm link` from `packages/cli`, so `idiolect` on this machine runs `packages/cli/dist/index.js`.
 
-Not built: M8 auto refresh, M9 team mode, M10 dashboard.
-Spec step 6 is launch: README with before/after examples, which does not exist yet.
+Not built: M9 team mode, M10 dashboard, the other languages.
+Spec step 6, launch, has its README. Posting it is Shakib's call.
 
 ## Repo layout
 
 ```
 packages/core    collector, analyzer, metrics, baseline rules, sampler, redact, llm providers, writer, render, config, profile
-packages/cli     idiolect init | scan | show | rules | unbot | hooks | eval | mcp | sync
+packages/cli     idiolect init | scan | show | rules | unbot | hooks | status | refresh | eval | mcp | sync
 packages/eval    task loading, with/without generation, judge, metric distance, report
 packages/mcp     createIdiolectServer: four tools, one resource, one prompt, transport-agnostic
 data/ai-tells.json       AI writing habits, each tied to a metric id
@@ -82,6 +82,10 @@ The CLI picks changed Kotlin files by default, `--staged` for hooks, `--all` for
 `fixtures/kotlin/AiWritten.kt` is the AI-written sample the test and the Dissent check use.
 
 Rules (`cli/src/rules.ts`): `list|show|approve|reject|edit` over `updateRules` in core. Decisions survive `scan`, verified in Dissent.
+
+Refresh (`cli/src/refresh.ts`): `status` and `refresh`. The commit count comes from `git rev-list --count <source.head>..HEAD`, so no extra state is stored.
+`refresh` spawns `scan` detached with `process.execPath` and `process.argv[1]`, logging to `.idiolect/cache/refresh.log`, and prints nothing below the count so the post-commit hook stays quiet.
+`hooks install` writes both hooks and is idempotent.
 
 MCP (`packages/mcp/src/index.ts`): `createIdiolectServer(deps)` takes a profile loader and a provider factory so tests pass a fixture profile.
 `idiolect mcp` wires it to stdio and reads `~/.idiolect` on every call.
@@ -161,8 +165,8 @@ He uses a global `~/.claude/CLAUDE.md` with his general rules, read it.
 2. If the quiz is near chance, work `SUGGESTIONS.md` item 13: cap voice rules, ask for fewer sharper rules.
 3. Shakib runs `claude mcp add idiolect -- idiolect mcp` and tries `get_style` and `check_style` from Claude Code inside Dissent.
 4. Shakib runs `idiolect sync` and `idiolect hooks install` inside Dissent and commits what he likes. `.idiolect/` is still untracked there.
-5. Spec step 6, launch: README with before/after examples. `fixtures/kotlin/AiWritten.kt` and its `unbot --fix` output are a ready-made before/after.
-6. Then M8 auto refresh, or suggestion 15 (unbot calibration in repo config, judge on fix output) if real use shows the fixed numbers are wrong for someone.
+5. Shakib reads README.md and decides about posting.
+6. Next build: more languages (Swift needs its grammar built, suggestion 3), or suggestion 15 if real use shows the unbot numbers are wrong for someone. M9 and M10 only after real usage, per the spec.
 
 ## Things that bit us, so you do not repeat them
 

@@ -152,7 +152,7 @@ Start with **Kotlin only**, add others after M5.
 - Rules below confidence threshold (default 0.6) are stored but not served
 - Minimum evidence: a metric-based rule needs `sampleSize >= minSampleSize` (default 20) and a ratio of >= 0.8 or <= 0.2.
   Below that the LLM gets the number but is told it is weak and must not turn it into a rule
-- On rescan: diff old vs new rules, changed rules become `pending`
+- On rescan: an approved rule whose text changed becomes `pending`, so a decision is never silently overridden. Auto rules the user never looked at are replaced in place, otherwise a background refresh would drop served rules without anyone deciding
 - Decisions: `idiolect rules approve|reject|edit <id>` sets the status. Approved and edited rules are served and kept across rescans, rejected rules are stored but never served and a rescan does not revive them. The MCP server reads the profile per call, so a decision is live immediately, `idiolect sync` has to be re-run by hand
 - Render `STYLE.md` (sections: Naming, Comments, Structure, Errors, Framework, Commits, Avoid, Team rules)
 
@@ -229,9 +229,10 @@ After publishing: `claude mcp add idiolect -- npx -y idiolect mcp`. Config snipp
 **Done when:** a file of typical AI-written Kotlin gets flagged and `--fix` produces something that passes the check and reads like the developer. Done 2026-10-02: `fixtures/kotlin/AiWritten.kt` gets 7 fast and 11 deep violations in Dissent, `--fix` left 0 and produced elvis guards, expression bodies and a one-line KDoc. The judge was not run on it, see suggestion 15
 
 ### M8 Auto refresh (`cli`)
-- Post-commit hook counts commits, every N commits (default 50) runs incremental scan in background
-- Changed rules go to `pending`, user approves via CLI or dashboard
-- `idiolect status` shows profile age, pending rules, last scan
+- `idiolect refresh` compares HEAD with the head stored for this repo in the profile. At `refresh.everyCommits` new commits (default 50), or with `--force`, it starts `idiolect scan` detached and returns at once, logging to `.idiolect/cache/refresh.log`. Below the count it prints nothing
+- `idiolect hooks install` adds it as a post-commit hook next to the pre-commit unbot hook
+- Changed approved rules go to `pending`, the user decides with `idiolect rules`
+- `idiolect status` shows profile age, rule counts, the pending rules, the last scan of this repo, commits since and when the refresh is due
 
 ### M9 Team mode (`team`)
 - Source: GitHub (token or `gh` auth), GitLab later
@@ -263,6 +264,7 @@ idiolect unbot [files] [--fix] [--llm] [--strict]
 idiolect hooks install
 idiolect eval [--quiz]
 idiolect status
+idiolect refresh [--force]
 idiolect team scan            # team mode
 idiolect mcp                  # start MCP server
 idiolect ui                   # dashboard

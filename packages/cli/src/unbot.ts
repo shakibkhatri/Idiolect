@@ -64,22 +64,27 @@ export function unbotCommand(): Command {
     });
 }
 
-const HOOK_LINE = "idiolect unbot --staged";
+const HOOKS = { "pre-commit": "idiolect unbot --staged", "post-commit": "idiolect refresh" };
+
+/** Writes or appends one hook. Husky owns .husky/<name> when it exists, lefthook has its own yaml so only print the line. */
+export async function installHook(repo: string, name: keyof typeof HOOKS): Promise<string> {
+  const line = HOOKS[name];
+  if (await access(join(repo, "lefthook.yml")).then(() => true, () => false)) return `lefthook.yml found. Add a ${name} command that runs: ${line}`;
+  const husky = join(repo, ".husky", name);
+  const target = (await access(husky).then(() => true, () => false)) ? husky : join(repo, (await git(repo, ["rev-parse", "--git-path", "hooks"])).trim(), name);
+  const existing = await readFile(target, "utf8").catch(() => undefined);
+  if (existing?.includes(line)) return `already installed in ${relative(repo, target)}`;
+  await writeFile(target, `${existing ?? "#!/bin/sh\n"}\n# idiolect: ${name === "pre-commit" ? "lint staged Kotlin against your style profile, warn only" : "rescan in the background every refresh.everyCommits commits"}\n${line}\n`, { mode: 0o755 });
+  return `${existing ? "appended to" : "created"} ${relative(repo, target)}`;
+}
 
 export function hooksCommand(): Command {
-  const hooks = new Command("hooks").description("git hooks that run unbot");
-  hooks.command("install").description("pre-commit hook that runs unbot on staged Kotlin, warn only. Uses .husky/pre-commit when present")
+  const hooks = new Command("hooks").description("git hooks that run unbot and the background refresh");
+  hooks.command("install").description("pre-commit runs unbot on staged Kotlin, warn only. post-commit rescans every N commits. Uses .husky when present")
     .option("--repo <path>", "repository path", ".")
     .action(async (o: { repo: string }) => {
       const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"])).trim();
-      const husky = join(repo, ".husky", "pre-commit");
-      const target = (await access(husky).then(() => true, () => false)) ? husky : join(repo, (await git(repo, ["rev-parse", "--git-path", "hooks"])).trim(), "pre-commit");
-      const existing = await readFile(target, "utf8").catch(() => undefined);
-      if (existing?.includes(HOOK_LINE)) { console.log(`already installed in ${relative(repo, target)}`); return; }
-      // lefthook has its own yaml, so point at it instead of guessing the format
-      if (await access(join(repo, "lefthook.yml")).then(() => true, () => false)) { console.log(`lefthook.yml found. Add a pre-commit command that runs: ${HOOK_LINE}`); return; }
-      await writeFile(target, `${existing ?? "#!/bin/sh\n"}\n# idiolect: lint staged Kotlin against your style profile, warn only\n${HOOK_LINE}\n`, { mode: 0o755 });
-      console.log(`${existing ? "appended to" : "created"} ${relative(repo, target)}`);
+      for (const name of Object.keys(HOOKS) as (keyof typeof HOOKS)[]) console.log(`${name.padEnd(12)} ${await installHook(repo, name)}`);
     });
   return hooks;
 }
