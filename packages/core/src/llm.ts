@@ -3,7 +3,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { execFile } from "node:child_process";
 import { tmpdir } from "node:os";
 import { z } from "zod";
-import type { Config } from "./config.js";
+import type { UserConfig } from "./config.js";
 
 export type LlmRequest<T> = { system: string; user: string; schema: z.ZodType<T>; maxTokens?: number };
 export type LlmProvider = { name: string; model: string; complete<T>(req: LlmRequest<T>): Promise<T> };
@@ -16,7 +16,7 @@ const DEFAULTS = {
 } as const;
 
 /** Returns undefined when no provider is configured, which the writer treats as "baseline rules only". */
-export function createProvider(llm: Config["llm"]): LlmProvider | undefined {
+export function createProvider(llm: UserConfig["llm"]): LlmProvider | undefined {
   if (llm.provider === "none") return undefined;
   if (llm.provider === "claude-cli") return claudeCliProvider(llm.model);
   const d = DEFAULTS[llm.provider];

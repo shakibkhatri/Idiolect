@@ -95,7 +95,8 @@ Storage:
 - Merging: the analyzer emits counts and bucketed histograms, never ratios or percentiles.
   Merge is a plain sum, so it is exact, order-independent and deterministic. Ratios and percentiles are computed at render time.
   Per-repo stats are kept in `sources[]` so a repo that disagrees with the merged profile can be spotted later.
-- Per-repo config and cache: `<repo>/.idiolect/` (cache git-ignored)
+- Developer config: `~/.idiolect/config.json` (name, all emails across repos, LLM provider). Never inside a repo, so nothing personal can be committed to a team repo
+- Per-repo config and cache: `<repo>/.idiolect/config.json` holds repo settings only (languages, ignore, sync targets, thresholds), safe to commit. `<repo>/.idiolect/cache/` is git-ignored
 - Team rules: `<repo>/.idiolect/team.json` (committed)
 
 Precedence when serving rules:
@@ -243,14 +244,25 @@ idiolect mcp                  # start MCP server
 idiolect ui                   # dashboard
 ```
 
-## 8. Config (`.idiolect/config.json`)
+## 8. Config
+
+Developer, `~/.idiolect/config.json`:
 
 ```json
 {
-  "emails": ["me@example.com"],
+  "name": "Me",
+  "emails": ["me@example.com", "me@work.com"],
+  "llm": { "provider": "claude-cli" }
+}
+```
+
+Other providers: `{ "provider": "anthropic", "model": "claude-opus-5-5", "apiKeyEnv": "ANTHROPIC_API_KEY" }` or `{ "provider": "openai-compatible", "baseUrl": "http://localhost:11434/v1", "model": "<model>" }`.
+
+Repo, `<repo>/.idiolect/config.json`, every field optional:
+
+```json
+{
   "languages": ["kotlin"],
-  "llm": { "provider": "anthropic", "model": "claude-opus-5-5", "apiKeyEnv": "ANTHROPIC_API_KEY" },
-  "// local example": { "provider": "openai-compatible", "baseUrl": "http://localhost:11434/v1", "model": "<model>" },
   "sampling": { "maxTokens": 40000 },
   "confidenceThreshold": 0.6,
   "minSampleSize": 20,

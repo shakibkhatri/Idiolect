@@ -1,12 +1,19 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
 
-export const ConfigSchema = z.object({
-  emails: z.array(z.string()).min(1),
+/** Who the developer is and which LLM they use. Lives in the home directory, never inside a repo. */
+export const UserConfigSchema = z.object({
   name: z.string().optional(),
-  languages: z.array(z.enum(["kotlin"])).default(["kotlin"]),
+  emails: z.array(z.string()).min(1),
   llm: z.object({ provider: z.enum(["claude-cli", "anthropic", "openai", "gemini", "openai-compatible", "none"]).default("none"), model: z.string().optional(), apiKeyEnv: z.string().optional(), baseUrl: z.string().optional() }).prefault({}),
+});
+export type UserConfig = z.infer<typeof UserConfigSchema>;
+
+/** Repo-level settings. Nothing personal, safe to commit, every field has a default so the file is optional. */
+export const RepoConfigSchema = z.object({
+  languages: z.array(z.enum(["kotlin"])).default(["kotlin"]),
   sampling: z.object({ maxTokens: z.number().default(40000) }).prefault({}),
   confidenceThreshold: z.number().default(0.6),
   minSampleSize: z.number().default(20),
@@ -14,16 +21,27 @@ export const ConfigSchema = z.object({
   refresh: z.object({ everyCommits: z.number().default(50) }).prefault({}),
   ignore: z.array(z.string()).default([]),
 });
-export type Config = z.infer<typeof ConfigSchema>;
+export type RepoConfig = z.infer<typeof RepoConfigSchema>;
 
-export const configPath = (repo: string) => join(repo, ".idiolect", "config.json");
+export const userConfigPath = () => join(homedir(), ".idiolect", "config.json");
+export const repoConfigPath = (repo: string) => join(repo, ".idiolect", "config.json");
 
-export async function loadConfig(repo: string): Promise<Config | undefined> {
-  const raw = await readFile(configPath(repo), "utf8").catch(() => undefined);
-  return raw === undefined ? undefined : ConfigSchema.parse(JSON.parse(raw));
+export async function loadUserConfig(): Promise<UserConfig | undefined> {
+  const raw = await readFile(userConfigPath(), "utf8").catch(() => undefined);
+  return raw === undefined ? undefined : UserConfigSchema.parse(JSON.parse(raw));
 }
 
-export async function saveConfig(repo: string, config: Config) {
+export async function saveUserConfig(config: UserConfig) {
+  await mkdir(join(homedir(), ".idiolect"), { recursive: true });
+  await writeFile(userConfigPath(), JSON.stringify(config, null, 2) + "\n");
+}
+
+export async function loadRepoConfig(repo: string): Promise<RepoConfig> {
+  const raw = await readFile(repoConfigPath(repo), "utf8").catch(() => "{}");
+  return RepoConfigSchema.parse(JSON.parse(raw));
+}
+
+export async function saveRepoConfig(repo: string, config: Partial<RepoConfig>) {
   await mkdir(join(repo, ".idiolect"), { recursive: true });
-  await writeFile(configPath(repo), JSON.stringify(config, null, 2) + "\n");
+  await writeFile(repoConfigPath(repo), JSON.stringify(config, null, 2) + "\n");
 }
