@@ -26,7 +26,7 @@ export const DEFAULT_IGNORE = [
   "**/vendor/**", "**/third_party/**", "**/*.lock", "**/*lock.json", "**/*.min.*", "**/*.d.ts",
 ];
 
-type Cache = { files: Record<string, OwnedFile>; commitsHead?: string; commits: Commit[] };
+type Cache = { emails?: string[]; files: Record<string, OwnedFile>; commitsHead?: string; commits: Commit[] };
 
 export async function git(repo: string, args: string[]): Promise<string> {
   const { stdout } = await execFileAsync("git", args, { cwd: repo, maxBuffer: 256 * 1024 * 1024 });
@@ -43,7 +43,7 @@ export async function collect(opts: CollectOptions): Promise<Collection> {
   const head = (await git(repo, ["rev-parse", "HEAD"])).trim();
   const ignore = [...DEFAULT_IGNORE, ...(opts.ignore ?? []), ...(await readIgnoreFile(repo))];
   const cachePath = join(repo, ".idiolect", "cache", "collector.json");
-  const cache = useCache ? await readCache(cachePath) : { files: {}, commits: [] };
+  const cache = useCache ? await readCache(cachePath, emails) : { files: {}, commits: [] };
 
   const files: OwnedFile[] = [];
   const blamed: Record<string, OwnedFile> = {};
@@ -58,6 +58,7 @@ export async function collect(opts: CollectOptions): Promise<Collection> {
   const commits = await listCommits(repo, head, emails, cache);
 
   if (useCache) {
+    cache.emails = emails;
     cache.files = blamed;
     cache.commits = commits;
     cache.commitsHead = head;
@@ -124,8 +125,10 @@ async function readIgnoreFile(repo: string): Promise<string[]> {
   return text.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
 }
 
-async function readCache(path: string): Promise<Cache> {
-  return JSON.parse(await readFile(path, "utf8").catch(() => '{"files":{},"commits":[]}'));
+/** Ownership and commits depend on the email list, so a cache written for other emails is thrown away. */
+async function readCache(path: string, emails: string[]): Promise<Cache> {
+  const cache: Cache = JSON.parse(await readFile(path, "utf8").catch(() => '{"files":{},"commits":[]}'));
+  return cache.emails && [...cache.emails].sort().join() === [...emails].sort().join() ? cache : { files: {}, commits: [] };
 }
 
 async function writeCache(path: string, cache: Cache) {

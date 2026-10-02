@@ -258,7 +258,8 @@ export function testNameStyle(id: string): string {
 
 export function casing(id: string): Casing {
   if (id.startsWith("`")) return "backtick";
-  const x = id.replace(/^_+/, "");
+  // leading underscores and the # of a private class member are not part of the casing
+  const x = id.replace(/^[_#]+/, "");
   if (/^[A-Z][A-Z0-9]*(_[A-Z0-9]+)+$/.test(x) || (/^[A-Z]{2,}$/.test(x))) return "screaming";
   if (/^[a-z][a-z0-9]*(_[a-z0-9]+)+$/.test(x)) return "snake";
   if (/^[a-z][a-zA-Z0-9]*$/.test(x)) return "camel";
@@ -266,7 +267,7 @@ export function casing(id: string): Casing {
   return "other";
 }
 
-const words = (id: string) => id.replace(/^_+/, "").split(/(?=[A-Z])|_/).map((w) => w.toLowerCase()).filter(Boolean);
+const words = (id: string) => id.replace(/^[_#]+/, "").split(/(?=[A-Z])|_/).map((w) => w.toLowerCase()).filter(Boolean);
 export const firstWord = (id: string) => words(id)[0] ?? id;
 const name = (n: Node) => n.namedChildren.find((c) => c?.type === "identifier")?.text;
 const modifierTexts = (n: Node) => new Set(n.namedChildren.find((c) => c?.type === "modifiers")?.namedChildren.map((c) => c?.text ?? "") ?? []);

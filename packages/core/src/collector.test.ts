@@ -62,3 +62,13 @@ test("incremental rescan picks up new commits and changed files", async () => {
 test("detects email from git config", async () => {
   expect(await detectEmail(repo)).toBe(A);
 });
+
+test("a cache written for other emails is discarded, so adding an email changes ownership on the next scan", async () => {
+  await collect({ repo, emails: [A] });
+  const both = await collect({ repo, emails: [A, B] });
+  expect(both.files.map((f) => f.path)).toContain("src/Util.kt");
+  expect(both.files.find((f) => f.path === "src/Repo.kt")!.ownedLines).toBe(5);
+  expect(both.commits.map((m) => m.subject)).toContain("bob adds util");
+  const cache = JSON.parse(readFileSync(join(repo, ".idiolect/cache/collector.json"), "utf8"));
+  expect(cache.emails).toEqual([A, B]);
+});

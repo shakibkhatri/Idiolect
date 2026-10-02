@@ -22,7 +22,7 @@ Build: `pnpm build`, which must run before the global `idiolect` command picks u
 The CLI is linked globally with `npm link` from `packages/cli`, so `idiolect` on this machine runs `packages/cli/dist/index.js`.
 
 TypeScript, Python and Go landed on 2026-10-02 too. TypeScript was verified on the Firebase functions in Dissent, Python on its six scripts and on dabeaz/sly against the stdlib `ast` module, Go on tidwall/gjson against a regex count because this machine has no Go toolchain.
-`scripts/verify/README.md` says how: an independent counter per language plus a scan with an isolated `HOME` so nobody's profile is touched. Use it for Swift.
+All four languages were then checked the same way on a well-known single-author repo: sly, gjson, ky and picnic. `scripts/verify/README.md` has the counters, the isolated-`HOME` recipe and the results. Use it for Swift.
 Not built: M9 team mode, M10 dashboard, Swift.
 Spec step 6, launch, has its README. Posting it is Shakib's call.
 
@@ -50,7 +50,7 @@ The spec lists more packages, they get created when their module is built, not b
 ## How the pipeline works
 
 Collector (`core/src/collector.ts`): `git ls-tree` at HEAD for files, `git blame -w --line-porcelain` per file for owned line ranges, `git log` for the author's commits.
-Cache per file by blob hash in `<repo>/.idiolect/cache/collector.json`, so warm rescans take about 100 ms.
+Cache per file by blob hash in `<repo>/.idiolect/cache/collector.json`, so warm rescans take about 100 ms. The cache also records the email list and is discarded when it changes, found when a third author email on picnic changed nothing.
 
 Analyzer (`core/src/analyzer.ts`): one tree-sitter walk per file producing counts and histograms only, never ratios.
 `analyzeTree` is the shared walk, `count` in analyzer.ts is the Kotlin counter, `analyzer-ts.ts`, `analyzer-py.ts` and `analyzer-go.ts` the others, `languages.ts` dispatches by language. `languageOf(path)` and `EXTENSIONS` decide which files are scanned.
