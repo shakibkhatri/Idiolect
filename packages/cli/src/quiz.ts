@@ -88,92 +88,109 @@ export function page(pairs: Omit<Pair, "flip">[]): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Idiolect quiz</title>
 <style>
-  :root { --bg: #fff; --fg: #1a1a1a; --dim: #9a9a9a; --line: #e6e6e6; --mark: #fff3bf; --accent: #2f6feb; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #111; --fg: #e8e8e8; --dim: #6a6a6a; --line: #2a2a2a; --mark: #4a3f10; --accent: #6ea0ff; } }
+  :root { --bg: #f4f4f6; --card: #fff; --fg: #1b1b1f; --muted: #6b6b76; --line: #e2e2e8; --accent: #4f5bd5; --accent-soft: #eceefb; --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(20,20,40,.06); }
+  @media (prefers-color-scheme: dark) { :root { --bg: #0f0f12; --card: #19191e; --fg: #ececf1; --muted: #8a8a96; --line: #2a2a32; --accent: #8c96ff; --accent-soft: #23243a; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35); } }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-  header { display: flex; align-items: baseline; gap: 16px; padding: 12px 16px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); }
-  header h1 { font-size: 14px; margin: 0; font-weight: 600; }
-  header .count { color: var(--dim); }
-  header .keys { margin-left: auto; color: var(--dim); }
-  kbd { border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
-  .prompt { padding: 10px 16px; color: var(--dim); white-space: pre-wrap; border-bottom: 1px solid var(--line); font-family: system-ui, sans-serif; }
-  .bar { height: 3px; background: var(--line); } .bar i { display: block; height: 100%; background: var(--accent); transition: width .2s; }
-  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  td { vertical-align: top; padding: 0 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
-  td + td { border-left: 1px solid var(--line); }
-  th { text-align: left; padding: 6px 12px; color: var(--dim); font-weight: 600; border-bottom: 1px solid var(--line); }
-  th + th { border-left: 1px solid var(--line); }
-  tr.same td { color: var(--dim); }
-  tr.diff td.has { background: var(--mark); }
-  .choose { display: flex; gap: 12px; padding: 16px; position: sticky; bottom: 0; background: var(--bg); border-top: 1px solid var(--line); }
-  button { flex: 1; padding: 12px; font: inherit; font-weight: 600; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--fg); cursor: pointer; }
-  button:hover { border-color: var(--accent); }
-  button.skip { flex: 0 0 120px; color: var(--dim); }
-  .done { padding: 24px 16px; max-width: 720px; }
-  .done h2 { font-size: 20px; margin: 0 0 8px; }
-  .done table { margin-top: 16px; width: auto; } .done td { padding: 4px 24px 4px 0; white-space: normal; border: 0; }
-  .with { color: var(--accent); }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 20px 24px 120px; }
+  header { display: flex; align-items: center; gap: 20px; margin-bottom: 18px; }
+  header h1 { font-size: 20px; margin: 0; font-weight: 650; letter-spacing: -.01em; }
+  .dots { display: flex; gap: 5px; margin-left: auto; }
+  .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); transition: background .2s, transform .2s; }
+  .dots i.done { background: var(--accent); } .dots i.now { background: var(--accent); transform: scale(1.35); }
+  .task { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; margin-bottom: 18px; box-shadow: var(--shadow); }
+  .task small { display: block; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+  .task p { margin: 0; white-space: pre-wrap; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 900px) { .pair { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); cursor: pointer; transition: border-color .15s, transform .15s, box-shadow .15s; overflow: hidden; animation: in .25s ease-out; }
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,.06), 0 14px 32px rgba(20,20,40,.12); }
+  .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .card h2 { display: flex; align-items: center; gap: 10px; margin: 0; padding: 12px 16px; font-size: 13px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .card h2 b { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-size: 14px; }
+  .card h2 span { margin-left: auto; font-weight: 500; opacity: 0; transition: opacity .15s; }
+  .card:hover h2 span { opacity: 1; }
+  pre { margin: 0; padding: 14px 16px; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+  pre .same { opacity: .4; }
+  pre .diff { box-shadow: inset 3px 0 0 var(--accent); margin-left: -16px; padding-left: 13px; display: inline-block; width: calc(100% + 16px); }
+  .foot { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; gap: 18px; padding: 14px; background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(8px); border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  kbd { font: 12px ui-monospace, monospace; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; background: var(--card); color: var(--fg); }
+  .foot button { font: inherit; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; cursor: pointer; }
+  .foot button:hover { color: var(--fg); border-color: var(--accent); }
+  .result { max-width: 640px; margin: 48px auto; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 32px; box-shadow: var(--shadow); animation: in .3s ease-out; }
+  .result .big { font-size: 56px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+  .result .big small { font-size: 20px; color: var(--muted); font-weight: 500; margin-left: 8px; letter-spacing: 0; }
+  .result p { color: var(--muted); margin: 12px 0 20px; }
+  .meter { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; position: relative; }
+  .meter i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .6s ease-out; }
+  .meter:after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; border-left: 2px dashed var(--muted); }
+  .legend { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin: 6px 0 24px; }
+  .list { display: grid; grid-template-columns: 1fr auto; gap: 6px 24px; font-size: 14px; }
+  .list .with { color: var(--accent); font-weight: 600; } .list .without, .list .skip { color: var(--muted); }
+  @keyframes in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 </style>
 </head>
 <body>
-<header><h1>Which sounds like you?</h1><span class="count" id="count"></span><span class="keys"><kbd>A</kbd> left <kbd>B</kbd> right <kbd>S</kbd> skip</span></header>
-<div class="bar"><i id="bar"></i></div>
-<div id="root"></div>
+<div class="wrap">
+  <header><h1>Which sounds like you?</h1><div class="dots" id="dots"></div></header>
+  <div id="root"></div>
+</div>
+<div class="foot" id="foot"><span><kbd>A</kbd> left</span><span><kbd>B</kbd> right</span><span><kbd>S</kbd> skip</span><button onclick="pick('skip')">Skip this one</button></div>
 <script id="data" type="application/json">${data}</script>
 <script>
 var pairs = JSON.parse(document.getElementById("data").textContent);
 var picks = [], i = 0;
-var root = document.getElementById("root");
+var root = document.getElementById("root"), dots = document.getElementById("dots");
+dots.innerHTML = pairs.map(function () { return "<i></i>"; }).join("");
 
-// longest common subsequence over lines, so shared code is dimmed and only the differences stand out
-function align(a, b) {
+// lines both outputs share, by longest common subsequence
+function shared(a, b) {
   var n = a.length, m = b.length, dp = [];
-  for (var x = 0; x <= n; x++) { dp.push(new Array(m + 1).fill(0)); }
-  // blank lines do not anchor the alignment, otherwise two unrelated paragraphs line up on their gaps
-  function same(x, y) { return a[x] === b[y] && a[x].trim() !== ""; }
-  for (var x = n - 1; x >= 0; x--) for (var y = m - 1; y >= 0; y--) dp[x][y] = same(x, y) ? dp[x + 1][y + 1] + 1 : Math.max(dp[x + 1][y], dp[x][y + 1]);
-  var rows = [], x = 0, y = 0, da = [], db = [];
-  // a run of changed lines is zipped so both versions of a paragraph sit on the same rows
-  function flush() { for (var k = 0; k < Math.max(da.length, db.length); k++) { var l = k < da.length ? da[k] : null, r = k < db.length ? db[k] : null; rows.push([l, r, l === r]); } da = []; db = []; }
-  while (x < n || y < m) {
-    if (x < n && y < m && same(x, y)) { flush(); rows.push([a[x++], b[y++], true]); }
-    else if (y < m && (x >= n || dp[x][y + 1] >= dp[x + 1][y])) { db.push(b[y++]); }
-    else { da.push(a[x++]); }
+  for (var x = 0; x <= n; x++) dp.push(new Array(m + 1).fill(0));
+  for (var x = n - 1; x >= 0; x--) for (var y = m - 1; y >= 0; y--) dp[x][y] = a[x] === b[y] && a[x].trim() ? dp[x + 1][y + 1] + 1 : Math.max(dp[x + 1][y], dp[x][y + 1]);
+  var sa = new Set(), sb = new Set(), x = 0, y = 0;
+  while (x < n && y < m) {
+    if (a[x] === b[y] && a[x].trim()) { sa.add(x); sb.add(y); x++; y++; }
+    else if (dp[x + 1][y] >= dp[x][y + 1]) x++; else y++;
   }
-  flush();
-  return rows;
+  return [sa, sb];
 }
 function esc(s) { return s.replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
-function cell(s) { return s === null ? "<td></td>" : "<td class=\\"has\\">" + (esc(s) || " ") + "</td>"; }
 
+// the dimming only helps when the two outputs mostly overlap, two unrelated texts stay plain
+function render(lines, same, mark) {
+  return lines.map(function (l, k) { return mark ? "<span class=\\"" + (same.has(k) ? "same" : l.trim() ? "diff" : "") + "\\">" + esc(l) + "</span>" : esc(l); }).join("\\n");
+}
+function card(side, text, same, mark) {
+  return "<div class=\\"card\\" tabindex=\\"0\\" role=\\"button\\" onclick=\\"pick('" + side + "')\\" onkeydown=\\"if(event.key==='Enter')pick('" + side + "')\\"><h2><b>" + side + "</b>Output " + side + "<span>Pick this one</span></h2><pre>" + render(text, same, mark) + "</pre></div>";
+}
 function show() {
-  var p = pairs[i];
-  document.getElementById("count").textContent = (i + 1) + " / " + pairs.length + "  " + p.task;
-  document.getElementById("bar").style.width = (100 * i / pairs.length) + "%";
-  var rows = align(p.a.trim().split("\\n"), p.b.trim().split("\\n"));
-  var html = "<div class=\\"prompt\\">" + esc(p.prompt) + "</div><table><tr><th>A</th><th>B</th></tr>";
-  for (var r = 0; r < rows.length; r++) html += "<tr class=\\"" + (rows[r][2] ? "same" : "diff") + "\\">" + cell(rows[r][0]) + cell(rows[r][1]) + "</tr>";
-  html += "</table><div class=\\"choose\\"><button onclick=\\"pick('A')\\">A sounds like me</button><button class=\\"skip\\" onclick=\\"pick('skip')\\">Skip</button><button onclick=\\"pick('B')\\">B sounds like me</button></div>";
-  root.innerHTML = html;
+  var p = pairs[i], a = p.a.trim().split("\\n"), b = p.b.trim().split("\\n");
+  var s = shared(a, b), mark = s[0].size >= Math.min(a.length, b.length) * 0.5;
+  var d = dots.children; for (var k = 0; k < d.length; k++) d[k].className = k < i ? "done" : k === i ? "now" : "";
+  root.innerHTML = "<div class=\\"task\\"><small>Task " + (i + 1) + " of " + pairs.length + "</small><p>" + esc(p.prompt) + "</p></div><div class=\\"pair\\">" + card("A", a, s[0], mark) + card("B", b, s[1], mark) + "</div>";
   window.scrollTo(0, 0);
 }
 function pick(v) {
+  if (i >= pairs.length) return;
   picks.push({ task: pairs[i].task, pick: v });
   if (++i < pairs.length) return show();
-  document.getElementById("bar").style.width = "100%";
-  document.getElementById("count").textContent = "done";
-  root.innerHTML = "<div class=\\"done\\">Scoring...</div>";
+  var d = dots.children; for (var k = 0; k < d.length; k++) d[k].className = "done";
+  document.getElementById("foot").style.display = "none";
+  root.innerHTML = "<div class=\\"result\\">Scoring...</div>";
   fetch("/done", { method: "POST", body: JSON.stringify(picks) }).then(function (r) { return r.json(); }).then(finish);
 }
 function finish(q) {
-  var html = "<div class=\\"done\\"><h2>You picked the profile output " + q.withWins + " of " + q.total + "</h2>";
-  html += "<p>More than half means the profile makes agent output read more like you. The report is updated, you can close this tab.</p><table>";
-  for (var r = 0; r < q.picks.length; r++) html += "<tr><td>" + esc(q.picks[r].task) + "</td><td class=\\"" + q.picks[r].picked + "\\">" + (q.picks[r].picked === "with" ? "profile" : q.picks[r].picked === "without" ? "plain" : "skipped") + "</td></tr>";
-  root.innerHTML = html + "</table></div>";
+  var pct = q.total ? Math.round(100 * q.withWins / q.total) : 0;
+  var verdict = !q.total ? "Nothing answered." : pct > 60 ? "The profile makes agent output read more like you." : pct < 40 ? "The profile makes agent output read less like you." : "No clear difference yet. Chance is the dashed line.";
+  var html = "<div class=\\"result\\"><div class=\\"big\\">" + q.withWins + " <small>of " + q.total + " for the profile</small></div><p>" + verdict + " The report is updated, you can close this tab.</p>";
+  html += "<div class=\\"meter\\"><i id=\\"meter\\"></i></div><div class=\\"legend\\"><span>none for the profile</span><span>chance</span><span>all for the profile</span></div><div class=\\"list\\">";
+  for (var r = 0; r < q.picks.length; r++) html += "<span>" + esc(q.picks[r].task) + "</span><span class=\\"" + q.picks[r].picked + "\\">" + ({ with: "profile", without: "plain", skip: "skipped" })[q.picks[r].picked] + "</span>";
+  root.innerHTML = html + "</div></div>";
+  requestAnimationFrame(function () { document.getElementById("meter").style.width = pct + "%"; });
 }
 document.addEventListener("keydown", function (e) {
-  if (i >= pairs.length || e.metaKey || e.ctrlKey) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
   var k = e.key.toUpperCase();
   if (k === "A" || k === "B") pick(k); else if (k === "S") pick("skip");
 });
