@@ -4,6 +4,7 @@ import { DEFAULT_TASKS_DIR, loadTasks, renderReport, runEval, type Report } from
 import { createIdiolectServer } from "@shakibkhatri/idiolect-mcp";
 import { renderHelp, TAGLINE } from "./help.js";
 import { scanSummary } from "./summary.js";
+import { progress } from "./term.js";
 import { syncTargets } from "./sync.js";
 import { NO_PROFILE, rulesCommand, writeStyle } from "./rules.js";
 import { FOLLOWS, onPath, stylesCommand, useCommand } from "./styles.js";
@@ -108,17 +109,23 @@ program.command("scan")
     if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
     const config = await loadRepoConfig(repo);
     const t0 = Date.now();
-    const c = await collect({ repo, emails: user.emails, ignore: config.ignore, cache: o.cache, extensions: config.languages.flatMap((l) => EXTENSIONS[l]) });
+    // the blame pass of a first scan takes seconds, a pipe and the refresh log stay quiet
+    const reading = progress.interactive ? progress.spinner("reading your lines") : undefined;
+    const c = await collect({ repo, emails: user.emails, ignore: config.ignore, cache: o.cache, extensions: config.languages.flatMap((l) => EXTENSIONS[l]), onFile: (done, total) => reading?.update(`${done}/${total} files`) })
+      .catch((e) => { reading?.stop(""); throw e; });
+    reading?.clear();
     const linesOwned = c.files.reduce((n, f) => n + f.ownedLines, 0);
+    if (!c.files.length && !c.commits.length) reading?.stop("");
     if (!c.files.length && !c.commits.length) throw new Error(`none of your emails (${user.emails.join(", ")}) appear in this repo, run: idiolect init`);
     if (o.verbose) process.stderr.write(`collected ${c.files.length} files, ${linesOwned} owned lines, ${c.commits.length} commits${c.agentCommits ? `, ${c.agentCommits} agent commits excluded` : ""} (${Date.now() - t0}ms)\n`);
 
     const stats: Partial<Record<Language, LanguageStats>> = {};
     const perFile: Partial<Record<Language, LanguageStats[]>> = {};
     const inputs: SampleInput[] = [];
-    for (const f of c.files) {
+    for (const [i, f] of c.files.entries()) {
       const lang = languageOf(f.path);
       if (!lang) continue;
+      reading?.update(`measuring ${i + 1}/${c.files.length} files`);
       const code = await git(repo, ["show", `${c.head}:${f.path}`]);
       const test = isTestPath(f.path);
       inputs.push({ path: f.path, code, ranges: f.ranges, test });
@@ -126,6 +133,7 @@ program.command("scan")
       stats[lang] = mergeStats(stats[lang] ?? emptyStats(), st);
       (perFile[lang] ??= []).push(st);
     }
+    reading?.stop("");
     const spread = Object.fromEntries((Object.entries(perFile) as [Language, LanguageStats[]][]).map(([l, xs]) => [l, fileSpread(xs)]));
     const commitStats = analyzeCommits(c.commits);
 
@@ -137,7 +145,7 @@ program.command("scan")
     profile = { ...profile, developer: { name, emails: user.emails } };
     await saveProfile(profile);
 
-    let provider;
+    let provider: ReturnType<typeof createProvider>;
     try { provider = o.llm ? createProvider(user.llm) : undefined; }
     catch (e) { process.stderr.write(`warning: ${(e as Error).message}, writing metric rules only\n`); }
     const samples = await collectSamples(inputs, c.commits, { maxTokens: config.sampling.maxTokens });
@@ -148,8 +156,9 @@ program.command("scan")
       console.log(`\nprovider: ${provider ? `${provider.name} ${provider.model}` : "none (metric rules only)"}. Nothing was sent.`);
       return;
     }
-    if (provider) process.stderr.write(`asking ${provider.name} ${provider.model} (${estimateTokens(buildPrompt(profile, samples, []).user)} tokens)...\n`);
-    profile = { ...profile, rules: await writeRules(profile, samples, provider, ruleOpts) };
+    const write = () => writeRules(profile, samples, provider, ruleOpts);
+    const rules = provider ? await progress.during(`asking ${provider.name} ${provider.model} (${estimateTokens(buildPrompt(profile, samples, []).user)} tokens)`, write) : await write();
+    profile = { ...profile, rules };
     await saveProfile(profile);
     await writeStyle(profile, config.confidenceThreshold);
     const project = profile.rules.filter((r) => r.repo === repo).length;
@@ -254,9 +263,13 @@ program.command("eval")
     for (const f of c.files.slice(0, 400)) inputs.push({ path: f.path, code: await git(repo, ["show", `${c.head}:${f.path}`]), ranges: f.ranges, test: isTestPath(f.path) });
     const samples = await collectSamples(inputs, c.commits, { maxTokens: 12000, functions: 12, comments: 20, commits: 8 });
     const references = [...samples.functions, ...samples.comments, ...samples.commits];
-    process.stderr.write(`${tasks.length} tasks, ${references.length} reference samples, ${provider.name} ${provider.model}, ${tasks.length * 3} LLM calls\n`);
-
-    const report: Report = await runEval({ profile, provider, references, tasks, repo, threshold: config.confidenceThreshold, concurrency: Number(o.concurrency), onProgress: (m) => process.stderr.write(`  ${m}\n`) });
+    // a terminal counts the finished tasks on one line, a pipe keeps one line per task
+    let steps = 0;
+    const report: Report = await progress.during(`${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}, ${references.length} reference samples, ${provider.name} ${provider.model}, ${tasks.length * 3} LLM calls`, (spin) =>
+      runEval({ profile, provider, references, tasks, repo, threshold: config.confidenceThreshold, concurrency: Number(o.concurrency), onProgress: (m) => {
+        spin.update(`${++steps}/${tasks.length * 2} steps`);
+        if (!progress.interactive) process.stderr.write(`  ${m}\n`);
+      } }));
     if (o.quiz) report.quiz = await quiz(report);
 
     const dir = join(await ensureRepoDir(repo), "eval");

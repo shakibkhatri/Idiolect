@@ -1,6 +1,7 @@
 import { allExtensions, createProvider, git, languageOf, loadServedProfile, loadRepoConfig, loadUserConfig, rewriteLikeMe, unbot, type Violation } from "@shakibkhatri/idiolect-core";
 import { Command } from "commander";
 import { NO_PROFILE } from "./rules.js";
+import { progress } from "./term.js";
 import { access, readFile, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 
@@ -38,29 +39,37 @@ export function unbotCommand(): Command {
       const picked = await pickFiles(repo, files, o);
       if (!picked.length) { console.log("no source files to check"); return; }
       let total = 0, flagged = 0, fixed = 0;
-      for (const file of picked) {
-        const abs = join(repo, file);
-        const language = languageOf(file);
-        let code = await readFile(abs, "utf8").catch(() => undefined);
-        if (code === undefined || !language) continue;
-        const opts = { language, threshold, repo, file, floors };
-        let found = await unbot(profile, code, opts, o.llm ? provider : undefined);
-        if (!found.length) continue;
-        flagged++;
-        console.log(`${file}\n${found.map(show).join("\n")}`);
-        if (o.fix) {
-          const out = await rewriteLikeMe(profile, code, opts, provider!);
-          await writeFile(abs, out.code.endsWith("\n") ? out.code : `${out.code}\n`);
-          code = out.code;
-          const before = found.length;
-          found = await unbot(profile, code, opts, o.llm ? provider : undefined);
-          fixed += before - found.length;
-          console.log(`  rewrote the file:${out.changes.map((c) => `\n    - ${c}`).join("") || " nothing changed"}\n  ${found.length} left after the rewrite`);
+      // only the LLM modes wait, the fast check and the hooks print nothing extra
+      const spin = provider ? progress.spinner(`${o.fix ? "checking and rewriting" : "checking"} ${picked.length} ${picked.length === 1 ? "file" : "files"} with ${provider.name} ${provider.model}`) : undefined;
+      const say = (text: string) => { spin?.clear(); console.log(text); };
+      try {
+        for (const [i, file] of picked.entries()) {
+          spin?.update(`${i + 1}/${picked.length} ${file}`);
+          const abs = join(repo, file);
+          const language = languageOf(file);
+          let code = await readFile(abs, "utf8").catch(() => undefined);
+          if (code === undefined || !language) continue;
+          const opts = { language, threshold, repo, file, floors };
+          let found = await unbot(profile, code, opts, o.llm ? provider : undefined);
+          if (!found.length) continue;
+          flagged++;
+          say(`${file}\n${found.map(show).join("\n")}`);
+          if (o.fix) {
+            const out = await rewriteLikeMe(profile, code, opts, provider!);
+            await writeFile(abs, out.code.endsWith("\n") ? out.code : `${out.code}\n`);
+            code = out.code;
+            const before = found.length;
+            found = await unbot(profile, code, opts, o.llm ? provider : undefined);
+            fixed += before - found.length;
+            say(`  rewrote the file:${out.changes.map((c) => `\n    - ${c}`).join("") || " nothing changed"}\n  ${found.length} left after the rewrite`);
+          }
+          total += found.length;
         }
-        total += found.length;
-      }
-      const where = `${flagged} of ${picked.length} files`;
-      console.log(o.fix ? `\n${fixed} fixed, ${total} left in ${where}` : total ? `\n${total} ${total === 1 ? "violation" : "violations"} in ${where}` : `\n${picked.length} files, nothing flagged`);
+      } catch (e) { spin?.fail(); throw e; }
+      spin?.stop();
+      const count = `${picked.length} ${picked.length === 1 ? "file" : "files"}`;
+      const where = `${flagged} of ${count}`;
+      console.log(o.fix ? `\n${fixed} fixed, ${total} left in ${where}` : total ? `\n${total} ${total === 1 ? "violation" : "violations"} in ${where}` : `\n${count}, nothing flagged`);
       if (total && o.strict) process.exit(1);
     });
 }

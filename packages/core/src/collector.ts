@@ -22,6 +22,8 @@ export type CollectOptions = {
   ignore?: string[];
   maxFileBytes?: number;
   cache?: boolean;
+  /** Called after each file is blamed or read from the cache, for a progress counter. */
+  onFile?: (done: number, total: number) => void;
 };
 
 export const DEFAULT_IGNORE = [
@@ -51,11 +53,14 @@ export async function collect(opts: CollectOptions): Promise<Collection> {
 
   const files: OwnedFile[] = [];
   const blamed: Record<string, OwnedFile> = {};
-  await pool(await listFiles(repo, head, extensions, ignore, maxFileBytes), 8, async (f) => {
+  const listed = await listFiles(repo, head, extensions, ignore, maxFileBytes);
+  let done = 0;
+  await pool(listed, 8, async (f) => {
     const cached = cache.files[f.path];
     const owned = cached?.blob === f.blob ? cached : await blameFile(repo, head, f, emails, agents);
     blamed[f.path] = owned;
     if (owned.ownedLines > 0) files.push(owned);
+    opts.onFile?.(++done, listed.length);
   });
   files.sort((a, b) => a.path.localeCompare(b.path));
 

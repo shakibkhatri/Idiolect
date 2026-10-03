@@ -44,10 +44,24 @@ test("the spinner prints two stable lines in a pipe and redraws one line in a TT
     expect(screen.chunks[0]).toBe(`\r${ESC}[K| asking claude-cli 0s`);
     expect(screen.chunks[1]).toBe(`\r${ESC}[K/ asking claude-cli 2s`);
     expect(screen.chunks.at(-1)).toBe(`\r${ESC}[Kasking claude-cli done in 2s\n`);
+    const more = createTerm(screen, { NO_COLOR: "1" }, () => clock).spinner("reading your lines");
+    more.update("3/9 files");
+    vi.advanceTimersByTime(120);
+    expect(screen.chunks.at(-1)).toBe(`\r${ESC}[K/ reading your lines 3/9 files 0s`);
+    more.stop("");
+    expect(screen.chunks.at(-1)).toBe(`\r${ESC}[K`); // an empty final line leaves nothing behind
     const drawn = screen.chunks.length;
     vi.advanceTimersByTime(1000);
     expect(screen.chunks.length).toBe(drawn); // nothing is drawn after stop
   } finally {
     vi.useRealTimers();
   }
+});
+
+test("during closes the spinner with done on success and failed on an error", async () => {
+  const out = fake(false);
+  const t = createTerm(out, {}, () => 0);
+  expect(await t.during("asking", async () => 7)).toBe(7);
+  await expect(t.during("asking again", async () => { throw new Error("no"); })).rejects.toThrow("no");
+  expect(out.chunks).toEqual(["asking\n", "done in 0s\n", "asking again\n", "failed after 0s\n"]);
 });
