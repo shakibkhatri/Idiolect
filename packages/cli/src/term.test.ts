@@ -154,3 +154,18 @@ test("multiSelect ticks with Space, keeps one tick per group and answers at once
   press("escape");
   expect(await left).toBeUndefined();
 });
+
+test("a list in a narrow window cuts its lines instead of letting them wrap", async () => {
+  const { select } = await import("./term.js");
+  const { keys, press } = await keyboard();
+  const screen = Object.assign(fake(true), { columns: 24 });
+  const picked = select([{ value: 1, label: "The style" }, { value: 2, label: "Everything in this project" }], { input: keys, t: createTerm(screen, { NO_COLOR: "1" }), out: screen, numbered: true, leave: "Leave, change nothing" });
+  const lines = screen.chunks.at(-1)!.split("\n").map((l) => l.replace(`${ESC}[2K`, ""));
+  expect(Math.max(...lines.map((l) => l.length))).toBeLessThanOrEqual(23);
+  expect(lines).toContain("  2  Everything in this");
+  expect(lines).toContain("Up and down to move, En");
+  press("2", "2");
+  press("return");
+  expect(await picked).toBe(2);
+  expect(screen.chunks.at(-1)).toBe(`${ESC}[4A${ESC}[J> Everything in this pr\n${ESC}[?25h`);
+});

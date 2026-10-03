@@ -1,7 +1,7 @@
 import { emitKeypressEvents } from "node:readline";
 
 /** Colour, spinner, the arrow-key list and the TTY check for every command, so none of them writes ANSI codes itself. */
-export type Out = { isTTY?: boolean; write(text: string): unknown };
+export type Out = { isTTY?: boolean; columns?: number; write(text: string): unknown };
 type Env = Record<string, string | undefined>;
 
 // The roles of theme.ts on the basic ANSI colours, which follow the user's terminal theme.
@@ -82,17 +82,19 @@ function list<T>(choices: Choice<T>[], o: ListOptions, ticked?: Set<number>): Pr
   const width = Math.max(0, ...choices.filter((c) => c.hint).map((c) => c.label.length));
   const digits = String(choices.length).length;
   let at = Math.min(Math.max(o.start ?? 0, 0), rows - 1);
-  const mark = (i: number, text: string) => (i === at ? `${t.accent(">")} ${t.bold(text)}` : `  ${text}`);
+  // a line that wraps would throw off the redraw, which counts lines, so each one is cut to the window
+  const fit = (text: string, used = 0) => (out.columns && text.length > out.columns - 1 - used ? text.slice(0, Math.max(0, out.columns - 1 - used)) : text);
+  const mark = (i: number, text: string) => (i === at ? `${t.accent(">")} ${t.bold(fit(text, 2))}` : `  ${fit(text, 2)}`);
   const render = () => {
     const lines: string[] = [];
     choices.forEach((c, i) => {
-      if (c.heading !== undefined) lines.push(...(i ? [""] : []), c.heading);
+      if (c.heading !== undefined) lines.push(...(i ? [""] : []), fit(c.heading));
       const box = !ticked ? "" : c.instant ? "    " : ticked.has(i) ? "[x] " : "[ ] ";
       const number = o.numbered ? `${String(i + 1).padStart(digits)}  ` : "";
       lines.push(mark(i, `${box}${number}${c.hint ? `${c.label.padEnd(width)} - ${c.hint}` : c.label}`));
     });
     if (o.leave) lines.push(mark(choices.length, `${" ".repeat((ticked ? 4 : 0) + (o.numbered ? digits + 2 : 0))}${o.leave}`));
-    lines.push(t.dim(ticked ? "Up and down to move, Space to tick, Enter to confirm, Esc to leave" : `Up and down to move, Enter to choose${o.leave ? ", Esc to leave" : ""}`));
+    lines.push(t.dim(fit(ticked ? "Up and down to move, Space to tick, Enter to confirm, Esc to leave" : `Up and down to move, Enter to choose${o.leave ? ", Esc to leave" : ""}`)));
     return lines;
   };
   const height = render().length;
@@ -104,7 +106,7 @@ function list<T>(choices: Choice<T>[], o: ListOptions, ticked?: Set<number>): Pr
       input.pause();
       // an answered list is not read again, so it shrinks to one line naming the answer
       const answer = picked?.filter((i) => !choices[i]!.instant).map((i) => choices[i]!.label).join(", ");
-      out.write(`\x1b[${height}A\x1b[J${answer && o.summary !== false ? `${t.accent(">")} ${answer}\n` : ""}\x1b[?25h`);
+      out.write(`\x1b[${height}A\x1b[J${answer && o.summary !== false ? `${t.accent(">")} ${fit(answer, 2)}\n` : ""}\x1b[?25h`);
       done(picked);
     };
     const tick = () => {
