@@ -29,6 +29,7 @@ Rules:
 - Every rule must be backed by one to three example samples, cited by their exact file and line as given. A rule you cannot cite does not exist.
 - Only state what the samples show. No generic best practices, nothing you would say about any developer.
 - Rule text is one or two sentences, imperative, written as an instruction to an agent. Quote a short pattern from the samples when it helps.
+- Your own wording uses plain punctuation: commas, periods, colons and the plain hyphen. No em dashes, no arrows, no emoji. A pattern quoted from the samples stays exactly as the developer wrote it.
 - Write at most twelve rules, at most three per category. Pick the habits that show in most of the samples, not the ones that show in a few.
 - Never write a rule that would make an agent add a comment, doc block or structure the samples mostly lack. Describe how the developer writes when they do write, never where to add more.
 - scope is "personal" when the habit would hold in any codebase this developer works in: voice, phrasing, structure, error handling style, how they name and comment.
