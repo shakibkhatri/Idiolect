@@ -1,6 +1,6 @@
 import { emptyProfile, emptyStats, type Rule } from "@shakibkhatri/idiolect-core";
 import { expect, test } from "vitest";
-import { scanSummary } from "./summary.js";
+import { llmHint, scanSummary } from "./summary.js";
 
 const rule = (id: string, language: Rule["language"], metric: boolean): Rule =>
   ({ id, scope: "personal", language, category: "naming", text: id, evidence: { examples: [], ...(metric ? { metric: { name: "m", value: 1, sampleSize: 30 } } : {}) }, confidence: 0.9, status: metric ? "auto" : "pending" });
@@ -18,4 +18,11 @@ test("a scan ends with one line per language, the total and the next step", () =
     "Next: idiolect show to read them, idiolect sync to give them to your agent.",
   ]);
   expect(scanSummary(profile, stats, { commits: 1, llm: false })).toContain("Learned 4 rules from measurements alone, no LLM was used.");
+});
+
+test("a failed LLM call is followed by what to run, with the sign-in step for a lapsed login", () => {
+  expect(llmHint("claude CLI: Failed to authenticate: OAuth session expired and could not be refreshed", "scan"))
+    .toBe("run: claude, sign in with /login, then idiolect scan again, or idiolect scan --no-llm for metric rules alone");
+  expect(llmHint("fetch failed", "scan")).toMatch(/^run: idiolect scan --no-llm/);
+  expect(llmHint("fetch failed", "eval")).toBe("run: idiolect init to check or change the LLM provider");
 });

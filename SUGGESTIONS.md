@@ -185,6 +185,9 @@ The provider starts `claude` with `execFile` and no shell.
 On Windows the command is usually `claude.cmd`, which Node may refuse to start that way.
 Picking and syncing styles makes no LLM call and works there, verified on a Windows laptop with 0.1.1.
 A scan with voice rules, `eval`, `unbot --llm` and `--fix` are untested on Windows.
+Half answered on 2026-10-03 with 0.2.0 on the Windows laptop: `idiolect scan` started `claude` there and got an answer back, "Failed to authenticate: OAuth session expired and could not be refreshed".
+So the command is found and runs without a shell.
+A call that succeeds is still unseen, it needs a fresh `/login` in Claude Code on that laptop.
 
 ## 28. Own profile for one language, a shipped style for another (open)
 

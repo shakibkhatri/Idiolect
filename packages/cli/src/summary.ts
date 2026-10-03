@@ -64,3 +64,10 @@ export function scanSummary(profile: Profile, stats: Partial<Record<Language, La
     "Next: idiolect show to read them, idiolect sync to give them to your agent.",
   ].join("\n");
 }
+
+/** The line under a failed LLM call: what to run. A lapsed login is the common case and has its own answer. */
+export function llmHint(message: string, command: string): string {
+  const fallback = command === "scan" ? ", or idiolect scan --no-llm for metric rules alone" : "";
+  if (/authenticat|oauth|log ?in|unauthorized|\b401\b/i.test(message)) return `run: claude, sign in with /login, then idiolect ${command} again${fallback}`;
+  return command === "scan" ? "run: idiolect scan --no-llm for metric rules alone, or idiolect init to change the provider" : "run: idiolect init to check or change the LLM provider";
+}

@@ -4,7 +4,7 @@ import { DEFAULT_TASKS_DIR, loadTasks, renderReport, runEval, type Report } from
 import { createIdiolectServer } from "@shakibkhatri/idiolect-mcp";
 import { renderHelp, TAGLINE } from "./help.js";
 import { removeCommand } from "./remove.js";
-import { scanSummary } from "./summary.js";
+import { llmHint, scanSummary } from "./summary.js";
 import { progress } from "./term.js";
 import { syncTargets } from "./sync.js";
 import { NO_PROFILE, rulesCommand, writeStyle } from "./rules.js";
@@ -161,7 +161,7 @@ program.command("scan")
       return;
     }
     const write = () => writeRules(profile, samples, provider, ruleOpts);
-    const rules = provider ? await progress.during(`asking ${provider.name} ${provider.model} (${estimateTokens(buildPrompt(profile, samples, []).user)} tokens)`, write) : await write();
+    const rules = provider ? await progress.during(`asking ${provider.name} ${provider.model} (${estimateTokens(buildPrompt(profile, samples, []).user)} tokens)`, write).catch(hinted("scan")) : await write();
     profile = { ...profile, rules };
     await saveProfile(profile);
     await writeStyle(profile, config.confidenceThreshold);
@@ -274,7 +274,7 @@ program.command("eval")
       runEval({ profile, provider, references, tasks, repo, threshold: config.confidenceThreshold, concurrency: Number(o.concurrency), onProgress: (m) => {
         spin.update(`${++steps}/${tasks.length * 2} steps`);
         if (!progress.interactive) process.stderr.write(`  ${m}\n`);
-      } }));
+      } })).catch(hinted("eval"));
     if (o.quiz) report.quiz = await quiz(report);
 
     const dir = join(await ensureRepoDir(repo), "eval");
@@ -299,6 +299,9 @@ program.command("mcp")
     });
     await server.connect(new StdioServerTransport());
   });
+
+// an LLM failure keeps its message and gains the line saying what to run
+const hinted = (command: string) => (e: Error): never => { throw new Error(`${e.message.split("\n")[0]}\n${llmHint(e.message, command)}`); };
 
 async function latestReport(repo: string) {
   const dir = join(repo, ".idiolect", "eval");
