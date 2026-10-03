@@ -165,7 +165,6 @@ async function pickFromList(repo: string, everything?: boolean): Promise<Style[]
     const ticked = await multiSelect(rows, preset, { numbered: true });
     if (ticked?.includes(MORE)) {
       ({ languages, shown, hidden } = await forProject(repo, true));
-      console.log("");
       continue;
     }
     // leaving the list is not an error, the caller says that nothing changed

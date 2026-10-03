@@ -126,9 +126,8 @@ export async function start(o: { repo: string; prompt: boolean }) {
   if (!o.prompt || !canAsk()) { console.log(`${renderState(state)}\n\n${renderSteps(steps)}`); return; }
   console.log(`${renderState(state)}\n`);
   // the list starts on Leave, so Enter alone changes nothing
-  const step = await select(steps.map((s) => ({ value: s, label: s.label, hint: commandOf(s) })), { numbered: true, leave: "Leave", start: steps.length });
+  const step = await select(steps.map((s) => ({ value: s, label: s.label, hint: commandOf(s) })), { numbered: true, leave: "Leave", start: steps.length, summary: false });
   if (!step) return;
-  console.log("");
   for (const args of step.runs) {
     console.log(term.dim(`> idiolect ${args.join(" ")}`));
     const code = await run(args, repo);

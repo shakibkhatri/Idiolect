@@ -67,7 +67,8 @@ export const progress = createTerm(process.stderr);
 export type Choice<T> = { value: T; label: string; hint?: string; heading?: string; group?: string; instant?: boolean };
 type KeyHandler = (text: string | undefined, key: { name?: string; ctrl?: boolean } | undefined) => void;
 export type Keys = { isTTY?: boolean; setRawMode?(raw: boolean): unknown; resume(): unknown; pause(): unknown; on(event: "keypress", fn: KeyHandler): unknown; off(event: "keypress", fn: KeyHandler): unknown };
-export type ListOptions = { start?: number; numbered?: boolean; leave?: string; input?: Keys; t?: Term; out?: Out };
+/** `summary: false` leaves no line behind once answered, for a caller that prints what happens next itself. */
+export type ListOptions = { start?: number; numbered?: boolean; leave?: string; summary?: boolean; input?: Keys; t?: Term; out?: Out };
 
 /** A list needs a terminal on both ends. Without one the caller prints the options and reads a typed answer. */
 export const canAsk = (input: Keys = process.stdin, t: Term = term) => input.isTTY === true && !!input.setRawMode && t.interactive;
@@ -101,8 +102,9 @@ function list<T>(choices: Choice<T>[], o: ListOptions, ticked?: Set<number>): Pr
       input.off("keypress", onKey);
       input.setRawMode!(false);
       input.pause();
-      // the key help goes, the list stays as it was answered
-      out.write("\x1b[1A\x1b[2K\x1b[?25h");
+      // an answered list is not read again, so it shrinks to one line naming the answer
+      const answer = picked?.filter((i) => !choices[i]!.instant).map((i) => choices[i]!.label).join(", ");
+      out.write(`\x1b[${height}A\x1b[J${answer && o.summary !== false ? `${t.accent(">")} ${answer}\n` : ""}\x1b[?25h`);
       done(picked);
     };
     const tick = () => {

@@ -108,6 +108,7 @@ Up and down to move, Enter to choose, Esc to leave
 
 Every menu works the same way: the arrow keys move, Enter chooses, a digit jumps to that row, and Esc leaves.
 Where several rows can be picked, Space ticks them and Enter confirms.
+Once answered, a list shrinks to one line with the answer, so the screen holds what was decided and not the options again.
 The list starts on Leave, so Enter alone changes nothing, and each step names the command it runs, so you know what to type next time.
 In a script, in CI or with `--no-prompt` it only prints the report and the commands.
 `idiolect --help` lists every command in three groups.

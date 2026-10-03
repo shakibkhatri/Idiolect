@@ -91,7 +91,8 @@ test("select moves with the arrow keys, wraps around, jumps on a digit and retur
   press("return");
   expect(await picked).toBe("c");
   expect(keys.raw).toEqual([true, false]);
-  expect(screen.chunks.at(-1)).toContain(`${ESC}[?25h`); // the cursor is shown again
+  // the answered list is erased and one line names the answer, the cursor is shown again
+  expect(screen.chunks.at(-1)).toBe(`${ESC}[4A${ESC}[J> gamma\n${ESC}[?25h`);
 
   // numbered rows and a leave row: Enter on Leave and Esc both answer nothing
   const leaving = select(choices, { ...o, numbered: true, leave: "Leave", start: 3 });
@@ -100,6 +101,7 @@ test("select moves with the arrow keys, wraps around, jumps on a digit and retur
   expect(screen.chunks.at(-1)).toContain("Enter to choose, Esc to leave");
   press("return");
   expect(await leaving).toBeUndefined();
+  expect(screen.chunks.at(-1)).toBe(`${ESC}[5A${ESC}[J${ESC}[?25h`); // leaving leaves no line behind
   const escaped = select(choices, { ...o, leave: "Leave" });
   press("escape");
   expect(await escaped).toBeUndefined();
@@ -107,6 +109,10 @@ test("select moves with the arrow keys, wraps around, jumps on a digit and retur
   press("down"); // from Leave it wraps to the first row
   press("return");
   expect(await first).toBe("a");
+  const quiet = select(choices, { ...o, summary: false });
+  press("return");
+  expect(await quiet).toBe("a");
+  expect(screen.chunks.at(-1)).not.toContain("alpha");
 
   // without a terminal there is no list, the caller asks for a typed answer
   expect(await select(choices, { ...o, input: (await keyboard(false)).keys })).toBeUndefined();
@@ -137,11 +143,13 @@ test("multiSelect ticks with Space, keeps one tick per group and answers at once
   press("space", " "); // unticks TypeScript
   press("return");
   expect(await picked).toEqual(["k2"]);
+  expect(screen.chunks.at(-1)).toContain(`${ESC}[J> kotlin-other\n`);
 
   const more = multiSelect(rows, ["k1"], o);
   press("4", "4");
   press("space", " ");
   expect(await more).toEqual(["more"]);
+  expect(screen.chunks.at(-1)).not.toContain("Show 2 more"); // an instant row makes room for the next list
   const left = multiSelect(rows, ["k1"], o);
   press("escape");
   expect(await left).toBeUndefined();

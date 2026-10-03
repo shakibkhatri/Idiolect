@@ -326,6 +326,7 @@ The commands below are what 0.2.2 ships.
 - The confirmation of `remove` is a two-row list that starts on "No, keep everything"
 - The style picker and the authors in `init` are checklists. The picker keeps one tick per language and its last row shows the styles of the other languages
 - The provider in `init` is a list, with a dash between each name and what it means
+- An answered list is erased and replaced by one line naming the answer, `> kotlin-quiet, typescript-terse`, because the owner found himself reading the options again after choosing. Leaving a list, and the row that shows more styles, leave no line. The redraw counts lines, so a row must not be wider than the window
 - Without a terminal nothing changed: the report and the commands are printed, and where an answer is read it is typed as before. `canAsk` decides
 
 ```
