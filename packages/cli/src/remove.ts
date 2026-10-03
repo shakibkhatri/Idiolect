@@ -144,8 +144,8 @@ function leftovers(f: Found, level: Level): string[] {
 export function warning(f: Found, level: Level): string | undefined {
   const project = f.dir ? ["the settings in .idiolect/config.json", ...(f.dir.reports ? [`${plural(f.dir.reports, "eval report")} and their quiz picks`] : []), ...(f.dir.decisions ? ["your rule decisions"] : [])] : [];
   const lost = level === 1 ? [] : [...project, ...(level === 3 && f.home ? ["your learned style, which only a new scan rebuilds"] : [])];
-  // one line each, the sentence form ran past 100 columns and wrapped mid-word
-  return lost.length ? ["This cannot be brought back:", ...lost.map((l) => `  ${l}`)].join("\n") : undefined;
+  // one sentence, so the terminal wraps it to whatever width the window has
+  return lost.length ? `This cannot be brought back: ${lost.join(", ")}.` : undefined;
 }
 
 async function ask(question: string): Promise<string> {
