@@ -66,26 +66,83 @@ test("during closes the spinner with done on success and failed on an error", as
   expect(out.chunks).toEqual(["asking\n", "done in 0s\n", "asking again\n", "failed after 0s\n"]);
 });
 
-test("select moves with the arrow keys, wraps around, jumps on a digit and returns the row under Enter", async () => {
+const keyboard = async (isTTY = true) => {
   const { EventEmitter } = await import("node:events");
+  const keys = Object.assign(new EventEmitter(), { isTTY, raw: [] as boolean[], setRawMode(on: boolean) { this.raw.push(on); }, resume() {}, pause() {} });
+  const press = (name: string, text?: string) => keys.emit("keypress", text, { name });
+  return { keys, press };
+};
+
+test("select moves with the arrow keys, wraps around, jumps on a digit and returns the row under Enter", async () => {
   const { select } = await import("./term.js");
-  const keys = Object.assign(new EventEmitter(), { isTTY: true, raw: [] as boolean[], setRawMode(on: boolean) { this.raw.push(on); }, resume() {}, pause() {} });
+  const { keys, press } = await keyboard();
   const screen = fake(true);
+  const o = { input: keys, t: createTerm(screen, { NO_COLOR: "1" }), out: screen };
   const choices = [{ value: "a", label: "alpha", hint: "first" }, { value: "b", label: "be", hint: "second" }, { value: "c", label: "gamma" }];
-  const picked = select(choices, 0, keys, createTerm(screen, { NO_COLOR: "1" }), screen);
+  const picked = select(choices, o);
   expect(screen.chunks.at(-1)).toContain("> alpha - first\n");
   expect(screen.chunks.at(-1)).toContain("  be    - second\n");
-  keys.emit("keypress", undefined, { name: "up" }); // wraps to the last row
+  press("up"); // wraps to the last row
   expect(screen.chunks.at(-1)).toContain("> gamma\n");
-  keys.emit("keypress", "2", { name: "2" });
-  keys.emit("keypress", undefined, { name: "down" });
-  keys.emit("keypress", "x", { name: "x" }); // an unknown key changes nothing
-  keys.emit("keypress", undefined, { name: "return" });
+  press("2", "2");
+  press("down");
+  press("x", "x"); // an unknown key changes nothing
+  press("escape"); // nothing to leave to, so it is ignored
+  press("return");
   expect(await picked).toBe("c");
   expect(keys.raw).toEqual([true, false]);
   expect(screen.chunks.at(-1)).toContain(`${ESC}[?25h`); // the cursor is shown again
 
+  // numbered rows and a leave row: Enter on Leave and Esc both answer nothing
+  const leaving = select(choices, { ...o, numbered: true, leave: "Leave", start: 3 });
+  expect(screen.chunks.at(-1)).toContain("  1  alpha - first\n");
+  expect(screen.chunks.at(-1)).toContain(">    Leave\n");
+  expect(screen.chunks.at(-1)).toContain("Enter to choose, Esc to leave");
+  press("return");
+  expect(await leaving).toBeUndefined();
+  const escaped = select(choices, { ...o, leave: "Leave" });
+  press("escape");
+  expect(await escaped).toBeUndefined();
+  const first = select(choices, { ...o, numbered: true, leave: "Leave", start: 3 });
+  press("down"); // from Leave it wraps to the first row
+  press("return");
+  expect(await first).toBe("a");
+
   // without a terminal there is no list, the caller asks for a typed answer
-  expect(await select(choices, 0, Object.assign(new EventEmitter(), { isTTY: false, resume() {}, pause() {} }), createTerm(screen, {}), screen)).toBeUndefined();
-  expect(await select(choices, 0, keys, createTerm(fake(false), {}), screen)).toBeUndefined();
+  expect(await select(choices, { ...o, input: (await keyboard(false)).keys })).toBeUndefined();
+  expect(await select(choices, { ...o, t: createTerm(fake(false), {}) })).toBeUndefined();
+});
+
+test("multiSelect ticks with Space, keeps one tick per group and answers at once on an instant row", async () => {
+  const { multiSelect } = await import("./term.js");
+  const { keys, press } = await keyboard();
+  const screen = fake(true);
+  const o = { input: keys, t: createTerm(screen, { NO_COLOR: "1" }), out: screen, numbered: true };
+  const rows = [
+    { value: "k1", label: "kotlin-quiet", hint: "few comments", heading: "Kotlin", group: "kotlin" },
+    { value: "k2", label: "kotlin-other", group: "kotlin" },
+    { value: "t1", label: "typescript-terse", heading: "TypeScript", group: "typescript" },
+    { value: "more", label: "Show 2 more styles", heading: "Other languages", instant: true },
+  ];
+  const picked = multiSelect(rows, ["k1", "t1"], o);
+  expect(screen.chunks.at(-1)).toContain("Kotlin\n");
+  expect(screen.chunks.at(-1)).toContain("> [x] 1  kotlin-quiet - few comments\n");
+  expect(screen.chunks.at(-1)).toContain("  [ ] 2  kotlin-other\n");
+  expect(screen.chunks.at(-1)).toContain("Space to tick, Enter to confirm, Esc to leave");
+  press("down");
+  press("space", " "); // ticking the second Kotlin style unticks the first
+  expect(screen.chunks.at(-1)).toContain("  [ ] 1  kotlin-quiet");
+  expect(screen.chunks.at(-1)).toContain("> [x] 2  kotlin-other");
+  press("3", "3");
+  press("space", " "); // unticks TypeScript
+  press("return");
+  expect(await picked).toEqual(["k2"]);
+
+  const more = multiSelect(rows, ["k1"], o);
+  press("4", "4");
+  press("space", " ");
+  expect(await more).toEqual(["more"]);
+  const left = multiSelect(rows, ["k1"], o);
+  press("escape");
+  expect(await left).toBeUndefined();
 });

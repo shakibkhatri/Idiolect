@@ -2,12 +2,11 @@ import { git, loadRepoConfig, loadServedProfile, loadStyle, loadUserConfig, rend
 import { Command } from "commander";
 import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
-import { createInterface } from "node:readline/promises";
 import { join, resolve } from "node:path";
 import { ago, commitsSince } from "./refresh.js";
 import { LANGUAGE_NAMES, LANGUAGES } from "./styles.js";
 import { START, syncTargets } from "./sync.js";
-import { term, type Term } from "./term.js";
+import { canAsk, select, term, type Term } from "./term.js";
 
 /** Where a project stands: no style, a house style, the developer's own, or their own without a scan of this repo. */
 export type ProjectState = {
@@ -108,9 +107,9 @@ export function stepsFor(s: ProjectState): Step[] {
 
 const commandOf = (step: Step) => step.runs.map((r) => `idiolect ${r.join(" ")}`).join(", then ");
 
-export function renderSteps(steps: Step[], numbered: boolean, t: Term = term): string {
-  const width = Math.max(...steps.map((s) => (numbered ? s.label : commandOf(s)).length));
-  if (numbered) return steps.map((s, i) => `  ${t.bold(String(i + 1))}  ${s.label.padEnd(width)}  ${t.dim(commandOf(s))}`).join("\n");
+/** The steps as commands, for a pipe, a script and status. A terminal gets them as a list to choose from. */
+export function renderSteps(steps: Step[]): string {
+  const width = Math.max(...steps.map((s) => commandOf(s).length));
   return ["Next:", ...steps.map((s) => `  ${commandOf(s).padEnd(width)}  ${s.label}`)].join("\n");
 }
 
@@ -119,32 +118,21 @@ const run = (args: string[], repo: string) => new Promise<number>((done) => {
   spawn(process.execPath, [process.argv[1]!, ...args], { stdio: "inherit", cwd: repo }).on("close", (code) => done(code ?? 1));
 });
 
-async function ask(question: string): Promise<string> {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  try { return await rl.question(question); } catch { return ""; } finally { rl.close(); }
-}
-
 /** Reports where the project stands. In a terminal it then asks for a step by number, Enter leaves. */
 export async function start(o: { repo: string; prompt: boolean }) {
   const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"]).catch(() => "")).trim() || resolve(o.repo);
   const state = await projectState(repo);
   const steps = stepsFor(state);
-  const interactive = o.prompt && process.stdin.isTTY === true && term.interactive;
-  console.log(`${renderState(state)}\n\n${renderSteps(steps, interactive)}`);
-  if (!interactive) return;
-  for (;;) {
-    console.log("");
-    const answer = (await ask("Type a number, or Enter to leave: ")).trim();
-    if (!answer) return;
-    const step = /^\d+$/.test(answer) ? steps[Number(answer) - 1] : undefined;
-    if (!step) { console.log(`  ${answer} is not one of 1 to ${steps.length}`); continue; }
-    console.log("");
-    for (const args of step.runs) {
-      console.log(term.dim(`> idiolect ${args.join(" ")}`));
-      const code = await run(args, repo);
-      if (code !== 0) process.exit(code);
-    }
-    return;
+  if (!o.prompt || !canAsk()) { console.log(`${renderState(state)}\n\n${renderSteps(steps)}`); return; }
+  console.log(`${renderState(state)}\n`);
+  // the list starts on Leave, so Enter alone changes nothing
+  const step = await select(steps.map((s) => ({ value: s, label: s.label, hint: commandOf(s) })), { numbered: true, leave: "Leave", start: steps.length });
+  if (!step) return;
+  console.log("");
+  for (const args of step.runs) {
+    console.log(term.dim(`> idiolect ${args.join(" ")}`));
+    const code = await run(args, repo);
+    if (code !== 0) process.exit(code);
   }
 }
 

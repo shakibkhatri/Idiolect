@@ -36,7 +36,6 @@ test("the report names the served style first and stays within 100 columns", () 
   expect(mine).not.toMatch(/profile/i);
 });
 
-test("steps are numbered for a prompt and listed as commands without one", () => {
-  expect(renderSteps(stepsFor(base), true, plain)).toBe("  1  Pick a house style                      idiolect use\n  2  Learn my own style from my git history  idiolect init, then idiolect scan");
-  expect(renderSteps(stepsFor(base), false, plain).split("\n")).toEqual(["Next:", "  idiolect use                       Pick a house style", "  idiolect init, then idiolect scan  Learn my own style from my git history"]);
+test("without a terminal the steps are listed as commands", () => {
+  expect(renderSteps(stepsFor(base)).split("\n")).toEqual(["Next:", "  idiolect use                       Pick a house style", "  idiolect init, then idiolect scan  Learn my own style from my git history"]);
 });

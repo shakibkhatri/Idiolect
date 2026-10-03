@@ -100,13 +100,15 @@ This project has no style yet.
 idiolect gives your AI coding agent a style to write in.
 Pick a house style, or learn your own from this project's git history.
 
-  1  Pick a house style                      idiolect use
-  2  Learn my own style from my git history  idiolect init, then idiolect scan
-
-Type a number, or Enter to leave:
+  1  Pick a house style                     - idiolect use
+  2  Learn my own style from my git history - idiolect init, then idiolect scan
+>    Leave
+Up and down to move, Enter to choose, Esc to leave
 ```
 
-Enter leaves without changing anything, and each step names the command it runs, so you know what to type next time.
+Every menu works the same way: the arrow keys move, Enter chooses, a digit jumps to that row, and Esc leaves.
+Where several rows can be picked, Space ticks them and Enter confirms.
+The list starts on Leave, so Enter alone changes nothing, and each step names the command it runs, so you know what to type next time.
 In a script, in CI or with `--no-prompt` it only prints the report and the commands.
 `idiolect --help` lists every command in three groups.
 
@@ -122,22 +124,24 @@ cd your-project
 npx -y idiolect use
 ```
 
-`use` looks at what the project is written in, shows the house styles for those languages as a numbered list, and asks for a number.
+`use` looks at what the project is written in and shows the house styles for those languages as a checklist, one tick per language.
 
 ```
 This project is written in Kotlin and TypeScript.
 
 Kotlin
-   1  kotlin-quiet      Few comments, no KDoc, noun-phrase names, short plain commits
+> [x] 1  kotlin-quiet     - Few comments, no KDoc, noun-phrase names, short plain commits
 
 TypeScript
-   2  typescript-terse  No semicolons, terse lowercase comments, short functions
+  [x] 2  typescript-terse - No semicolons, terse lowercase comments, short functions
 
-Type the number of the style you want, one per language [1 2]:
+Other languages
+      3  Show 2 more styles
+Up and down to move, Space to tick, Enter to confirm, Esc to leave
 ```
 
 A language with under 5% of the project's source files is left out.
-Type `all` in the menu, or run `idiolect use --all`, to see every style.
+The last row, or `idiolect use --all`, shows every style.
 `idiolect styles` prints the same list without asking, `idiolect styles show kotlin-quiet` lists the rules of one style, and `idiolect use kotlin-quiet typescript-terse` picks by name for scripts.
 A style is named for its language and for how it reads, not for the project it was learned from.
 The ids from before 0.2.1, `kotlin-tivi`, `typescript-vue`, `python-httpx` and `go-caddy`, still work everywhere.
@@ -177,7 +181,7 @@ Then you pick how far it goes:
 
 Your own text in an agent file stays byte for byte.
 A file that idiolect created and that holds nothing but its block is deleted.
-Levels 2 and 3 name what cannot be brought back, such as eval reports, and ask before they delete it: `yes` removes, `no` or Enter keeps everything.
+Levels 2 and 3 name what cannot be brought back, such as eval reports, and ask before they delete it, in a list that starts on "No, keep everything".
 For scripts: `idiolect remove --style`, `--project` or `--everything`, with `--yes` to skip the question and `--dry-run` to only list.
 
 It cannot undo a file that `unbot --fix` rewrote, git has the old version.

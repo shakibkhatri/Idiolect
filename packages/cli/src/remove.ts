@@ -3,9 +3,8 @@ import { Command } from "commander";
 import { readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, relative, resolve } from "node:path";
-import { createInterface } from "node:readline/promises";
 import { DEFAULT_TARGETS, removeBlock, START } from "./sync.js";
-import { term, type Term } from "./term.js";
+import { canAsk, select, term, type Choice, type Term } from "./term.js";
 import { hookFiles, removeHook } from "./unbot.js";
 
 export type Level = 1 | 2 | 3;
@@ -148,11 +147,6 @@ export function warning(f: Found, level: Level): string | undefined {
   return lost.length ? `This cannot be brought back: ${lost.join(", ")}.` : undefined;
 }
 
-async function ask(question: string): Promise<string> {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  try { return (await rl.question(question)).trim(); } catch { return ""; } finally { rl.close(); }
-}
-
 export async function removeStyle(repo: string) {
   const found = await find(repo);
   const done = await apply(repo, found, 1);
@@ -172,27 +166,23 @@ export function removeCommand(): Command {
       const found = await find(repo);
       console.log(renderFound(repo, found));
       let level: Level | undefined = o.everything ? 3 : o.project ? 2 : o.style ? 1 : undefined;
-      const interactive = process.stdin.isTTY === true && term.interactive;
+      const interactive = canAsk();
       const nothing = !found.blocks.length && !found.configKeys.length && !found.hooks.length && !found.dir && !found.home;
       if (o.dryRun || nothing) return;
       if (!level) {
         if (!interactive) { console.log("\nNothing was changed. Remove with: idiolect remove --style, --project or --everything"); return; }
-        console.log("");
-        const answer = await ask("Type a level to remove, or Enter to leave: ");
-        if (!answer) return;
-        if (!/^[123]$/.test(answer)) throw new Error(`${answer} is not one of 1 to 3, nothing was changed`);
-        level = Number(answer) as Level;
+        console.log("\nHow much should be removed?");
+        const levels: Choice<Level>[] = [{ value: 1, label: "The style" }, { value: 2, label: "Everything in this project" }, { value: 3, label: "Everything on this machine" }];
+        level = await select(levels, { numbered: true, leave: "Leave, change nothing", start: levels.length });
+        if (!level) return;
       }
       const warn = warning(found, level);
       if (warn && !o.yes) {
         if (!interactive) throw new Error(`${warn}\nrun it again with --yes to go ahead`);
         console.log(`\n${term.warn(warn)}`);
-        for (;;) {
-          const answer = (await ask("Type yes to remove it, or no to keep it: ")).toLowerCase();
-          if (answer === "yes") break;
-          if (answer === "no" || answer === "n" || !answer) { console.log("Nothing was changed."); return; }
-          console.log(`  ${answer} is neither yes nor no`);
-        }
+        // the list starts on No, so removing takes a deliberate move
+        const sure = await select([{ value: false, label: "No, keep everything" }, { value: true, label: "Yes, remove it" }]);
+        if (!sure) { console.log("Nothing was changed."); return; }
       }
       const done = await apply(repo, found, level);
       console.log(`\n${done.length ? done.join("\n") : "There was nothing to remove at this level."}\n\n${leftovers(found, level).join("\n")}`);

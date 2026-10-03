@@ -5,7 +5,7 @@ import { createIdiolectServer } from "@shakibkhatri/idiolect-mcp";
 import { renderHelp, TAGLINE } from "./help.js";
 import { removeCommand } from "./remove.js";
 import { llmHint, scanSummary } from "./summary.js";
-import { progress, select, type Choice } from "./term.js";
+import { canAsk, multiSelect, progress, select, type Choice } from "./term.js";
 import { syncTargets } from "./sync.js";
 import { NO_PROFILE, rulesCommand, writeStyle } from "./rules.js";
 import { FOLLOWS, onPath, stylesCommand, useCommand } from "./styles.js";
@@ -46,17 +46,23 @@ program.command("init")
     let emails = o.email?.map((e) => e.toLowerCase());
     let name = user?.name;
     if (!emails) {
-      console.log("Authors in this repo:");
-      authors.forEach((a, i) => {
-        const tag = known.has(a.email) ? "  <- you (from ~/.idiolect)" : a.email === mine ? "  <- git config" : "";
-        console.log(`  ${i + 1}. ${a.email}  (${a.name}, ${a.commits} ${a.commits === 1 ? "commit" : "commits"})${tag}`);
-      });
+      const tagOf = (a: { email: string }) => (known.has(a.email) ? "you, from ~/.idiolect" : a.email === mine ? "from git config" : "");
+      const about = (a: { name: string; commits: number }) => `${a.name}, ${a.commits} ${a.commits === 1 ? "commit" : "commits"}`;
       const myName = user?.name ?? authors.find((x) => x.email === mine)?.name;
       const matched = authors.map((a, i) => (known.has(a.email) || a.email === mine || sameName(a.name, myName) ? i + 1 : 0)).filter(Boolean);
       // a repo with one author needs no guess, and an empty default is not shown as []
       const def = matched.length || authors.length !== 1 ? matched : [1];
-      const answer = o.yes ? "" : (await ask(`Which are you? numbers, comma separated${def.length ? ` [${def.join(",")}]` : ""}: `)).trim();
-      const picks = answer ? answer.split(/[,\s]+/).map(Number) : def;
+      let picks = def;
+      if (!o.yes && canAsk()) {
+        console.log("Which authors in this repo are you?");
+        const rows = authors.map((a, i) => ({ value: i + 1, label: a.email, hint: [about(a), tagOf(a)].filter(Boolean).join(", ") }));
+        picks = (await multiSelect(rows, def, { numbered: true })) ?? [];
+      } else {
+        console.log("Authors in this repo:");
+        authors.forEach((a, i) => console.log(`  ${i + 1}. ${a.email}  (${about(a)})${tagOf(a) ? `  <- ${tagOf(a)}` : ""}`));
+        const answer = o.yes ? "" : (await ask(`Which are you? numbers, comma separated${def.length ? ` [${def.join(",")}]` : ""}: `)).trim();
+        if (answer) picks = answer.split(/[,\s]+/).map(Number);
+      }
       emails = picks.map((i) => authors[i - 1]?.email).filter((e): e is string => !!e);
       name ??= authors[(picks[0] ?? 1) - 1]?.name;
     }
@@ -77,7 +83,7 @@ program.command("init")
       ];
       console.log(`\nLLM provider. Samples of your code go to it to phrase the rules.`);
       // arrow keys in a terminal, the typed name everywhere else
-      const picked = o.yes ? def : await select(choices, choices.findIndex((c) => c.value === def));
+      const picked = o.yes ? (def as Provider) : await select(choices, { start: choices.findIndex((c) => c.value === def) });
       if (picked) provider = picked;
       else {
         const width = Math.max(...choices.map((c) => c.label.length));

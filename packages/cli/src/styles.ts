@@ -6,6 +6,7 @@ import { createInterface } from "node:readline/promises";
 import { join, resolve } from "node:path";
 import { removeStyle } from "./remove.js";
 import { syncTargets } from "./sync.js";
+import { canAsk, multiSelect, type Choice } from "./term.js";
 
 export const LANGUAGES = ["kotlin", "typescript", "python", "go"] as const;
 export const LANGUAGE_NAMES: Record<Language, string> = { kotlin: "Kotlin", typescript: "TypeScript", python: "Python", go: "Go" };
@@ -145,8 +146,38 @@ export async function filesToCreate(repo: string, claudeInstalled: boolean): Pro
   return create;
 }
 
+const MORE = "show-other-languages";
+
+/** The styles as a checklist, one tick per language. The only style of each language starts ticked. */
+async function pickFromList(repo: string, everything?: boolean): Promise<Style[]> {
+  let { languages, shown, hidden } = await forProject(repo, everything);
+  if (languages.length) console.log(`This project is written in ${names(languages)}.\n`);
+  // what starts ticked is decided on the first list and survives showing the other languages
+  const first = menuOrder(shown);
+  const preset = languages.length && LANGUAGES.every((l) => first.filter((s) => s.language === l).length <= 1) ? first.map((s) => s.id) : [];
+  for (;;) {
+    const menu = menuOrder(shown);
+    const rows: Choice<string>[] = menu.map((s, i) => ({
+      value: s.id, label: s.id, hint: `${s.summary}${s.experimental ? " (experimental)" : ""}`, group: s.language,
+      ...(menu[i - 1]?.language === s.language ? {} : { heading: LANGUAGE_NAMES[s.language] }),
+    }));
+    if (hidden) rows.push({ value: MORE, label: `Show ${hidden} more ${hidden === 1 ? "style" : "styles"}`, heading: "Other languages", instant: true });
+    const ticked = await multiSelect(rows, preset, { numbered: true });
+    if (ticked?.includes(MORE)) {
+      ({ languages, shown, hidden } = await forProject(repo, true));
+      console.log("");
+      continue;
+    }
+    // leaving the list is not an error, the caller says that nothing changed
+    if (!ticked?.length) return [];
+    console.log("");
+    return menu.filter((s) => ticked.includes(s.id));
+  }
+}
+
 /** Shows the numbered styles for this project and reads the choice. Enter takes the only style of each language when there is no choice to make. */
 async function pickFromMenu(repo: string, everything?: boolean): Promise<Style[]> {
+  if (canAsk()) return pickFromList(repo, everything);
   let { languages, shown, hidden } = await forProject(repo, everything);
   let menu = menuOrder(shown);
   if (languages.length) console.log(`This project is written in ${names(languages)}.\n`);
@@ -186,6 +217,7 @@ export function useCommand(): Command {
       const repo = await toplevel(o.repo);
       if (o.none) return removeStyle(repo);
       const chosen = ids.length ? await Promise.all(ids.map((id) => loadStyle(id))) : await pickFromMenu(repo, o.all);
+      if (!chosen.length) { console.log("No style picked, nothing was changed."); return; }
       const picked: Picked = { ...(await loadRepoConfig(repo)).styles };
       // a config written under an older name of a style moves to its current id
       for (const key of Object.keys(picked) as (keyof Picked)[]) if (picked[key]) picked[key] = (await loadStyle(picked[key]!)).id;
