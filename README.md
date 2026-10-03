@@ -136,7 +136,8 @@ TypeScript
 Type the number of the style you want, one per language [1 2]:
 ```
 
-A language with under 5% of the project's source files is left out, `--all` shows every style.
+A language with under 5% of the project's source files is left out.
+Type `all` in the menu, or run `idiolect use --all`, to see every style.
 `idiolect styles` prints the same list without asking, `idiolect styles show kotlin-quiet` lists the rules of one style, and `idiolect use kotlin-quiet typescript-terse` picks by name for scripts.
 A style is named for its language and for how it reads, not for the project it was learned from.
 The ids from before 0.2.1, `kotlin-tivi`, `typescript-vue`, `python-httpx` and `go-caddy`, still work everywhere.
@@ -176,7 +177,7 @@ Then you pick how far it goes:
 
 Your own text in an agent file stays byte for byte.
 A file that idiolect created and that holds nothing but its block is deleted.
-Levels 2 and 3 name what cannot be brought back, such as eval reports, and ask before they delete it.
+Levels 2 and 3 name what cannot be brought back, such as eval reports, and ask before they delete it: `yes` removes, `no` or Enter keeps everything.
 For scripts: `idiolect remove --style`, `--project` or `--everything`, with `--yes` to skip the question and `--dry-run` to only list.
 
 It cannot undo a file that `unbot --fix` rewrote, git has the old version.
@@ -209,6 +210,8 @@ The default LLM is the Claude Code you already have, run headless under your own
 It runs in safe mode with idiolect's own prompt, so your `CLAUDE.md`, hooks and plugins do not leak into the rules it writes.
 Anthropic, OpenAI, Gemini and any OpenAI-compatible local server such as Ollama work too.
 Run `idiolect scan --dry-run` to see exactly what would be sent.
+While the model works you see a spinner with the elapsed seconds, and in a pipe one line before and one after.
+If the call fails, for example because your Claude Code login expired, the error is followed by what to run, and `idiolect scan --no-llm` always gives you the metric rules.
 
 Scan more than one repo and your style is merged over all of them.
 Rules that only hold in one repo, like a team's commit prefixes, are kept as rules for that repo only.

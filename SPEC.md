@@ -299,7 +299,7 @@ Published 2026-10-02 as `idiolect@0.0.1` on npm. The org name `idiolect` was tak
 
 ## 7. CLI
 
-The commands below are what 0.2.0 ships.
+The commands below are what 0.2.1 ships.
 0.2.0 is the redesign briefed in `CLI.md`, built 2026-10-03: every 0.1.2 command and flag still works, and how they are presented changed.
 
 - Bare `idiolect` is the front door. It reports one of four states, no style, a house style, the developer's own, or their own without a scan of this repo, and in a terminal lists the next steps by number and runs the one picked. Enter leaves and changes nothing. Without a terminal, with `--no-prompt`, and as `idiolect status`, it prints the report and the commands and exits 0. It lives in `cli/src/start.ts`
@@ -309,6 +309,15 @@ The commands below are what 0.2.0 ships.
 - Quiet output. `scan` ends with one line per language, a total and a next step, the statistics are behind `--verbose`. `use` says where it wrote and what changes. `sync` lists the files it touched. `rules list` groups by section with a marker, `+` served, `-` held back, `?` pending, `x` rejected, the text first and the id last, wrapped at 100 columns
 - Progress. `cli/src/term.ts` holds colour, the spinner and the TTY check, and no command writes ANSI codes itself. Colour only in a terminal without `NO_COLOR`. The four LLM commands show a spinner with elapsed seconds on stderr in a terminal and print the announcing line and "done in Ns" in a pipe. The blame pass counts files in a terminal only
 - `idiolect remove` takes idiolect out again at one of three levels: the style, everything in the project, everything on the machine. It lists first and changes nothing, levels 2 and 3 ask before deleting what cannot be brought back. `use --none` is level 1. `removeBlock` in `sync.ts` and `removeHook` in `unbot.ts` undo what `syncBlock` and `installHook` wrote, and a file left with nothing of the user's is deleted. A file that ended without a newline, or with two, before the block was added comes back ending in one
+
+0.2.1, 2026-10-03, is what testing 0.2.0 in real terminals on the Mac and on Windows found:
+
+- The question before level 2 and 3 of `remove` names both answers. `yes` removes, `no`, `n` or Enter keeps everything, anything else is asked again. The warning is one sentence so the terminal wraps it to the window
+- The picker takes `all` or `--all` and then lists every style, because its own hint named a command that cannot be run from inside a prompt. With one style listed a wrong answer is told that 1 is the only one
+- The line of `use` naming the agent files it did not write puts the files on their own line, it ran past the window on Windows
+- `init` takes the only author of a repo as the default, shows no empty `[]`, and lists the providers in one aligned column
+- A failed LLM call in `scan` or `eval` keeps the first line of its message and adds what to run, `llmHint` in `cli/src/summary.ts`: sign in again for a lapsed login, otherwise `scan --no-llm` or `init`. `unbot --llm` and `--fix` do not have it yet
+- The house styles have idiolect's own names, see Style names in the data model
 
 ```
 idiolect                      # where this project stands, and the next steps by number
@@ -403,7 +412,7 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
 7. Add languages (Swift, TS, Python, Go), **M8 Auto refresh**. M8 done 2026-10-02. TypeScript, Python and Go done 2026-10-02, TypeScript and Python verified in Dissent, Go on its fixture. Swift still needs its grammar built
 8. **M9 Team mode**, **M10 Dashboard** - only after real usage. M10 built 2026-10-02 as one page in the CLI, see M10
 9. **Shipped styles**, 2026-10-03, released as 0.1.0 to 0.1.2. In order: a repo can serve another profile, borrowed profiles serve voice and layout only, the headless Claude leak fixed, the catalogue with `styles` and `use`, the short list with `styles show`, the numbered picker limited to the project's languages, Claude Code found on Windows. Installed from npm on a Windows laptop and picked a style there
-10. **CLI redesign**, 2026-10-03, released as 0.2.0, see section 7 and `CLI.md`. The picker preview is the one part left for a later release
+10. **CLI redesign**, 2026-10-03, released as 0.2.0, then 0.2.1 with the fixes from testing it and the new style names, see section 7 and `CLI.md`. The picker preview is the one part left for a later release
 
 ## 12. Out of scope for v1
 
