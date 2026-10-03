@@ -30,6 +30,9 @@ test("syncTargets creates only AGENTS.md by default and updates files that exist
   ]);
   expect(await readFile(join(repo, "CLAUDE.md"), "utf8")).toMatch(/^# Mine\n\n<!-- idiolect:start -->/);
   expect((await syncTargets(repo, "- rule")).map((r) => r.status)).toEqual(["unchanged", "unchanged", "skipped", "skipped", "skipped"]);
+  // a dry run reports what a sync would do and writes nothing
+  expect((await syncTargets(repo, "- other", undefined, undefined, false)).map((r) => r.status)).toEqual(["updated", "updated", "skipped", "skipped", "skipped"]);
+  expect(await readFile(join(repo, "AGENTS.md"), "utf8")).toContain("- rule");
   expect(await syncTargets(repo, "- rule", [".cursor/rules/idiolect.mdc"])).toEqual([{ file: ".cursor/rules/idiolect.mdc", status: "created" }]);
 });
 

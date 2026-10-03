@@ -30,7 +30,8 @@ export function renderHelp(registered: string[], t: Term = term): string {
     TAGLINE, "",
     ...GROUPS.flatMap((g) => [t.bold(g.title), ...g.commands.map(([name, text]) => `  ${t.accent(name.padEnd(width))}   ${text}`), ""]),
     t.bold("Advanced"), `  ${advanced.join(", ")}`, "",
-    t.dim("idiolect help <command> shows what one command does and its options."),
+    t.dim("idiolect alone shows where this project stands and asks what to do next,"),
+    t.dim("--no-prompt only shows it. idiolect help <command> explains one command."),
     t.dim("idiolect --version prints the version."),
   ].join("\n") + "\n";
 }

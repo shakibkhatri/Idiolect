@@ -25,8 +25,11 @@ const header = (file: string) => (file.endsWith(".mdc") ? "---\ndescription: The
 
 export type SyncResult = { file: string; status: "created" | "updated" | "unchanged" | "skipped" };
 
-/** With explicit targets every file is written. With none, known files are updated and only the ones in `create` are created. */
-export async function syncTargets(repo: string, body: string, targets?: string[], create: ReadonlySet<string> = CREATE_BY_DEFAULT): Promise<SyncResult[]> {
+/**
+ * With explicit targets every file is written. With none, known files are updated and only the ones in `create` are created.
+ * `write: false` is a dry run that reports the same statuses and touches nothing.
+ */
+export async function syncTargets(repo: string, body: string, targets?: string[], create: ReadonlySet<string> = CREATE_BY_DEFAULT, write = true): Promise<SyncResult[]> {
   const explicit = !!targets;
   const out: SyncResult[] = [];
   for (const file of targets ?? DEFAULT_TARGETS) {
@@ -35,8 +38,10 @@ export async function syncTargets(repo: string, body: string, targets?: string[]
     if (existing === undefined && !explicit && !create.has(file)) { out.push({ file, status: "skipped" }); continue; }
     const next = syncBlock(existing, body, file);
     if (next === existing) { out.push({ file, status: "unchanged" }); continue; }
-    await mkdir(dirname(path), { recursive: true });
-    await writeFile(path, next);
+    if (write) {
+      await mkdir(dirname(path), { recursive: true });
+      await writeFile(path, next);
+    }
     out.push({ file, status: existing === undefined ? "created" : "updated" });
   }
   return out;

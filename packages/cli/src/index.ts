@@ -7,7 +7,8 @@ import { syncTargets } from "./sync.js";
 import { NO_PROFILE, rulesCommand, writeStyle } from "./rules.js";
 import { onPath, stylesCommand, useCommand } from "./styles.js";
 import { hooksCommand, unbotCommand } from "./unbot.js";
-import { refreshCommand, statusCommand } from "./refresh.js";
+import { refreshCommand } from "./refresh.js";
+import { start, statusCommand } from "./start.js";
 import { ttyQuiz, webQuiz } from "./quiz.js";
 import { uiCommand } from "./ui.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -292,4 +293,7 @@ async function ask(q: string) {
   try { return await rl.question(q); } finally { rl.close(); }
 }
 
-program.parseAsync().catch((e: Error) => { console.error(`error: ${e.message}`); process.exit(1); });
+// bare idiolect is the guided start, anything else goes to commander
+const argv = process.argv.slice(2);
+const main = argv.every((a) => a === "--no-prompt") ? start({ repo: ".", prompt: !argv.length }) : program.parseAsync();
+main.catch((e: Error) => { console.error(`error: ${e.message}`); process.exit(1); });

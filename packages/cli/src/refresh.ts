@@ -13,37 +13,17 @@ async function load() {
 }
 
 /** Commits on HEAD since the last scan of this repo, or undefined when the repo was never scanned. */
-async function commitsSince(profile: Profile, repo: string): Promise<{ since: number; scannedAt: string } | undefined> {
+export async function commitsSince(profile: Profile, repo: string): Promise<{ since: number; scannedAt: string } | undefined> {
   const source = profile.sources.find((s) => s.repo === repo);
   if (!source) return undefined;
   const since = Number((await git(repo, ["rev-list", "--count", `${source.head}..HEAD`]).catch(() => "0")).trim());
   return { since, scannedAt: source.scannedAt };
 }
 
-const ago = (iso: string) => {
+export const ago = (iso: string) => {
   const h = Math.round((Date.now() - Date.parse(iso)) / 3600000);
   return h < 1 ? "under an hour ago" : h < 48 ? `${h} hours ago` : `${Math.round(h / 24)} days ago`;
 };
-
-export function statusCommand(): Command {
-  return new Command("status").description("age of your style, pending rules, last scan of this repo and when the next refresh is due")
-    .option("--repo <path>", "repository path", ".")
-    .action(async (o: { repo: string }) => {
-      const profile = await load();
-      const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"]).catch(() => "")).trim();
-      const by = (st: string) => profile.rules.filter((r) => r.status === st);
-      console.log(`style    ${profile.developer.name}, ${profile.sources.length} ${profile.sources.length === 1 ? "repo" : "repos"}, updated ${ago(profile.generatedAt)}`);
-      console.log(`rules    ${profile.rules.length} (${by("auto").length} auto, ${by("approved").length} approved, ${by("edited").length} edited, ${by("pending").length} pending, ${by("rejected").length} rejected)`);
-      for (const r of by("pending")) console.log(`  pending  ${r.id}  ${r.text}`);
-      if (by("pending").length) console.log(`  decide with: idiolect rules approve|reject|edit <id>`);
-      if (!repo) return;
-      const { refresh } = await loadRepoConfig(repo);
-      const s = await commitsSince(profile, repo);
-      if (!s) { console.log(`repo     ${repo} not scanned yet, run: idiolect scan`); return; }
-      console.log(`repo     ${repo}, scanned ${ago(s.scannedAt)}, ${s.since} ${s.since === 1 ? "commit" : "commits"} since`);
-      console.log(`refresh  every ${refresh.everyCommits} commits, ${s.since >= refresh.everyCommits ? "due now: idiolect refresh" : `due in ${refresh.everyCommits - s.since}`}`);
-    });
-}
 
 export function refreshCommand(): Command {
   return new Command("refresh").description("rescan in the background once refresh.everyCommits new commits have landed. Quiet otherwise, for the post-commit hook")

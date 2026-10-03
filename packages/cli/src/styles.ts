@@ -6,8 +6,8 @@ import { createInterface } from "node:readline/promises";
 import { join, resolve } from "node:path";
 import { syncTargets } from "./sync.js";
 
-const LANGUAGES = ["kotlin", "typescript", "python", "go"] as const;
-const LANGUAGE_NAMES: Record<Language, string> = { kotlin: "Kotlin", typescript: "TypeScript", python: "Python", go: "Go" };
+export const LANGUAGES = ["kotlin", "typescript", "python", "go"] as const;
+export const LANGUAGE_NAMES: Record<Language, string> = { kotlin: "Kotlin", typescript: "TypeScript", python: "Python", go: "Go" };
 
 /** One short line per style under its language, so a long catalogue stays readable in a narrow terminal. Numbered when it is a menu. */
 export function renderList(all: Style[], opts: { numbered?: boolean; hidden?: number } = {}): string {
