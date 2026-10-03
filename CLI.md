@@ -70,26 +70,51 @@ Each point was observed in the running tool, not guessed.
 `idiolect` with no arguments stops printing help and reports where this project stands, then offers the next step.
 `idiolect --help` and `idiolect help` keep printing the help.
 
+Shakib decided on 2026-10-03 that it prompts, in every state.
+After the report it shows the next steps as a numbered list and the answer runs that step, the same way the style picker reads a number.
+A new user gets from install to a working style by typing `idiolect` and one number.
+
+```
+> idiolect
+This project has no style yet.
+
+  1  Pick a house style
+  2  Learn my own style from my git history
+
+Type a number, or Enter to leave:
+```
+
+Rules for the prompt:
+- Enter alone does nothing and exits 0. Looking at the state never changes a file by accident.
+- Every numbered step is an existing command, and the line names it, so the user learns what to type next time.
+- A step that writes files says so before it runs, as its own command already does.
+- Without a TTY there is no prompt in any state: it prints the report and the commands, and exits 0. Scripts, CI and hooks always get this.
+- `--no-prompt` forces the same in a terminal.
+
 It has four states, decided from the repo config, `~/.idiolect` and the agent files.
 
 **No style served, no personal profile.**
 Say what the tool does in two lines, then offer the two paths: pick a house style, or learn your own from this repo's history.
-In a TTY this is a two-item numbered prompt that runs `use` or `init` then `scan`.
-In a pipe it prints the two commands and exits 0.
+The prompt runs `use`, or `init` then `scan`.
 
 **A shipped style is served.**
 One line per language with the style id and its summary, the files it was written into, and whether they are current with what would be rendered now.
-Then the three things a user can do: change the style, review its rules, check the project with Unbot.
+The prompt offers: change the style (`use`), review its rules (`ui`), check the project (`unbot --all`), write the agent files again when they are not current (`sync`), remove idiolect (`remove`).
 
 **The developer's own profile is served.**
 Profile age, rule counts, pending rules, commits since the last scan of this repo, whether the agent files are current.
 This is today's `status`, with the served style first.
+The prompt offers: rescan when there are new commits (`scan`), review pending rules (`ui`), write the agent files again when they are not current (`sync`), check the project (`unbot --all`), remove idiolect (`remove`).
 
 **A personal profile exists but this repo was never scanned.**
-Say so and offer `scan`.
+Say so.
+The prompt offers `scan`, and a house style as the other way.
 
 Whether the agent files are current is a comparison of the block between the idiolect markers with a fresh render.
 `syncTargets` already computes "unchanged", so a dry-run mode of it answers this without writing.
+
+A step is only offered when it applies: no "write the agent files again" when they are current, no "rescan" with zero commits since the last scan.
+At most five steps are shown, in the order above.
 
 `status` becomes an alias of the bare command's report, without the prompt.
 That fixes point 6.
@@ -306,6 +331,7 @@ Each step is a branch, verified, merged and reported before the next starts.
    Done when `idiolect --help` fits 80 columns and shows the three groups.
 4. **Bare `idiolect`** with its four states, and `status` as its alias.
    Done when each state is shown in a throwaway repo: empty, shipped style, own profile, profile without a scan of this repo.
+   Each is checked three ways: answering with a number runs the step, Enter changes nothing, and piped through `cat` there is no prompt.
 5. **Quiet output** for `scan`, `use`, `sync` and `rules list`, with `--verbose` on `scan`.
    Done when each ends with a result line and a next-step line, and `scan --verbose` prints what `scan` prints today.
 6. **Progress** on the four LLM commands and the blame pass.
@@ -333,9 +359,10 @@ Only the picker preview waits.
 
 ## Open decisions for Shakib
 
-1. Whether bare `idiolect` should prompt at all, or only report and print the commands.
+None are open.
 
 Decided on 2026-10-03:
+- Bare `idiolect` prompts in every state, and only reports when there is no terminal, see section 1.
 - 0.2.0 ships after step 7. The picker preview follows in a later release.
 - The user-facing name for shipped styles is "house styles", see the vocabulary section.
 - Removing deletes an agent file idiolect created that holds nothing else, and the user picks how much to remove, up to everything idiolect did, see section 7.
