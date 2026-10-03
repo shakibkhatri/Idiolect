@@ -88,6 +88,24 @@ export async function installHook(repo: string, name: keyof typeof HOOKS): Promi
   return `${existing ? "appended to" : "created"} ${relative(repo, target)}`;
 }
 
+/**
+ * Takes out the comment line idiolect wrote and the command under it, with the blank line before them.
+ * Undefined when only a shebang is left, so the file can be deleted. Null when the hook holds no idiolect line.
+ */
+export function removeHook(existing: string): string | undefined | null {
+  const commands = Object.values(HOOKS).map((c) => c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  const ours = new RegExp(`\\n?# idiolect:[^\\n]*\\n(?:${commands})(?:\\n|$)`, "g");
+  if (!ours.test(existing)) return null;
+  const rest = existing.replace(ours, "");
+  return /^(#![^\n]*)?\s*$/.test(rest) ? undefined : rest;
+}
+
+/** Every hook file idiolect may have written into: .husky and the git hooks folder, for both hooks. */
+export async function hookFiles(repo: string): Promise<string[]> {
+  const gitHooks = (await git(repo, ["rev-parse", "--git-path", "hooks"]).catch(() => "")).trim();
+  return (Object.keys(HOOKS) as (keyof typeof HOOKS)[]).flatMap((name) => [join(repo, ".husky", name), ...(gitHooks ? [resolve(repo, gitHooks, name)] : [])]);
+}
+
 export function hooksCommand(): Command {
   const hooks = new Command("hooks").description("git hooks that run unbot and the background refresh");
   hooks.command("install").description("pre-commit runs unbot on staged files, warn only. post-commit rescans every N commits. Uses .husky when present")

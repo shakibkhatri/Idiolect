@@ -4,6 +4,7 @@ import { execFile } from "node:child_process";
 import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import { createInterface } from "node:readline/promises";
 import { join, resolve } from "node:path";
+import { removeStyle } from "./remove.js";
 import { syncTargets } from "./sync.js";
 
 export const LANGUAGES = ["kotlin", "typescript", "python", "go"] as const;
@@ -173,8 +174,10 @@ export function useCommand(): Command {
     .option("--target <file...>", "agent files to write, overrides sync.targets in .idiolect/config.json")
     .option("--all", "offer every style, whatever the project is written in")
     .option("--no-sync", "only record the choice, do not write agent files")
-    .action(async (ids: string[], o: { repo: string; target?: string[]; all?: boolean; sync: boolean }) => {
+    .option("--none", "stop following a style here: the same as idiolect remove --style")
+    .action(async (ids: string[], o: { repo: string; target?: string[]; all?: boolean; sync: boolean; none?: boolean }) => {
       const repo = await toplevel(o.repo);
+      if (o.none) return removeStyle(repo);
       const chosen = ids.length ? await Promise.all(ids.map((id) => loadStyle(id))) : await pickFromMenu(repo, o.all);
       const picked: Picked = { ...(await loadRepoConfig(repo)).styles };
       for (const s of chosen) picked[s.language] = s.id;
@@ -194,7 +197,7 @@ export function useCommand(): Command {
       const results = await syncTargets(repo, renderStyleMd(profile, { threshold: config.confidenceThreshold, repo }), o.target ?? config.sync.targets, create);
       const written = results.filter((r) => r.status === "created" || r.status === "updated").map((r) => r.file);
       console.log(written.length ? `Written to ${list(written)}.\n${FOLLOWS}` : `${list(results.filter((r) => r.status === "unchanged").map((r) => r.file))} already ${results.filter((r) => r.status === "unchanged").length === 1 ? "holds" : "hold"} this style.`);
-      console.log("Check existing code: idiolect unbot --all.");
+      console.log("Check existing code: idiolect unbot --all.  Undo: idiolect remove.");
       // one line for the agents that are not set up here, a row each was noise for someone who uses one agent
       const skipped = results.filter((r) => r.status === "skipped").map((r) => r.file);
       if (skipped.length) console.log(`\nnot written, those agents are not set up here: ${skipped.join(", ")}\nto write one anyway: idiolect use --target <file>`);

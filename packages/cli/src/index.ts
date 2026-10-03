@@ -3,6 +3,7 @@ import { analyze, fileSpread, languageOf, EXTENSIONS, isTestPath, collect, detec
 import { DEFAULT_TASKS_DIR, loadTasks, renderReport, runEval, type Report } from "@shakibkhatri/idiolect-eval";
 import { createIdiolectServer } from "@shakibkhatri/idiolect-mcp";
 import { renderHelp, TAGLINE } from "./help.js";
+import { removeCommand } from "./remove.js";
 import { scanSummary } from "./summary.js";
 import { progress } from "./term.js";
 import { syncTargets } from "./sync.js";
@@ -214,6 +215,7 @@ program.command("sync")
 
 program.addCommand(stylesCommand());
 program.addCommand(useCommand());
+program.addCommand(removeCommand());
 program.addCommand(rulesCommand());
 program.addCommand(unbotCommand());
 program.addCommand(hooksCommand());

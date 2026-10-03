@@ -12,4 +12,5 @@ test("the help shows three groups within 80 columns and never loses a registered
   expect(lines).toContain("  use      pick a house style for this project");
   expect(lines).toContain("  mcp, hooks, status, refresh, eval, brand-new");
   expect(help).not.toMatch(/profile|shipped|build/);
+  expect(lines).toContain("  remove   take idiolect out of this project again");
 });

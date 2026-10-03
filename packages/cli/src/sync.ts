@@ -21,7 +21,21 @@ export function syncBlock(existing: string | undefined, body: string, file: stri
 }
 
 // Cursor rule files need frontmatter to be picked up
-const header = (file: string) => (file.endsWith(".mdc") ? "---\ndescription: The coding style to write in, served by idiolect\nalwaysApply: true\n---\n\n" : "");
+const CURSOR_HEADER = "---\ndescription: The coding style to write in, served by idiolect\nalwaysApply: true\n---\n\n";
+const header = (file: string) => (file.endsWith(".mdc") ? CURSOR_HEADER : "");
+
+/**
+ * Takes the block out again, with the blank line syncBlock put before it. Everything else stays byte for byte.
+ * Returns undefined when nothing of the user's is left, so the file can be deleted. Null means there is no block.
+ */
+export function removeBlock(existing: string): string | undefined | null {
+  const start = existing.indexOf(START);
+  const end = existing.indexOf(END, start);
+  if (start < 0 || end < 0) return null;
+  const before = existing.slice(0, start), after = existing.slice(end + END.length);
+  const rest = (before.endsWith("\n\n") ? before.slice(0, -1) : before) + (after.startsWith("\n") ? after.slice(1) : after);
+  return rest.trim() === "" || rest.trim() === CURSOR_HEADER.trim() ? undefined : rest;
+}
 
 export type SyncResult = { file: string; status: "created" | "updated" | "unchanged" | "skipped" };
 

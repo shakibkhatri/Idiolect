@@ -9,6 +9,7 @@ const GROUPS: { title: string; commands: [name: string, text: string][] }[] = [
     ["init", "set up learning your own style from your git history"],
     ["scan", "learn or update your own style"],
     ["sync", "write the style into your agent's instruction files"],
+    ["remove", "take idiolect out of this project again"],
   ] },
   { title: "Review and check", commands: [
     ["show", "print the style your agent reads"],

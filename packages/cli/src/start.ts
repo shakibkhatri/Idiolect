@@ -99,10 +99,11 @@ export function stepsFor(s: ProjectState): Step[] {
   const check: Step = { label: "Check the project against the style", runs: [["unbot", "--all"]] };
   if (s.kind === "none") return [{ label: "Pick a house style", runs: [["use"]] }, { label: "Learn my own style from my git history", runs: [["init"], ["scan"]] }];
   if (s.kind === "unscanned") return [{ label: "Learn from this project's history too", runs: [["scan"]] }, { label: "Pick a house style instead", runs: [["use"]] }];
-  if (s.kind === "house") return [{ label: "Change the house style", runs: [["use"]] }, { label: "Review its rules in the browser", runs: [["ui"]] }, check, ...sync];
+  const remove: Step = { label: "Take idiolect out of this project", runs: [["remove"]] };
+  if (s.kind === "house") return [{ label: "Change the house style", runs: [["use"]] }, { label: "Review its rules in the browser", runs: [["ui"]] }, check, ...sync, remove];
   const rescan: Step[] = s.scan?.since && !s.named ? [{ label: `Learn from the ${plural(s.scan.since, "new commit")}`, runs: [["scan"]] }] : [];
   const review: Step = { label: s.pending.length ? `Review the ${plural(s.pending.length, "pending rule")} in the browser` : "Review the rules in the browser", runs: [["ui"]] };
-  return [...rescan, review, ...sync, check];
+  return [...rescan, review, ...sync, check, remove];
 }
 
 const commandOf = (step: Step) => step.runs.map((r) => `idiolect ${r.join(" ")}`).join(", then ");

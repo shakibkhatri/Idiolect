@@ -11,12 +11,12 @@ test("each state offers only the steps that apply, as existing commands", () => 
   expect(commands({ ...base, kind: "unscanned", rules: 4 })).toEqual(["scan", "use"]);
 
   const house: ProjectState = { ...base, kind: "house", styles: [{ language: "kotlin", id: "kotlin-tivi", summary: "Few comments" }], files: { written: ["AGENTS.md"], stale: [] } };
-  expect(commands(house)).toEqual(["use", "ui", "unbot --all"]);
-  expect(commands({ ...house, files: { written: ["AGENTS.md"], stale: ["AGENTS.md"] } })).toEqual(["use", "ui", "unbot --all", "sync"]);
+  expect(commands(house)).toEqual(["use", "ui", "unbot --all", "remove"]);
+  expect(commands({ ...house, files: { written: ["AGENTS.md"], stale: ["AGENTS.md"] } })).toEqual(["use", "ui", "unbot --all", "sync", "remove"]);
 
   const own: ProjectState = { ...base, kind: "own", rules: 79, updated: new Date().toISOString(), scan: { since: 0, scannedAt: new Date().toISOString() }, files: { written: ["AGENTS.md"], stale: [] } };
-  expect(commands(own)).toEqual(["ui", "unbot --all"]);
-  expect(commands({ ...own, scan: { ...own.scan!, since: 3 }, files: { written: [], stale: ["AGENTS.md"] } })).toEqual(["scan", "ui", "sync", "unbot --all"]);
+  expect(commands(own)).toEqual(["ui", "unbot --all", "remove"]);
+  expect(commands({ ...own, scan: { ...own.scan!, since: 3 }, files: { written: [], stale: ["AGENTS.md"] } })).toEqual(["scan", "ui", "sync", "unbot --all", "remove"]);
   for (const s of [base, house, own]) expect(stepsFor(s).length).toBeLessThanOrEqual(5);
 });
 
