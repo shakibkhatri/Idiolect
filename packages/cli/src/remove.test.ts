@@ -52,8 +52,8 @@ test("level 1 leaves the project folder, level 2 gives the repo back as it was, 
   expect(listed).toContain("settings, the cache, 1 eval report");
   expect(await readFile(join(repo, "CLAUDE.md"), "utf8")).toContain("idiolect:start"); // listing changes nothing
   expect(warning(found, 1)).toBeUndefined();
-  expect(warning(found, 2)).toBe("This cannot be brought back: the settings in .idiolect/config.json, 1 eval report and their quiz picks.");
-  expect(warning(found, 3)).toMatch(/quiz picks, your learned style, which only a new scan rebuilds\.$/);
+  expect(warning(found, 2)).toBe("This cannot be brought back:\n  the settings in .idiolect/config.json\n  1 eval report and their quiz picks");
+  expect(warning(found, 3)).toMatch(/quiz picks\n  your learned style, which only a new scan rebuilds$/);
 
   expect(await apply(repo, found, 1)).toEqual(["deleted  AGENTS.md", "removed  the style block from CLAUDE.md", "removed  styles from .idiolect/config.json"]);
   expect(await readFile(join(repo, "CLAUDE.md"), "utf8")).toBe("# Mine\n");

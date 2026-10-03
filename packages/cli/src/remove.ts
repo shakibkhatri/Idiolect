@@ -144,7 +144,8 @@ function leftovers(f: Found, level: Level): string[] {
 export function warning(f: Found, level: Level): string | undefined {
   const project = f.dir ? ["the settings in .idiolect/config.json", ...(f.dir.reports ? [`${plural(f.dir.reports, "eval report")} and their quiz picks`] : []), ...(f.dir.decisions ? ["your rule decisions"] : [])] : [];
   const lost = level === 1 ? [] : [...project, ...(level === 3 && f.home ? ["your learned style, which only a new scan rebuilds"] : [])];
-  return lost.length ? `This cannot be brought back: ${lost.join(", ")}.` : undefined;
+  // one line each, the sentence form ran past 100 columns and wrapped mid-word
+  return lost.length ? ["This cannot be brought back:", ...lost.map((l) => `  ${l}`)].join("\n") : undefined;
 }
 
 async function ask(question: string): Promise<string> {
@@ -186,7 +187,12 @@ export function removeCommand(): Command {
       if (warn && !o.yes) {
         if (!interactive) throw new Error(`${warn}\nrun it again with --yes to go ahead`);
         console.log(`\n${term.warn(warn)}`);
-        if ((await ask("Type yes to remove it: ")).toLowerCase() !== "yes") { console.log("Nothing was changed."); return; }
+        for (;;) {
+          const answer = (await ask("Type yes to remove it, or no to keep it: ")).toLowerCase();
+          if (answer === "yes") break;
+          if (answer === "no" || answer === "n" || !answer) { console.log("Nothing was changed."); return; }
+          console.log(`  ${answer} is neither yes nor no`);
+        }
       }
       const done = await apply(repo, found, level);
       console.log(`\n${done.length ? done.join("\n") : "There was nothing to remove at this level."}\n\n${leftovers(found, level).join("\n")}`);
