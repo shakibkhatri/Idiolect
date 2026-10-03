@@ -245,18 +245,16 @@ export function countName(id: string | undefined, kind: NameKind, s: LanguageSta
   n.casing[kind][c]++;
   if (c === "backtick") return;
   bump(n.nameLength[kind], id.length);
-  // ponytail: a 2-3 letter camel word outside the allowlist counts as an abbreviation, good enough for a ratio
   if (words(id).some((w) => w.length >= 2 && w.length <= 3 && !SHORT_OK.has(w))) n.abbreviated++;
 }
 
-// ponytail: three buckets are enough to say "you write test names as backtick sentences"
 export function testNameStyle(id: string): string {
   if (id.startsWith("`")) return "backtick";
   if (/_/.test(id)) return "snake";
   return words(id).length >= 4 ? "camelSentence" : "camel";
 }
 
-/** Test names given as strings: "should ..." versus a plain statement. ponytail: two buckets, that is the only common split */
+/** Test names given as strings: "should ..." versus a plain statement. */
 export const testStringStyle = (name: string) => (/^should\b/i.test(name.trim()) ? "should" : "sentence");
 
 export function casing(id: string): Casing {
@@ -295,7 +293,6 @@ export function analyzeCommits(commits: Commit[]): CommitStats {
     // a hard-wrapped body keeps every line at 72 or so, an unwrapped one has one long line per paragraph
     for (const line of c.body.split("\n")) { if (!line.trim()) continue; s.bodyLines++; if (line.length <= 80) s.bodyLinesWrapped++; }
     const verb = rest.split(/\s+/)[0]?.toLowerCase() ?? "";
-    // ponytail: suffix heuristic, "added" past, "adds" third person, else imperative
     bump(s.tense, /ed$/.test(verb) ? "past" : /[^s]s$/.test(verb) ? "thirdPerson" : "imperative");
   }
   return s;

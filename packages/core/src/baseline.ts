@@ -140,7 +140,6 @@ function ruleFromDef(def: Def, lang: Language | "any", m: Metric, stats: Languag
     text += " Varies by repo, follow the repo you are in.";
   }
   // a habit the developer does in some files and mostly not in others is a per-file choice, not a rule
-  // ponytail: 15% of files doing the opposite was the line on the author's repo, make it config if others disagree
   const files = spread ? spread.under + spread.over : 0;
   const against = def.kind === "high" ? spread?.under ?? 0 : def.kind === "low" ? spread?.over ?? 0 : 0;
   if (files >= 4 && against / files >= 0.15) {
