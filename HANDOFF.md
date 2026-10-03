@@ -25,9 +25,11 @@ Languages: Kotlin, TypeScript, Python, Go. Swift is the only spec language left 
 Built on top since: the dashboard `idiolect ui` (M10), shipped styles with `idiolect styles` and `idiolect use`. Not built: M9 team mode.
 0.2.0, the CLI redesign of `CLI.md`, steps 1 to 8, was published on 2026-10-03 and tested by Shakib on the Mac and on the Windows laptop.
 0.2.1 was published the same day with what that testing found: the picker takes `all`, `init` defaults to the only author, a failed LLM call says what to run, and the house styles have idiolect's own names.
-Version 0.2.2 is prepared on `main` and not yet published. Every menu is now an arrow-key list from one engine in `cli/src/term.ts`, `select` and `multiSelect`: bare `idiolect`, the `remove` levels and its confirmation, the style picker, and the authors and provider in `init`. Shakib asked for it because typed numbers, typed words and arrow keys side by side looked off.
+0.2.2 was published the same day. Every menu is now an arrow-key list from one engine in `cli/src/term.ts`, `select` and `multiSelect`: bare `idiolect`, the `remove` levels and its confirmation, the style picker, and the authors and provider in `init`. Shakib asked for it because typed numbers, typed words and arrow keys side by side looked off.
 The lists were checked on the Mac in a pseudo terminal with scripted keys and replayed through a small terminal emulator. Nobody has seen them in PowerShell yet. They redraw with cursor-up and erase-line codes, so that is the thing to look at in the first Windows screenshot.
-Tests: `pnpm test`, 73 vitest tests, all green. `pnpm typecheck`. `pnpm build` must run before the global `idiolect` picks up changes.
+Version 0.2.3 is prepared on `main` and not yet published. An answered list shrinks to one line naming the answer, because Shakib found himself reading the options again. Every line of a list is cut to the window width: at 38 columns the key help wrapped, the redraw came up a line short and left copies of the first row behind, which he found in a narrow terminal on the Mac.
+Text outside the lists is still written for about 100 columns and folds raggedly in a narrow window, the table of `remove` most of all.
+Tests: `pnpm test`, 74 vitest tests, all green. `pnpm typecheck`. `pnpm build` must run before the global `idiolect` picks up changes.
 On this machine `idiolect` is the npm-linked dev build from `packages/cli`, not the published one. Keep it that way while developing.
 
 ## The verdict, where it stands
@@ -185,7 +187,7 @@ The agent cannot start headless `claude` in his setup, the permission classifier
 
 ## Open items, in order
 
-1. Release 0.2.2, bumped on `main`, Shakib pushes and publishes, then tests the lists on Windows. Still unverified: a successful `claude-cli` call on Windows, the one try there failed on an expired login, and a successful `eval` run under the spinner. `unbot --llm` and `--fix` do not yet add the what-to-run line to a failed LLM call, `scan` and `eval` do. Two rule texts still quote `::TiviShow` and `httpx.ReadTimeout`, Shakib has not said whether to change them. Then step 9, the picker preview: `?` and a number in the menu prints that style's rules.
+1. Release 0.2.3, bumped on `main`, Shakib pushes and publishes, then tests the lists on Windows. Still unverified: a successful `claude-cli` call on Windows, the one try there failed on an expired login, and a successful `eval` run under the spinner. `unbot --llm` and `--fix` do not yet add the what-to-run line to a failed LLM call, `scan` and `eval` do. Two rule texts still quote `::TiviShow` and `httpx.ReadTimeout`, Shakib has not said whether to change them. Then step 9, the picker preview: `?` and a number in the menu prints that style's rules.
 1. Shakib's own profile is the stale 79-rule one from before the leak fix, and Dissent no longer serves it. One `idiolect scan` in Dissent rebuilds it clean. To serve it again he removes `styles` from Dissent's config.
 2. Retake the quiz with the clean baseline, suggestion 29. It is the only way to know whether the chance-level verdict was real.
 3. More styles, suggestion 31. Shakib wants to learn from more open source projects. One project and one main author per style, recipe in `scripts/styles/README.md`.

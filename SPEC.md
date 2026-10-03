@@ -299,7 +299,7 @@ Published 2026-10-02 as `idiolect@0.0.1` on npm. The org name `idiolect` was tak
 
 ## 7. CLI
 
-The commands below are what 0.2.2 ships.
+The commands below are what 0.2.3 ships.
 0.2.0 is the redesign briefed in `CLI.md`, built 2026-10-03: every 0.1.2 command and flag still works, and how they are presented changed.
 
 - Bare `idiolect` is the front door. It reports one of four states, no style, a house style, the developer's own, or their own without a scan of this repo, and in a terminal lists the next steps and runs the one picked. Enter alone leaves and changes nothing. Without a terminal, with `--no-prompt`, and as `idiolect status`, it prints the report and the commands and exits 0. It lives in `cli/src/start.ts`
@@ -326,7 +326,7 @@ The commands below are what 0.2.2 ships.
 - The confirmation of `remove` is a two-row list that starts on "No, keep everything"
 - The style picker and the authors in `init` are checklists. The picker keeps one tick per language and its last row shows the styles of the other languages
 - The provider in `init` is a list, with a dash between each name and what it means
-- An answered list is erased and replaced by one line naming the answer, `> kotlin-quiet, typescript-terse`, because the owner found himself reading the options again after choosing. Leaving a list, and the row that shows more styles, leave no line. The redraw counts lines, so a row must not be wider than the window
+- An answered list is erased and replaced by one line naming the answer, `> kotlin-quiet, typescript-terse`, because the owner found himself reading the options again after choosing. Leaving a list, and the row that shows more styles, leave no line. The redraw counts lines, so since 0.2.3 every line of a list, the key help included, is cut to the width of the window. Both the one-line answer and the cut are 0.2.3
 - Without a terminal nothing changed: the report and the commands are printed, and where an answer is read it is typed as before. `canAsk` decides
 
 ```
