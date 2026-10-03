@@ -26,7 +26,12 @@ export function renderStyleMd(profile: Profile, opts: RenderOptions): string {
   const rules = served.filter((r) => !r.repo);
   const project = opts.repo ? served.filter((r) => r.repo === opts.repo) : [];
   const langs = new Set(served.map((r) => r.language).filter((l) => l !== "any"));
-  const label = (r: Rule) => (langs.size > 1 && r.language !== "any" ? `${LANGUAGE_NAMES[r.language] ?? r.language}: ` : "");
+  // a text shared by every served language needs no label, one shared by some names exactly those
+  const label = (...rs: Rule[]) => {
+    const own = [...new Set(rs.map((r) => r.language))];
+    if (langs.size < 2 || own.includes("any") || own.length === langs.size) return "";
+    return `${own.map((l) => LANGUAGE_NAMES[l] ?? l).join(", ")}: `;
+  };
   const out = [`# Code style: ${profile.developer.name}`, ""];
   out.push(`Learned from ${profile.sources.length} ${profile.sources.length === 1 ? "repo" : "repos"}, ${profile.sources.reduce((n, s) => n + s.linesOwned, 0)} lines of the developer's own code. Follow these when writing code, comments and commits for them.`, "");
   out.push(`Rules with numbers say how much. Match those quantities first: do not add comments, docs or structure beyond them. The other rules describe voice and apply only where you would write something anyway. Plain code with no comment is often the right answer.`, "");
@@ -35,14 +40,14 @@ export function renderStyleMd(profile: Profile, opts: RenderOptions): string {
     const own = capVoice(rules.filter((r) => r.category === category && r.scope === "personal").sort((a, b) => Number(!!b.evidence.metric) - Number(!!a.evidence.metric) || b.confidence - a.confidence));
     if (!own.length) continue;
     out.push(`## ${title}`, "");
-    // the same text learned for two languages, like an avoid rule, is one line without a language label
+    // the same text learned for two languages, like an avoid rule, is one line
     const byText = new Map<string, Rule[]>();
     for (const r of own) byText.set(r.text, [...(byText.get(r.text) ?? []), r]);
     // comment voice rules are the ones agents over-apply, so they get a lead-in that ties them to the quantities above
     let leadIn = category === "comments" && !!own[0]!.evidence.metric;
     for (const [text, rs] of byText) {
       if (leadIn && !rs[0]!.evidence.metric) { out.push("", "Those numbers bound how many. When a comment is warranted, it reads like this:", ""); leadIn = false; }
-      out.push(`- ${rs.length > 1 ? "" : label(rs[0]!)}${text}${opts.evidence ? evidence(rs[0]!) : ""}`);
+      out.push(`- ${label(...rs)}${text}${opts.evidence ? evidence(rs[0]!) : ""}`);
     }
     out.push("");
   }

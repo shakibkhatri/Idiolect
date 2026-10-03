@@ -130,6 +130,21 @@ test("a language under 5% of the lines is left out of the full profile but serve
   expect(renderStyleMd({ ...withPy, rules }, { threshold: 0.6, language: "python" })).toContain("Python comments are terse.");
 });
 
+test("a text shared by some of the served languages is labelled with exactly those", () => {
+  const p = upsertSource(emptyProfile("me", ["me@x"]), source("/a", () => {}));
+  const st = () => { const x = emptyStats(); x.loc = 5000; return x; };
+  const three: Profile = { ...p, stats: { kotlin: st(), typescript: st(), go: st() } };
+  const rule = (language: "kotlin" | "typescript" | "go", text: string) => ({
+    id: `${language}.comments.${text}`, scope: "personal" as const, language, category: "comments" as const, text,
+    evidence: { metric: { name: "m", value: 1, sampleSize: 100 }, examples: [] }, confidence: 0.9, status: "auto" as const,
+  });
+  const rules = [rule("kotlin", "No doc comments."), rule("typescript", "No doc comments."), rule("go", "Document everything."), ...(["kotlin", "typescript", "go"] as const).map((l) => rule(l, "No emoji."))];
+  const md = renderStyleMd({ ...three, rules }, { threshold: 0.6 });
+  expect(md).toContain("- Kotlin, TypeScript: No doc comments.");
+  expect(md).toContain("- Go: Document everything.");
+  expect(md).toContain("- No emoji.");
+});
+
 test("redact strips key-like strings and keeps the rest", () => {
   expect(redact('val key = "sk-ant-abcdefghijklmnopqrstuvwxyz0123"')).toBe('val key = "[REDACTED]"');
   expect(redact("password = hunter2!!x")).toBe("password = [REDACTED]");
