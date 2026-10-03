@@ -1,5 +1,6 @@
 import { buildStyle, git, listStyles, loadProfile, loadRepoConfig, loadServedProfile, loadStyle, monthYear, renderStyleMd, STYLES_DIR, updateRepoConfig, type Language, type Picked } from "@shakibkhatri/idiolect-core";
 import { Command } from "commander";
+import { execFile } from "node:child_process";
 import { mkdir, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { syncTargets } from "./sync.js";
@@ -43,6 +44,17 @@ export function stylesCommand(): Command {
   return styles;
 }
 
+const isDir = (path: string) => stat(path).then((s) => s.isDirectory(), () => false);
+const onPath = (cmd: string) => new Promise<boolean>((res) => execFile("which", [cmd], (err) => res(!err)));
+
+/** AGENTS.md always. An agent's own file only when that agent is in use: Claude Code installed or a .claude folder, a .cursor folder. */
+export async function filesToCreate(repo: string, claudeInstalled: boolean): Promise<Set<string>> {
+  const create = new Set(["AGENTS.md"]);
+  if (claudeInstalled || (await isDir(join(repo, ".claude")))) create.add("CLAUDE.md");
+  if (await isDir(join(repo, ".cursor"))) create.add(".cursor/rules/idiolect.mdc");
+  return create;
+}
+
 export function useCommand(): Command {
   return new Command("use").description("serve shipped styles in this repo, one per language, and write them into the agent files")
     .argument("<style...>", "style ids from idiolect styles")
@@ -63,9 +75,7 @@ export function useCommand(): Command {
       if (!o.sync) return;
       const config = await loadRepoConfig(repo);
       const profile = (await loadServedProfile(repo))!;
-      // someone picking a style has no agent files yet: Claude Code reads CLAUDE.md, most other agents AGENTS.md
-      const create = new Set(["AGENTS.md", "CLAUDE.md"]);
-      if (await stat(join(repo, ".cursor")).then((s) => s.isDirectory(), () => false)) create.add(".cursor/rules/idiolect.mdc");
+      const create = await filesToCreate(repo, await onPath("claude"));
       const results = await syncTargets(repo, renderStyleMd(profile, { threshold: config.confidenceThreshold, repo }), o.target ?? config.sync.targets, create);
       for (const r of results) console.log(`${r.status.padEnd(9)} ${r.file}${r.status === "skipped" ? "  (not present, pass --target to create it)" : ""}`);
     });

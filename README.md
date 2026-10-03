@@ -98,7 +98,8 @@ npx -y idiolect styles                              # what ships
 npx -y idiolect use kotlin-tivi typescript-vue      # one per language, written into CLAUDE.md and AGENTS.md
 ```
 
-`use` creates `CLAUDE.md` for Claude Code and `AGENTS.md` for the agents that read that file, and a Cursor rule when the repo has a `.cursor` folder.
+`use` always creates `AGENTS.md`, the file most agents read.
+It creates `CLAUDE.md` only when Claude Code is in use, meaning it is installed or the repo has a `.claude` folder, and a Cursor rule only when the repo has a `.cursor` folder.
 It updates `.github/copilot-instructions.md` and `GEMINI.md` when they exist, and `--target <file>` writes any other file.
 
 That is the whole setup: no scan, no LLM call, no account.
