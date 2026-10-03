@@ -23,7 +23,8 @@ export function renderList(all: Style[], opts: { numbered?: boolean; hidden?: nu
     for (const s of styles) out.push(`  ${opts.numbered ? `${String(++n).padStart(2)}  ` : ""}${s.id.padEnd(width)}  ${s.summary}${s.experimental ? "  (experimental)" : ""}`);
     out.push("");
   }
-  if (opts.hidden) out.push(`${opts.hidden} more for other languages: idiolect styles --all`);
+  // inside the menu a command cannot be run, so the menu takes the word instead
+  if (opts.hidden) out.push(`${opts.hidden} more for other languages: ${opts.numbered ? "type all to see them" : "idiolect styles --all"}`);
   return out.join("\n").trimEnd();
 }
 
@@ -58,7 +59,7 @@ export async function projectLanguages(repo: string): Promise<Language[]> {
 export function parsePick(input: string, shown: Style[]): Style[] {
   const picked = input.split(/[\s,]+/).filter(Boolean).map((t) => {
     const s = /^\d+$/.test(t) ? shown[Number(t) - 1] : undefined;
-    if (!s) throw new Error(`${t} is not one of 1 to ${shown.length}`);
+    if (!s) throw new Error(shown.length === 1 ? `${t} is not 1, the only style listed` : `${t} is not one of 1 to ${shown.length}`);
     return s;
   });
   const twice = LANGUAGES.find((l) => picked.filter((s) => s.language === l).length > 1);
@@ -147,15 +148,22 @@ export async function filesToCreate(repo: string, claudeInstalled: boolean): Pro
 
 /** Shows the numbered styles for this project and reads the choice. Enter takes the only style of each language when there is no choice to make. */
 async function pickFromMenu(repo: string, everything?: boolean): Promise<Style[]> {
-  const { languages, shown, hidden } = await forProject(repo, everything);
-  const menu = menuOrder(shown);
+  let { languages, shown, hidden } = await forProject(repo, everything);
+  let menu = menuOrder(shown);
   if (languages.length) console.log(`This project is written in ${names(languages)}.\n`);
   console.log(`${renderList(menu, { numbered: true, hidden })}\n`);
-  const single = LANGUAGES.every((l) => menu.filter((s) => s.language === l).length <= 1);
-  const preset = single && languages.length ? menu.map((_, i) => i + 1).join(" ") : "";
   for (;;) {
+    const single = LANGUAGES.every((l) => menu.filter((s) => s.language === l).length <= 1);
+    const preset = single && languages.length ? menu.map((_, i) => i + 1).join(" ") : "";
     const answer = (await ask(`Type the number of the style you want, one per language${preset ? ` [${preset}]` : ""}: `)).trim() || preset;
     if (!answer) throw new Error("no style picked");
+    // the list names --all for the command line, so the menu takes both spellings
+    if (hidden && /^(--)?all$/i.test(answer)) {
+      ({ languages, shown, hidden } = await forProject(repo, true));
+      menu = menuOrder(shown);
+      console.log(`\n${renderList(menu, { numbered: true })}\n`);
+      continue;
+    }
     try {
       const picked = parsePick(answer, menu);
       console.log("");
@@ -200,6 +208,6 @@ export function useCommand(): Command {
       console.log("Check existing code: idiolect unbot --all.  Undo: idiolect remove.");
       // one line for the agents that are not set up here, a row each was noise for someone who uses one agent
       const skipped = results.filter((r) => r.status === "skipped").map((r) => r.file);
-      if (skipped.length) console.log(`\nnot written, those agents are not set up here: ${skipped.join(", ")}\nto write one anyway: idiolect use --target <file>`);
+      if (skipped.length) console.log(`\nnot written, those agents are not set up here:\n  ${skipped.join(", ")}\nto write one anyway: idiolect use --target <file>`);
     });
 }
