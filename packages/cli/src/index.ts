@@ -91,7 +91,7 @@ program.command("init")
   });
 
 program.command("scan")
-  .description("collect your code, analyze it, merge into your personal profile, write rules")
+  .description("learn or update your own style from your code and commits in this repo")
   .option("--repo <path>", "repository path", ".")
   .option("--no-cache", "ignore the blame cache")
   .option("--no-llm", "metric rules only, no LLM call")
@@ -147,39 +147,39 @@ program.command("scan")
     await saveProfile(profile);
     await writeStyle(profile, config.confidenceThreshold);
     const project = profile.rules.filter((r) => r.repo === repo).length;
-    if (project) process.stderr.write(`${project} project-only rules kept for this repo, shown by idiolect show inside it\n`);
+    if (project) process.stderr.write(`${project} rules for this repo only, shown by idiolect show inside it\n`);
 
     const { summarizeLanguage, summarizeCommits } = await import("./summary.js");
     console.log(`\nThis repo`);
     for (const [lang, st] of Object.entries(stats) as [Language, LanguageStats][]) console.log(summarizeLanguage(lang, st));
     console.log(summarizeCommits(commitStats));
     if (profile.sources.length > 1) {
-      console.log(`\nMerged profile (${profile.sources.length} repos)`);
+      console.log(`\nYour style across ${profile.sources.length} repos`);
       for (const [lang, st] of Object.entries(profile.stats) as [Language, LanguageStats][]) console.log(summarizeLanguage(lang, st));
       console.log(summarizeCommits(profile.commitStats));
     }
     const by = (st: string) => profile.rules.filter((r) => r.status === st).length;
     console.log(`\nrules: ${profile.rules.length} (${by("auto")} auto, ${by("approved")} approved, ${by("edited")} edited, ${by("pending")} pending, ${by("rejected")} rejected)${provider ? "" : ", metric rules only"}`);
-    console.log(`profile: ${profilePath(primary)}`);
+    console.log(`saved: ${profilePath(primary)}`);
     console.log(`next: idiolect show, then idiolect rules list to approve, reject or edit`);
   });
 
 program.command("show")
-  .description("print your style profile as STYLE.md")
+  .description("print the style your agent reads")
   .option("--repo <path>", "repository path, for the confidence threshold", ".")
-  .option("--email <email>", "profile to show, default is yours")
+  .option("--email <email>", "print the style stored for this email in full, default is the one served here")
   .option("--lang <language>", "only rules for this language")
   .option("--evidence", "append metric and example evidence to each rule")
   .action(async (o: { repo: string; email?: string; lang?: string; evidence?: boolean }) => {
     const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"]).catch(() => "")).trim() || undefined;
     const profile = o.email ? await loadProfile(o.email) : await loadServedProfile(repo ?? resolve(o.repo));
-    if (!profile) throw new Error(o.email ? `no profile for ${o.email}, run: idiolect scan` : NO_PROFILE);
+    if (!profile) throw new Error(o.email ? `no style stored for ${o.email}, run: idiolect scan` : NO_PROFILE);
     const { confidenceThreshold } = await loadRepoConfig(resolve(o.repo));
     console.log(renderStyleMd(profile, { threshold: confidenceThreshold, language: o.lang, evidence: o.evidence, repo }));
   });
 
 program.command("sync")
-  .description("write your STYLE.md into agent instruction files, between idiolect markers only")
+  .description("write the style into your agent's instruction files, between idiolect markers only")
   .option("--repo <path>", "repository path", ".")
   .option("--target <file...>", "files to write, overrides sync.targets in .idiolect/config.json")
   .action(async (o: { repo: string; target?: string[] }) => {
@@ -202,8 +202,8 @@ program.addCommand(refreshCommand());
 program.addCommand(uiCommand());
 
 program.command("eval")
-  .description("generate code with and without your profile and score which sounds more like you")
-  .option("--repo <path>", "repository path, used for reference samples and project rules", ".")
+  .description("generate code with and without the style and score which sounds more like you")
+  .option("--repo <path>", "repository path, used for reference samples and the rules for this repo only", ".")
   .option("--tasks <dir>", "task directory", DEFAULT_TASKS_DIR)
   .option("--only <ids...>", "run only these task ids")
   .option("--quiz", "after the judge, show pairs blind in your browser and let you pick")
@@ -216,19 +216,19 @@ program.command("eval")
     if (o.from) {
       const path = o.from === "latest" ? await latestReport(repo) : resolve(o.from);
       const report = JSON.parse(await readFile(path, "utf8")) as Report;
-      process.stderr.write(`report: ${path}\nprofile with ${report.rules} rules, run ${report.generatedAt}\n`);
+      process.stderr.write(`report: ${path}\nstyle with ${report.rules} rules, run ${report.generatedAt}\n`);
       report.quiz = await quiz(report);
       await writeFile(path, JSON.stringify(report, null, 2));
       await writeFile(path.replace(/\.json$/, ".md"), renderReport(report));
-      console.log(`\nquiz:   you picked the profile output ${Math.round(report.quiz.winRate * 100)}% (${report.quiz.withWins}/${report.quiz.total})`);
-      console.log(`judge:  with profile wins ${Math.round(report.judge.winRate * 100)}% (${report.judge.withWins}/${report.judge.total})`);
+      console.log(`\nquiz:   you picked the styled output ${Math.round(report.quiz.winRate * 100)}% (${report.quiz.withWins}/${report.quiz.total})`);
+      console.log(`judge:  with the style wins ${Math.round(report.judge.winRate * 100)}% (${report.judge.withWins}/${report.judge.total})`);
       console.log(`report: ${path.replace(/\.json$/, ".md")}`);
       return;
     }
     const user = await loadUserConfig();
     if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
     const profile = await loadServedProfile(repo);
-    if (!profile) throw new Error("no profile, run: idiolect scan");
+    if (!profile) throw new Error(NO_PROFILE);
     const provider = createProvider(user.llm);
     if (!provider) throw new Error("eval needs an LLM provider, run: idiolect init");
     const config = await loadRepoConfig(repo);
@@ -254,8 +254,8 @@ program.command("eval")
     await writeFile(join(dir, `${stamp}.json`), JSON.stringify(report, null, 2));
     await writeFile(join(dir, `${stamp}.md`), renderReport(report));
     const pct = (x: number) => `${Math.round(x * 100)}%`;
-    console.log(`\njudge:  with profile wins ${pct(report.judge.winRate)} (${report.judge.withWins}/${report.judge.total})`);
-    if (report.quiz) console.log(`quiz:   you picked the profile output ${pct(report.quiz.winRate)} (${report.quiz.withWins}/${report.quiz.total})`);
+    console.log(`\njudge:  with the style wins ${pct(report.judge.winRate)} (${report.judge.withWins}/${report.judge.total})`);
+    if (report.quiz) console.log(`quiz:   you picked the styled output ${pct(report.quiz.winRate)} (${report.quiz.withWins}/${report.quiz.total})`);
     console.log(`metric distance: with ${report.metricDistance.with}, without ${report.metricDistance.without} (lower is closer to you)`);
     console.log(`report: ${join(dir, `${stamp}.md`)}`);
   });

@@ -10,7 +10,7 @@ export async function writeStyle(profile: Profile, threshold: number) {
   await writeFile(profilePath(profile.developer.emails[0]!).replace(/\.json$/, ".STYLE.md"), renderStyleMd(profile, { threshold }));
 }
 
-export const NO_PROFILE = "no style to serve. Pick a shipped one: idiolect styles, then idiolect use <style>. Or learn your own: idiolect init, then idiolect scan";
+export const NO_PROFILE = "this project has no style yet\nrun: idiolect use to pick a house style, or idiolect init then idiolect scan to learn your own";
 
 async function load(repo: string) {
   const profile = await loadServedProfile(resolve(repo));
@@ -35,7 +35,7 @@ async function decide(ids: string[], status: "approved" | "rejected" | "edited",
 const tag = (r: Rule) => (r.repo ? `[${r.repo.split("/").pop()}] ` : "");
 
 export function rulesCommand(): Command {
-  const rules = new Command("rules").description("list, approve, reject or edit the rules in your profile");
+  const rules = new Command("rules").description("approve, reject or edit rules");
   const repoOpt = (c: Command) => c.option("--repo <path>", "repository path, for the confidence threshold", ".");
 
   repoOpt(rules.command("list").description("one line per rule: status, confidence, id, text"))
@@ -59,7 +59,7 @@ export function rulesCommand(): Command {
   repoOpt(rules.command("show <id>").description("full text and evidence of one rule")).action(async (id: string, o: { repo: string }) => {
     const r = (await load(o.repo)).rules.find((x) => x.id === id);
     if (!r) throw new Error(`no rule ${id}, see: idiolect rules list`);
-    console.log(`${r.id}\n  ${r.text}\n  status ${r.status}, confidence ${r.confidence}, ${r.scope}, ${r.language}, ${r.category}, ${ruleKind(r)}${r.repo ? `, project rule for ${r.repo}` : ""}${r.learnedIn ? `, learned in ${r.learnedIn}` : ""}`);
+    console.log(`${r.id}\n  ${r.text}\n  status ${r.status}, confidence ${r.confidence}, ${r.scope}, ${r.language}, ${r.category}, ${ruleKind(r)}${r.repo ? `, served only in ${r.repo}` : ""}${r.learnedIn ? `, learned in ${r.learnedIn}` : ""}`);
     if (r.evidence.metric) console.log(`  metric ${r.evidence.metric.name} = ${r.evidence.metric.value}, n = ${r.evidence.metric.sampleSize}`);
     for (const e of r.evidence.examples) console.log(`  ${e.file.startsWith("commit:") ? e.file : `${e.file}:${e.line}`}\n    ${e.snippet.split("\n").join("\n    ")}`);
   });

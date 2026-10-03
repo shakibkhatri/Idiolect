@@ -18,13 +18,13 @@ const isMetricMessage = (m: string) => /\(n = \d+\)/.test(m);
 const show = (v: Violation) => `  ${String(v.line ?? "-").padStart(5)}  ${v.line && !isMetricMessage(v.message) ? `${v.message} Try: ${v.suggestion}` : v.suggestion}${v.line ? "" : ` ${v.message}`}  [${v.ruleId}]`;
 
 export function unbotCommand(): Command {
-  return new Command("unbot").description("flag code that breaks your measured habits or sounds like AI. Warns only, --strict fails")
+  return new Command("unbot").description("flag code that breaks the style or sounds like AI. Warns only, --strict fails")
     .argument("[files...]", "source files, default is what changed since HEAD")
     .option("--repo <path>", "repository path", ".")
     .option("--staged", "check the files staged for commit, for hooks")
     .option("--all", "check every tracked source file")
     .option("--llm", "deep mode: the LLM also checks the voice rules")
-    .option("--fix", "rewrite each flagged file in your style with the LLM and write it back")
+    .option("--fix", "rewrite each flagged file in the style with the LLM and write it back")
     .option("--strict", "exit 1 when anything is flagged")
     .action(async (files: string[], o: { repo: string; staged?: boolean; all?: boolean; llm?: boolean; fix?: boolean; strict?: boolean }) => {
       const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"])).trim();
@@ -75,7 +75,7 @@ export async function installHook(repo: string, name: keyof typeof HOOKS): Promi
   const target = (await access(husky).then(() => true, () => false)) ? husky : join(repo, (await git(repo, ["rev-parse", "--git-path", "hooks"])).trim(), name);
   const existing = await readFile(target, "utf8").catch(() => undefined);
   if (existing?.includes(line)) return `already installed in ${relative(repo, target)}`;
-  await writeFile(target, `${existing ?? "#!/bin/sh\n"}\n# idiolect: ${name === "pre-commit" ? "lint staged files against your style profile, warn only" : "rescan in the background every refresh.everyCommits commits"}\n${line}\n`, { mode: 0o755 });
+  await writeFile(target, `${existing ?? "#!/bin/sh\n"}\n# idiolect: ${name === "pre-commit" ? "check staged files against your style, warn only" : "rescan in the background every refresh.everyCommits commits"}\n${line}\n`, { mode: 0o755 });
   return `${existing ? "appended to" : "created"} ${relative(repo, target)}`;
 }
 

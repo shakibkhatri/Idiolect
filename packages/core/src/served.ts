@@ -23,7 +23,7 @@ export async function loadServedProfile(repo?: string): Promise<Profile | undefi
   const user = await loadUserConfig();
   if (!named) return user && loadProfile(user.emails[0]!);
   const profile = await loadProfile(named);
-  if (!profile) throw new Error(`no profile ${profilePath(named)}, named by "profile" in ${repoConfigPath(repo!)}`);
+  if (!profile) throw new Error(`no stored style at ${profilePath(named)}, named by "profile" in ${repoConfigPath(repo!)}`);
   // someone else's profile is borrowed: only the kinds the repo asks for, never its project rules
   const own = user?.emails.some((e) => e.toLowerCase() === named.toLowerCase());
   return own ? profile : { ...profile, borrowed: config!.borrow };

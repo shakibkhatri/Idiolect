@@ -11,7 +11,7 @@ const LANGUAGE_NAMES: Record<Language, string> = { kotlin: "Kotlin", typescript:
 
 /** One short line per style under its language, so a long catalogue stays readable in a narrow terminal. Numbered when it is a menu. */
 export function renderList(all: Style[], opts: { numbered?: boolean; hidden?: number } = {}): string {
-  if (!all.length) return "no styles ship with this build";
+  if (!all.length) return "this build has no house styles";
   const width = Math.max(...all.map((s) => s.id.length));
   const out: string[] = [];
   let n = 0;
@@ -82,12 +82,12 @@ async function forProject(repo: string, everything?: boolean) {
 const toplevel = async (path: string) => (await git(resolve(path), ["rev-parse", "--show-toplevel"]).catch(() => resolve(path))).trim();
 
 export function stylesCommand(): Command {
-  const styles = new Command("styles").description("list the styles for the languages this project uses, learned from open source code and reviewed")
+  const styles = new Command("styles").description("list the house styles for the languages this project uses")
     .option("--repo <path>", "repository path", ".")
     .option("--all", "every style, whatever the project is written in")
     .action(async (o: { repo: string; all?: boolean }) => {
       const { shown, hidden } = await forProject(await toplevel(o.repo), o.all);
-      console.log(`${renderList(shown, { hidden })}\n\ndetails: idiolect styles show <style>\npick: idiolect use`);
+      console.log(`House styles, each the way one open source project writes its code.\n\n${renderList(shown, { hidden })}\n\ndetails: idiolect styles show <style>\npick: idiolect use`);
     });
 
   styles.command("show <id>").description("where a style comes from and the rules it serves")
@@ -105,8 +105,8 @@ export function stylesCommand(): Command {
       ].join("\n"));
     });
 
-  styles.command("build").description("maintainers: cut a shippable style from a scanned and reviewed profile")
-    .requiredOption("--email <email>", "the scanned profile in ~/.idiolect/profiles")
+  styles.command("build").description("maintainers: cut a house style from a scan you have reviewed")
+    .requiredOption("--email <email>", "the email the scan is stored under in ~/.idiolect/profiles")
     .requiredOption("--id <id>", "style id, like kotlin-tivi")
     .requiredOption("--title <title>", "the project the style is named after")
     .requiredOption("--summary <text>", "one short line on what the style feels like, shown in the list")
@@ -119,7 +119,7 @@ export function stylesCommand(): Command {
       if (!(LANGUAGES as readonly string[]).includes(o.language)) throw new Error(`unknown language ${o.language}`);
       if (o.summary.length > 60) throw new Error(`the summary is ${o.summary.length} characters, keep it to 60 so the list fits a terminal line`);
       const profile = await loadProfile(o.email);
-      if (!profile) throw new Error(`no profile for ${o.email}`);
+      if (!profile) throw new Error(`nothing scanned for ${o.email}`);
       const style = buildStyle(profile, { id: o.id, title: o.title, summary: o.summary, language: o.language as Language, project: o.project, license: o.license, experimental: o.experimental });
       const unreviewed = profile.rules.filter((r) => !r.evidence.metric && !r.repo && r.status === "auto").length;
       await mkdir(o.out, { recursive: true });
@@ -165,7 +165,7 @@ async function pickFromMenu(repo: string, everything?: boolean): Promise<Style[]
 }
 
 export function useCommand(): Command {
-  return new Command("use").description("serve shipped styles in this repo, one per language, and write them into the agent files")
+  return new Command("use").description("pick a house style for this project, one per language, and write it into your agent's files")
     .argument("[style...]", "style ids, leave out to pick from a numbered list")
     .option("--repo <path>", "repository path", ".")
     .option("--target <file...>", "agent files to write, overrides sync.targets in .idiolect/config.json")

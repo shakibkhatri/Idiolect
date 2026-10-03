@@ -41,7 +41,7 @@ export type BuildOptions = { id: string; title: string; summary: string; languag
  */
 export function buildStyle(profile: Profile, o: BuildOptions): Style {
   const stats = profile.stats[o.language];
-  if (!stats) throw new Error(`the profile has no ${o.language} code`);
+  if (!stats) throw new Error(`the scan has no ${o.language} code`);
   const reviewed = (r: Rule) => (r.evidence.metric ? r.status === "auto" || r.status === "approved" || r.status === "edited" : r.status === "approved" || r.status === "edited");
   const rules = profile.rules
     .filter((r) => r.scope === "personal" && !r.repo && (r.language === o.language || r.language === "any") && reviewed(r))

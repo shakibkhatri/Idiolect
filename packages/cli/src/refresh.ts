@@ -8,7 +8,7 @@ async function load() {
   const user = await loadUserConfig();
   if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
   const profile = await loadProfile(user.emails[0]!);
-  if (!profile) throw new Error("no profile, run: idiolect scan");
+  if (!profile) throw new Error("you have no style of your own yet, run: idiolect scan");
   return profile;
 }
 
@@ -26,13 +26,13 @@ const ago = (iso: string) => {
 };
 
 export function statusCommand(): Command {
-  return new Command("status").description("profile age, pending rules, last scan of this repo and when the next refresh is due")
+  return new Command("status").description("age of your style, pending rules, last scan of this repo and when the next refresh is due")
     .option("--repo <path>", "repository path", ".")
     .action(async (o: { repo: string }) => {
       const profile = await load();
       const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"]).catch(() => "")).trim();
       const by = (st: string) => profile.rules.filter((r) => r.status === st);
-      console.log(`profile  ${profile.developer.name}, ${profile.sources.length} ${profile.sources.length === 1 ? "repo" : "repos"}, updated ${ago(profile.generatedAt)}`);
+      console.log(`style    ${profile.developer.name}, ${profile.sources.length} ${profile.sources.length === 1 ? "repo" : "repos"}, updated ${ago(profile.generatedAt)}`);
       console.log(`rules    ${profile.rules.length} (${by("auto").length} auto, ${by("approved").length} approved, ${by("edited").length} edited, ${by("pending").length} pending, ${by("rejected").length} rejected)`);
       for (const r of by("pending")) console.log(`  pending  ${r.id}  ${r.text}`);
       if (by("pending").length) console.log(`  decide with: idiolect rules approve|reject|edit <id>`);

@@ -70,7 +70,7 @@ export async function loadProfile(email: string): Promise<Profile | undefined> {
 
 export async function saveProfile(profile: Profile) {
   await mkdir(profileDir(), { recursive: true });
-  if (profile.shipped) throw new Error("a shipped style is read-only, decisions on it go to the repo's overrides");
+  if (profile.shipped) throw new Error("a house style is read-only, decisions on it go to the repo's overrides");
   const { borrowed: _b, provenance: _p, shipped: _s, ...stored } = profile;
   await writeFile(profilePath(profile.developer.emails[0]!), JSON.stringify(stored, null, 2) + "\n");
 }

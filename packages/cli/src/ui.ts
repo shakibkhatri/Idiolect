@@ -34,8 +34,8 @@ export async function listReports(repo: string): Promise<ReportRow[]> {
 }
 
 export function uiCommand(): Command {
-  return new Command("ui").description("open the dashboard in your browser: review rules, read the profile as served, browse eval runs")
-    .option("--repo <path>", "repository path, for project rules, the threshold and eval reports", ".")
+  return new Command("ui").description("open the dashboard in your browser: review rules, read the style your agent reads, browse eval runs")
+    .option("--repo <path>", "repository path, for the rules of this repo, the threshold and eval reports", ".")
     .option("--port <n>", "port, default is a free one", "0")
     .option("--no-open", "print the URL without opening the browser")
     .action(async (o: { repo: string; port: string; open: boolean }) => {
@@ -149,8 +149,8 @@ ${THEME}
 <body>
 <div class="wrap">
   <header><h1>Idiolect</h1><span class="who" id="who"></span>
-    <nav><a href="#rules">Rules</a><a href="#profile">Profile</a><a href="#evals">Evals</a><a href="#status">Status</a></nav></header>
-  <div id="root"><div class="empty">Loading your profile...</div></div>
+    <nav><a href="#rules">Rules</a><a href="#style">Style</a><a href="#evals">Evals</a><a href="#status">Status</a></nav></header>
+  <div id="root"><div class="empty">Loading your style...</div></div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -161,13 +161,13 @@ var LANG = { kotlin: "Kotlin", typescript: "TypeScript", python: "Python", go: "
 
 function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
 function toast(m) { var t = document.getElementById("toast"); t.textContent = m; t.className = "toast on"; setTimeout(function () { t.className = "toast"; }, 1800); }
-function tab() { var t = location.hash.replace("#", ""); return ["rules", "profile", "evals", "status"].indexOf(t) >= 0 ? t : "rules"; }
+function tab() { var t = location.hash.replace("#", "").replace("profile", "style"); return ["rules", "style", "evals", "status"].indexOf(t) >= 0 ? t : "rules"; }
 function api(path, opts) { return fetch(path, opts).then(function (r) { return r.json(); }).then(function (j) { if (j.error) { toast(j.error); throw new Error(j.error); } return j; }); }
 function load() { return api("/api/state").then(function (s) { S = s; document.getElementById("who").textContent = s.developer.name + " · " + s.rules.length + " rules · " + s.repo.split("/").pop(); render(); }); }
 function render() {
   var t = tab();
   var links = document.querySelectorAll("nav a"); for (var i = 0; i < links.length; i++) links[i].className = links[i].getAttribute("href") === "#" + t ? "on" : "";
-  if (t === "rules") renderRules(); else if (t === "profile") renderProfile(); else if (t === "evals") renderEvals(); else renderStatus();
+  if (t === "rules") renderRules(); else if (t === "style") renderProfile(); else if (t === "evals") renderEvals(); else renderStatus();
 }
 
 // ---- rules ----
@@ -244,7 +244,7 @@ function pct(w, t) { return t ? Math.round(100 * w / t) + "%" : "-"; }
 function renderEvals() {
   if (report) return renderReport();
   if (!S.reports.length) { root.innerHTML = "<div class=\\"card empty\\">No eval runs in this repo yet. Run <code>idiolect eval</code>.</div>"; return; }
-  var h = "<div class=\\"card\\"><table><tr><th>Run</th><th>Rules</th><th>Tasks</th><th>Judge for profile</th><th>Your quiz</th><th>Distance with</th><th>Distance without</th></tr>";
+  var h = "<div class=\\"card\\"><table><tr><th>Run</th><th>Rules</th><th>Tasks</th><th>Judge for style</th><th>Your quiz</th><th>Distance with</th><th>Distance without</th></tr>";
   S.reports.forEach(function (r) {
     h += "<tr class=\\"row\\" onclick=\\"openReport('" + r.stamp + "')\\"><td>" + esc(r.generatedAt.slice(0, 16).replace("T", " ")) + "</td><td class=\\"num\\">" + r.rules + "</td><td class=\\"num\\">" + r.tasks + "</td><td class=\\"num\\">" + pct(r.judge.withWins, r.judge.total) + " <span class=\\"without\\">" + r.judge.withWins + "/" + r.judge.total + "</span></td><td class=\\"num\\">" + (r.quiz ? pct(r.quiz.withWins, r.quiz.total) + " <span class=\\"without\\">" + r.quiz.withWins + "/" + r.quiz.total + "</span>" : "<span class=\\"without\\">not taken</span>") + "</td><td class=\\"num\\">" + r.distance.with + "</td><td class=\\"num\\">" + r.distance.without + "</td></tr>";
   });
@@ -254,11 +254,11 @@ function openReport(stamp) { api("/api/report?stamp=" + stamp).then(function (r)
 function renderReport() {
   var r = report, picks = {};
   (r.quiz ? r.quiz.picks : []).forEach(function (p) { picks[p.task] = p.picked; });
-  var h = "<div class=\\"bar\\"><button class=\\"chip\\" onclick=\\"report=null;renderEvals()\\">All runs</button><span class=\\"hint\\" style=\\"margin:0\\">" + esc(r.generatedAt.slice(0, 16).replace("T", " ")) + " · profile with " + r.rules + " rules · judge " + r.judge.withWins + "/" + r.judge.total + (r.quiz ? " · you " + r.quiz.withWins + "/" + r.quiz.total : " · quiz not taken") + "</span></div><div class=\\"card pairs\\">";
+  var h = "<div class=\\"bar\\"><button class=\\"chip\\" onclick=\\"report=null;renderEvals()\\">All runs</button><span class=\\"hint\\" style=\\"margin:0\\">" + esc(r.generatedAt.slice(0, 16).replace("T", " ")) + " · style with " + r.rules + " rules · judge " + r.judge.withWins + "/" + r.judge.total + (r.quiz ? " · you " + r.quiz.withWins + "/" + r.quiz.total : " · quiz not taken") + "</span></div><div class=\\"card pairs\\">";
   r.generations.forEach(function (g) {
     var v = r.judge.verdicts.filter(function (x) { return x.task === g.task.id; })[0] || {};
-    h += "<details><summary><b>" + esc(g.task.id) + "</b><span class=\\"" + v.winner + "\\">judge: " + (v.winner === "with" ? "profile" : "plain") + "</span>" + (picks[g.task.id] ? "<span class=\\"" + picks[g.task.id] + "\\">you: " + (picks[g.task.id] === "with" ? "profile" : picks[g.task.id] === "without" ? "plain" : "skipped") + "</span>" : "") + "<span class=\\"reason\\">" + esc(v.reason || "") + "</span></summary>";
-    h += "<div class=\\"two\\"><div><h4>With profile</h4><pre>" + esc(g.with.trim()) + "</pre></div><div><h4>Without</h4><pre>" + esc(g.without.trim()) + "</pre></div></div></details>";
+    h += "<details><summary><b>" + esc(g.task.id) + "</b><span class=\\"" + v.winner + "\\">judge: " + (v.winner === "with" ? "style" : "plain") + "</span>" + (picks[g.task.id] ? "<span class=\\"" + picks[g.task.id] + "\\">you: " + (picks[g.task.id] === "with" ? "style" : picks[g.task.id] === "without" ? "plain" : "skipped") + "</span>" : "") + "<span class=\\"reason\\">" + esc(v.reason || "") + "</span></summary>";
+    h += "<div class=\\"two\\"><div><h4>With style</h4><pre>" + esc(g.with.trim()) + "</pre></div><div><h4>Without</h4><pre>" + esc(g.without.trim()) + "</pre></div></div></details>";
   });
   root.innerHTML = h + "</div>";
 }
@@ -269,7 +269,7 @@ function renderStatus() {
   var by = function (st) { return S.rules.filter(function (r) { return r.status === st; }).length; };
   var pending = S.rules.filter(function (r) { return r.status === "pending"; });
   var h = "<div class=\\"grid\\">";
-  h += "<div class=\\"card stat\\"><small>Profile</small><div class=\\"big\\">" + S.rules.length + "<small>rules, scanned " + ago(S.generatedAt) + "</small></div><ul><li><span>Undecided</span><span>" + by("auto") + "</span></li><li><span>Approved</span><span>" + by("approved") + "</span></li><li><span>Edited</span><span>" + by("edited") + "</span></li><li><span>Pending</span><span>" + by("pending") + "</span></li><li><span>Rejected</span><span>" + by("rejected") + "</span></li></ul></div>";
+  h += "<div class=\\"card stat\\"><small>Style</small><div class=\\"big\\">" + S.rules.length + "<small>rules, scanned " + ago(S.generatedAt) + "</small></div><ul><li><span>Undecided</span><span>" + by("auto") + "</span></li><li><span>Approved</span><span>" + by("approved") + "</span></li><li><span>Edited</span><span>" + by("edited") + "</span></li><li><span>Pending</span><span>" + by("pending") + "</span></li><li><span>Rejected</span><span>" + by("rejected") + "</span></li></ul></div>";
   h += "<div class=\\"card stat\\"><small>Languages</small><div class=\\"big\\">" + S.languages.length + "<small>in your code</small></div><ul>" + S.languages.map(function (l) { return "<li><span>" + LANG[l.language] + (l.share < 0.05 ? " <span class=\\"without\\">(under 5%, served on request)</span>" : "") + "</span><span>" + l.loc.toLocaleString() + " lines</span></li>"; }).join("") + "</ul></div>";
   h += "<div class=\\"card stat\\"><small>Repos</small><div class=\\"big\\">" + S.sources.length + "<small>scanned</small></div><ul>" + S.sources.map(function (s) { return "<li><span>" + esc(s.repo.split("/").pop()) + " <span class=\\"without\\">" + ago(s.scannedAt) + "</span></span><span>" + s.commits + " commits, " + (s.commitsSince ? s.commitsSince + " new" : "up to date") + "</span></li>"; }).join("") + "</ul></div>";
   h += "</div>";

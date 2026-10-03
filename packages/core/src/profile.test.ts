@@ -64,7 +64,7 @@ test("a repo serves the profile its config names, otherwise the developer's own"
     expect((await loadServedProfile(repo))!.borrowed).toBeUndefined();
 
     await writeFile(join(repo, ".idiolect", "config.json"), JSON.stringify({ profile: "nobody@x.com" }));
-    await expect(loadServedProfile(repo)).rejects.toThrow(/no profile .*nobody@x.com/);
+    await expect(loadServedProfile(repo)).rejects.toThrow(/no stored style at .*nobody@x.com/);
   } finally {
     process.env.HOME = realHome;
   }

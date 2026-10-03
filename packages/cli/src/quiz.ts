@@ -35,7 +35,7 @@ export function webQuiz(report: Report, log: (s: string) => void = (s) => proces
     const server = createServer((req, res) => {
       if (req.method === "GET" && req.url === "/") {
         res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-        res.end(page(pairs.map(({ task, prompt, a, b }) => ({ task, prompt, a, b })), `profile with ${report.rules} rules, run ${report.generatedAt.slice(0, 16).replace("T", " ")}`));
+        res.end(page(pairs.map(({ task, prompt, a, b }) => ({ task, prompt, a, b })), `style with ${report.rules} rules, run ${report.generatedAt.slice(0, 16).replace("T", " ")}`));
         return;
       }
       if (req.method === "POST" && req.url === "/done") {
@@ -179,10 +179,10 @@ function pick(v) {
 }
 function finish(q) {
   var pct = q.total ? Math.round(100 * q.withWins / q.total) : 0;
-  var verdict = !q.total ? "Nothing answered." : pct > 60 ? "The profile makes agent output read more like you." : pct < 40 ? "The profile makes agent output read less like you." : "No clear difference yet. Chance is the dashed line.";
-  var html = "<div class=\\"result\\"><div class=\\"big\\">" + q.withWins + " <small>of " + q.total + " for the profile</small></div><p>" + verdict + " The report is updated, you can close this tab.</p>";
-  html += "<div class=\\"meter\\"><i id=\\"meter\\"></i></div><div class=\\"legend\\"><span>none for the profile</span><span>chance</span><span>all for the profile</span></div><div class=\\"list\\">";
-  for (var r = 0; r < q.picks.length; r++) html += "<span>" + esc(q.picks[r].task) + "</span><span class=\\"" + q.picks[r].picked + "\\">" + ({ with: "profile", without: "plain", skip: "skipped" })[q.picks[r].picked] + "</span>";
+  var verdict = !q.total ? "Nothing answered." : pct > 60 ? "The style makes agent output read more like you." : pct < 40 ? "The style makes agent output read less like you." : "No clear difference yet. Chance is the dashed line.";
+  var html = "<div class=\\"result\\"><div class=\\"big\\">" + q.withWins + " <small>of " + q.total + " for the style</small></div><p>" + verdict + " The report is updated, you can close this tab.</p>";
+  html += "<div class=\\"meter\\"><i id=\\"meter\\"></i></div><div class=\\"legend\\"><span>none for the style</span><span>chance</span><span>all for the style</span></div><div class=\\"list\\">";
+  for (var r = 0; r < q.picks.length; r++) html += "<span>" + esc(q.picks[r].task) + "</span><span class=\\"" + q.picks[r].picked + "\\">" + ({ with: "style", without: "plain", skip: "skipped" })[q.picks[r].picked] + "</span>";
   root.innerHTML = html + "</div></div>";
   requestAnimationFrame(function () { document.getElementById("meter").style.width = pct + "%"; });
 }

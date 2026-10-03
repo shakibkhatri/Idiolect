@@ -29,7 +29,7 @@ export function createIdiolectServer(deps: ServerDeps): McpServer {
     // the file may not exist yet, so fall back to the directory the client started us in
     const repo = (abs && (await toplevel(dirname(abs)))) || (await toplevel(cwd)) || undefined;
     const profile = await deps.profile(repo ?? cwd);
-    if (!profile) throw new Error("no style profile yet. Run: idiolect init, then idiolect scan");
+    if (!profile) throw new Error("no style yet. Run: idiolect use to pick a house style, or idiolect init then idiolect scan to learn your own");
     const { confidenceThreshold: threshold, check: floors } = await loadRepoConfig(repo ?? cwd);
     return { profile, repo, threshold, floors, file: abs ? relative(repo ?? cwd, abs) : undefined };
   };

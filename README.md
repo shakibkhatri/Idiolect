@@ -94,7 +94,8 @@ Or run it without installing: `npx -y idiolect <command>`.
 ## No code of your own yet
 
 If an AI writes most of your code, there is no history to learn from.
-Pick a style that ships with idiolect instead.
+Pick a house style instead.
+A house style is the way one project writes its code, and a few ship with idiolect.
 Each one was learned from a well-known open source project, reviewed by a person and frozen.
 
 ```
@@ -102,7 +103,7 @@ cd your-project
 npx -y idiolect use
 ```
 
-`use` looks at what the project is written in, shows the styles for those languages as a numbered list, and asks for a number.
+`use` looks at what the project is written in, shows the house styles for those languages as a numbered list, and asks for a number.
 
 ```
 This project is written in Kotlin and TypeScript.
@@ -127,10 +128,10 @@ The files it did not write are named in one line at the end.
 That is the whole setup: no scan, no LLM call, no account.
 Your agent now writes fewer and shorter comments, plainer names and short commit messages, and `idiolect unbot` flags code that sounds like AI.
 
-A shipped style shapes naming, comments, commit messages and layout.
+A house style shapes naming, comments, commit messages and layout.
 It leaves the choice of language features to the agent, because the code it was learned from has a date and languages move.
 The code already in your repo and your formatter always win over it.
-`idiolect rules reject <id>` and `idiolect rules edit <id>` change a style for your repo only, the decisions live in `.idiolect/overrides.json`.
+`idiolect rules reject <id>` and `idiolect rules edit <id>` change a house style for your repo only, the decisions live in `.idiolect/overrides.json`.
 Styles marked experimental have not been reviewed by someone who writes that language.
 
 ## Learn your own style
