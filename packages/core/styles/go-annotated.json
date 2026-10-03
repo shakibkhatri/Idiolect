@@ -1,6 +1,9 @@
 {
   "version": 1,
-  "id": "go-caddy",
+  "id": "go-annotated",
+  "aliases": [
+    "go-caddy"
+  ],
   "title": "Caddy",
   "summary": "Documented declarations, short locals, inline error checks",
   "language": "go",

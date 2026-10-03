@@ -5,10 +5,14 @@ import type { CommitStats, LanguageStats } from "./analyzer.js";
 import { ruleKind, type Language, type Profile, type Rule } from "./profile.js";
 import { monthYear } from "./render.js";
 
-/** A frozen, reviewed style cut from one scanned profile. Ships in the package, names its source project, holds no emails and no code. */
+/**
+ * A frozen, reviewed style cut from one scanned profile. Ships in the package, holds no emails and no code.
+ * The id is idiolect's own name for it. Title and source record where it was learned and are not shown.
+ */
 export type Style = {
   version: 1;
   id: string;
+  aliases?: string[];   // ids it shipped under before, still accepted in a repo config and on the command line
   title: string;
   summary: string;      // one line on what the style feels like, written by whoever builds it
   language: Language;
@@ -27,8 +31,10 @@ export async function listStyles(dir = STYLES_DIR): Promise<Style[]> {
   return Promise.all(files.map(async (f) => JSON.parse(await readFile(join(dir, f), "utf8")) as Style));
 }
 
+const named = (s: Style, id: string) => s.id === id || !!s.aliases?.includes(id);
+
 export async function loadStyle(id: string, dir = STYLES_DIR): Promise<Style> {
-  const style = (await listStyles(dir)).find((s) => s.id === id);
+  const style = (await listStyles(dir)).find((s) => named(s, id));
   if (!style) throw new Error(`no style ${id}, see: idiolect styles`);
   return style;
 }
@@ -66,7 +72,7 @@ export type Picked = Partial<Record<Language | "commits", string>>;
 export async function composeStyles(picked: Picked, dir = STYLES_DIR): Promise<Profile> {
   const all = await listStyles(dir);
   const find = (id: string) => {
-    const style = all.find((s) => s.id === id);
+    const style = all.find((s) => named(s, id));
     if (!style) throw new Error(`no style ${id}, see: idiolect styles`);
     return style;
   };
@@ -78,18 +84,18 @@ export async function composeStyles(picked: Picked, dir = STYLES_DIR): Promise<P
 
   const rules = [...languages.flatMap(({ language, style }) => style.rules.filter((r) => r.language === language)), ...owner.rules.filter((r) => r.language === "any")];
   const used = [...new Map([...languages.map((l) => l.style), owner].map((s) => [s.id, s])).values()];
-  // the agent needs the name and the age, where the code lives is in idiolect styles show
-  const from = (s: Style) => `${s.title}${s.source.snapshot ? ` (code up to ${monthYear(s.source.snapshot)})` : ""}`;
-  const parts = [...languages.map(({ language, style }) => `${LANGUAGE_NAMES[language]} from ${from(style)}`), `commit messages from ${owner.title}`];
+  // the agent needs the style's name and the age of the code, not the project it came from
+  const from = (s: Style) => `${s.id}${s.source.snapshot ? ` (code up to ${monthYear(s.source.snapshot)})` : ""}`;
+  const parts = [...languages.map(({ language, style }) => `${LANGUAGE_NAMES[language]} is ${from(style)}`), `commit messages follow ${owner.id}`];
   return {
     version: 1,
-    developer: { name: used.map((s) => s.title).join(", "), emails: [] },
+    developer: { name: used.map((s) => s.id).join(", "), emails: [] },
     generatedAt: used.map((s) => s.source.snapshot ?? "").sort().at(-1) ?? "",
     sources: used.map((s) => ({ repo: s.source.project, head: s.source.commit, headDate: s.source.snapshot, scannedAt: "", commits: s.commitStats.count, linesOwned: s.source.lines, stats: { [s.language]: s.stats }, commitStats: s.commitStats })),
     stats: Object.fromEntries(languages.map(({ language, style }) => [language, style.stats])),
     commitStats: owner.commitStats,
     rules,
     shipped: true,
-    provenance: `Learned from open source code: ${parts.join(", ")}.`,
+    provenance: `An idiolect house style, learned from open source code: ${parts.join(", ")}.`,
   };
 }

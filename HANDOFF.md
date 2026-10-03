@@ -50,7 +50,7 @@ packages/eval    task loading, with/without generation, judge, metric distance, 
 packages/mcp     createIdiolectServer: get_style, check_style, rewrite_like_me, get_team_rules, one resource, one prompt
 packages/core/grammars   vendored kotlin, typescript, tsx, python, go wasm plus licenses
 packages/core/data/ai-tells.json   AI writing habits tied to metric ids, some per language
-packages/core/styles/    the shipped styles, one JSON file each: kotlin-tivi, typescript-vue, python-httpx, go-caddy
+packages/core/styles/    the shipped styles, one JSON file each: kotlin-quiet, typescript-terse, python-spare, go-annotated
 fixtures/kotlin|typescript|python|go   one parallel sample program per language, plus AiWritten.kt for Unbot
 scripts/update-grammars.sh   refreshes the vendored grammars from npm, edit the table, run, commit
 scripts/verify/              second-opinion counters per language and the recipe for checking a language on a real repo
@@ -109,6 +109,7 @@ Render labels a text shared by some served languages with exactly those, "Kotlin
 Rules (`cli/src/rules.ts`): `list|show|approve|reject|edit` over `updateRules`. Decisions survive rescans.
 
 CLI surface (0.2.0): `cli/src/term.ts` is the only place with ANSI codes, `term` writes to stdout and `progress` to stderr. `start.ts` is bare `idiolect` and `status`: `projectState`, `renderState`, `stepsFor`, and a picked step runs as a child process of the same build. `help.ts` is the grouped top-level help. `remove.ts` is `idiolect remove`: `find` lists, `apply` removes up to a level, and it leans on `removeBlock` in `sync.ts` and `removeHook` in `unbot.ts`. `scanSummary` in `summary.ts` is the quiet scan output, the old statistics are behind `scan --verbose`.
+Style names (2026-10-03, for 0.2.1): Shakib decided a house style must sound like part of idiolect and not be named after a GitHub repo. Ids are the language and one word for how the style reads: `kotlin-quiet` (was `kotlin-tivi`), `typescript-terse` (was `typescript-vue`), `python-spare` (was `python-httpx`), `go-annotated` (was `go-caddy`). The old ids are `aliases` in the style files and keep working. He also decided the source project is shown nowhere in the CLI, so `styles show` and the header agents read no longer name it. It stays in the style file as `title` and `source`. Wherever this document says Tivi, Vue core, HTTPX or Caddy it means the code a style was learned from.
 The user-facing words are "style" and "house style". "Profile" and "shipped" stay in code, comments, paths and these documents.
 
 Refresh (`cli/src/refresh.ts`): `status` and `refresh`. Commits since the last scan come from `git rev-list --count <source.head>..HEAD`. At `refresh.everyCommits` it spawns `scan` detached and logs to `.idiolect/cache/refresh.log`.
@@ -163,7 +164,7 @@ Quantity rules in the check have floors because a per-file median over three fun
 The doc-ratio rule has no line finder on purpose: a developer who documents some files fully and others not at all would see every doc comment flagged.
 Avoid rule ids carry the language because the same tell for two languages produced one id twice.
 
-Dissent serves the shipped styles `kotlin-tivi` and `typescript-vue` since 2026-10-03, with commit rules from Tivi. Its config still carries an ignored `profile` key. Its Kotlin is indented with 4 spaces and the styles carry layout rules, so `"borrow": ["voice"]` is worth adding there.
+Dissent serves the shipped styles `kotlin-tivi` and `typescript-vue` since 2026-10-03, with commit rules from Tivi. Those are the old ids, its config still holds them and they resolve through the aliases. Its config still carries an ignored `profile` key. Its Kotlin is indented with 4 spaces and the styles carry layout rules, so `"borrow": ["voice"]` is worth adding there.
 
 ## Working agreements with Shakib
 
@@ -185,7 +186,7 @@ The agent cannot start headless `claude` in his setup, the permission classifier
 1. Shakib's own profile is the stale 79-rule one from before the leak fix, and Dissent no longer serves it. One `idiolect scan` in Dissent rebuilds it clean. To serve it again he removes `styles` from Dissent's config.
 2. Retake the quiz with the clean baseline, suggestion 29. It is the only way to know whether the chance-level verdict was real.
 3. More styles, suggestion 31. Shakib wants to learn from more open source projects. One project and one main author per style, recipe in `scripts/styles/README.md`.
-4. Reviewers for `python-httpx` and `go-caddy`, suggestion 30.
+4. Reviewers for `python-spare` and `go-annotated`, suggestion 30.
 5. The unwanted-function check for Unbot, suggestion 26. He named it as part of what the second audience wants.
 6. Windows: the LLM calls are untested there, suggestion 27.
 7. Smaller: the TODO avoid rule, suggestion 24, and the Python name count, suggestion 25.

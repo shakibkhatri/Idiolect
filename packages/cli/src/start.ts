@@ -50,7 +50,7 @@ export async function projectState(repo: string): Promise<ProjectState> {
   const base = { ...NONE, rules: served.rules.length, pending: served.rules.filter((r) => r.status === "pending"), refreshEvery: config.refresh.everyCommits, files };
   const picked = config.styles ?? {};
   if (Object.values(picked).some(Boolean)) {
-    const styles = await Promise.all(LANGUAGES.filter((l) => picked[l]).map(async (language) => ({ language, id: picked[language]!, summary: (await loadStyle(picked[language]!)).summary })));
+    const styles = await Promise.all(LANGUAGES.filter((l) => picked[l]).map(async (language) => { const style = await loadStyle(picked[language]!); return { language, id: style.id, summary: style.summary }; }));
     return { ...base, kind: "house", styles };
   }
   const user = await loadUserConfig();

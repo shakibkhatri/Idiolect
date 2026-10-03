@@ -128,16 +128,18 @@ npx -y idiolect use
 This project is written in Kotlin and TypeScript.
 
 Kotlin
-   1  kotlin-tivi     Few comments, no KDoc, noun-phrase names, short plain commits
+   1  kotlin-quiet      Few comments, no KDoc, noun-phrase names, short plain commits
 
 TypeScript
-   2  typescript-vue  No semicolons, terse lowercase comments, short functions
+   2  typescript-terse  No semicolons, terse lowercase comments, short functions
 
 Type the number of the style you want, one per language [1 2]:
 ```
 
 A language with under 5% of the project's source files is left out, `--all` shows every style.
-`idiolect styles` prints the same list without asking, `idiolect styles show kotlin-tivi` says where a style comes from and lists its rules, and `idiolect use kotlin-tivi typescript-vue` picks by name for scripts.
+`idiolect styles` prints the same list without asking, `idiolect styles show kotlin-quiet` lists the rules of one style, and `idiolect use kotlin-quiet typescript-terse` picks by name for scripts.
+A style is named for its language and for how it reads, not for the project it was learned from.
+The ids from before 0.2.1, `kotlin-tivi`, `typescript-vue`, `python-httpx` and `go-caddy`, still work everywhere.
 
 `use` always creates `AGENTS.md`, the file most agents read.
 It creates `CLAUDE.md` only when Claude Code is in use, meaning it is installed or the repo has a `.claude` folder, and a Cursor rule only when the repo has a `.cursor` folder.
@@ -303,10 +305,10 @@ Your identity lives in `~/.idiolect/config.json`, never in a repo.
 No telemetry, no accounts, no backend.
 
 A house style holds rules and numbers only: no author emails and no code from the project it was learned from.
-`idiolect styles show <style>` names that project, its licence and the date of the code.
+The project, its licence and the commit it was learned from are recorded in the style's file in `packages/core/styles/`.
 
 ## Status
 
 Personal project, early.
-Four styles ship: `kotlin-tivi` and `typescript-vue` are reviewed, `python-httpx` and `go-caddy` are experimental until someone who writes those languages has read them.
+Four styles ship: `kotlin-quiet` and `typescript-terse` are reviewed, `python-spare` and `go-annotated` are experimental until someone who writes those languages has read them.
 `SPEC.md` is the design, `HANDOFF.md` the current state, `CLI.md` the planned CLI redesign, `SUGGESTIONS.md` and `bugs/` the backlog, `scripts/styles/README.md` the recipe for adding a style.

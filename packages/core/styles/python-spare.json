@@ -1,6 +1,9 @@
 {
   "version": 1,
-  "id": "python-httpx",
+  "id": "python-spare",
+  "aliases": [
+    "python-httpx"
+  ],
   "title": "HTTPX",
   "summary": "Sparse sentence comments, f-strings, small flat functions",
   "language": "python",

@@ -54,7 +54,7 @@ Project rules and idiom rules need no decision: project rules never ship, idiom 
 
 ```
 HOME=$H idiolect styles build \
-  --email <first email> --id <language>-<project> --title "<Project>" \
+  --email <first email> --id <language>-<word> --title "<Project>" \
   --summary "<at most 60 characters on what the style feels like>" \
   --language <language> --project github.com/<owner>/<project> --license <SPDX id>
 ```
@@ -73,14 +73,22 @@ idiolect styles show <id>
 
 Then run `idiolect use <id>` in a throwaway folder and read the block it writes.
 
+## Naming
+
+The id is the language and one word for how the style reads, like `kotlin-quiet`.
+It is never the project or the author, a house style is idiolect's own.
+`--title`, `--project` and `--license` record where it was learned, in the style file only.
+A second style for a language needs a word that sets it apart from the first.
+When a style is renamed, put the old id into `aliases` in its file so repo configs keep working.
+
 ## What exists today
 
 | Style | Project | Reviewed by |
 |---|---|---|
-| kotlin-tivi | Tivi | Shakib |
-| typescript-vue | Vue core | Shakib |
-| python-httpx | HTTPX | nobody who writes Python, experimental |
-| go-caddy | Caddy | nobody who writes Go, experimental |
+| kotlin-quiet, was kotlin-tivi | Tivi | Shakib |
+| typescript-terse, was typescript-vue | Vue core | Shakib |
+| python-spare, was python-httpx | HTTPX | nobody who writes Python, experimental |
+| go-annotated, was go-caddy | Caddy | nobody who writes Go, experimental |
 
 Each was learned from the lines of the project's lead author only.
 Their names and emails stay out of the repo, the docs and the style files.

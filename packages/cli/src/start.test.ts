@@ -10,7 +10,7 @@ test("each state offers only the steps that apply, as existing commands", () => 
   expect(commands(base)).toEqual(["use", "init + scan"]);
   expect(commands({ ...base, kind: "unscanned", rules: 4 })).toEqual(["scan", "use"]);
 
-  const house: ProjectState = { ...base, kind: "house", styles: [{ language: "kotlin", id: "kotlin-tivi", summary: "Few comments" }], files: { written: ["AGENTS.md"], stale: [] } };
+  const house: ProjectState = { ...base, kind: "house", styles: [{ language: "kotlin", id: "kotlin-quiet", summary: "Few comments" }], files: { written: ["AGENTS.md"], stale: [] } };
   expect(commands(house)).toEqual(["use", "ui", "unbot --all", "remove"]);
   expect(commands({ ...house, files: { written: ["AGENTS.md"], stale: ["AGENTS.md"] } })).toEqual(["use", "ui", "unbot --all", "sync", "remove"]);
 
@@ -21,7 +21,7 @@ test("each state offers only the steps that apply, as existing commands", () => 
 });
 
 test("the report names the served style first and stays within 100 columns", () => {
-  const house: ProjectState = { ...base, kind: "house", styles: [{ language: "typescript", id: "typescript-vue", summary: "x".repeat(60) }], files: { written: ["AGENTS.md", "CLAUDE.md"], stale: ["CLAUDE.md"] } };
+  const house: ProjectState = { ...base, kind: "house", styles: [{ language: "typescript", id: "typescript-terse", summary: "x".repeat(60) }], files: { written: ["AGENTS.md", "CLAUDE.md"], stale: ["CLAUDE.md"] } };
   const report = renderState(house, plain);
   expect(report.split("\n")[0]).toBe("This project follows a house style.");
   expect(report).toContain("Agent files  AGENTS.md, out of date: CLAUDE.md");

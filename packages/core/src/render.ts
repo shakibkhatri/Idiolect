@@ -36,7 +36,7 @@ export function renderStyleMd(profile: Profile, opts: RenderOptions): string {
     return `${own.map((l) => LANGUAGE_NAMES[l] ?? l).join(", ")}: `;
   };
   const learned = `${profile.sources.length} ${profile.sources.length === 1 ? "repo" : "repos"}, ${profile.sources.reduce((n, s) => n + s.linesOwned, 0)} lines`;
-  const out = [`# Code style: ${profile.borrowed ? "borrowed from " : ""}${profile.developer.name}`, ""];
+  const out = [`# Code style: ${profile.shipped ? "" : profile.borrowed ? "borrowed from " : ""}${profile.developer.name}`, ""];
   if (profile.borrowed) {
     out.push(`${profile.provenance ?? `Learned from ${learned} of ${profile.developer.name}'s own code${snapshot(profile)}.`} It is a borrowed style, not the style of the developer you are working for. It shapes ${shapes(profile.borrowed)}.`, "");
     out.push(`The code already in this repo, its formatter and current language practice win over any rule here.`, "");

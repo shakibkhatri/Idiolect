@@ -36,7 +36,7 @@ test("level 1 leaves the project folder, level 2 gives the repo back as it was, 
   await writeFile(join(repo, "CLAUDE.md"), "# Mine\n");
   await writeFile(hook, "#!/bin/sh\necho mine\n", { mode: 0o755 });
   await mkdir(join(repo, ".idiolect", "eval"), { recursive: true });
-  await writeFile(join(repo, ".idiolect", "config.json"), JSON.stringify({ styles: { kotlin: "kotlin-tivi" }, ignore: ["x/**"] }));
+  await writeFile(join(repo, ".idiolect", "config.json"), JSON.stringify({ styles: { kotlin: "kotlin-quiet" }, ignore: ["x/**"] }));
   await writeFile(join(repo, ".idiolect", "eval", "run.json"), "{}");
   await mkdir(home);
   await syncTargets(repo, "- rule");

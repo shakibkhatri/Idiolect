@@ -1,6 +1,9 @@
 {
   "version": 1,
-  "id": "typescript-vue",
+  "id": "typescript-terse",
+  "aliases": [
+    "typescript-vue"
+  ],
   "title": "Vue core",
   "summary": "No semicolons, terse lowercase comments, short functions",
   "language": "typescript",

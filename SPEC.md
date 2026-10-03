@@ -122,12 +122,16 @@ Storage:
   The render says the style is borrowed, gives the date of the newest commit it was learned from (`headDate` on the source), states that the repo's code, formatter and current language practice win, and labels every language rule.
   The marker is `profile.borrowed`, set by `loadServedProfile` in memory and stripped by `saveProfile`
 - Shipped styles, added 2026-10-03 for people whose code is written by an agent and who have no history to learn from.
-  A style is a frozen file in `packages/core/styles/<language>-<project>.json`: the personal rules of one scanned profile for one language, its stats, and its source project, licence, commit and snapshot date. It is named after the project, never the person, and holds no emails, no code snippets and no project rules.
+  A style is a frozen file in `packages/core/styles/<language>-<word>.json`: the personal rules of one scanned profile for one language, its stats, and its source project, licence, commit and snapshot date. It is named after neither the project nor the person, see Style names below, and holds no emails, no code snippets and no project rules.
   `idiolect styles build` cuts one from a scanned profile. Metric rules go in as measured. A rule the LLM wrote goes in only when a person approved or edited it, because three scans of the same code gave three different rule sets.
-  `idiolect styles` lists them by language with a one-line summary of at most 60 characters, written when the style is built. `idiolect styles show <id>` gives the source project, licence, snapshot and rules. The source URL is kept out of the list and out of the block agents read. One project and one main author per style, more projects mean more styles. `idiolect use` without ids is the picker: it counts the project's source files per language, offers only the styles for languages with at least 5% of them, numbers them and reads the numbers, Enter takes them all when each language has one style. `idiolect styles` filters the same way, `--all` on either shows everything, an empty project sees everything. `idiolect use <style...>` writes `styles` into the repo config, one style per language plus the one that owns the commit rules, and syncs. No `~/.idiolect` is needed.
+  `idiolect styles` lists them by language with a one-line summary of at most 60 characters, written when the style is built. `idiolect styles show <id>` gives the size and date of the code it was learned from and the rules. The source project is kept out of everything the CLI prints and out of the block agents read. One project and one main author per style, more projects mean more styles. `idiolect use` without ids is the picker: it counts the project's source files per language, offers only the styles for languages with at least 5% of them, numbers them and reads the numbers, Enter takes them all when each language has one style. `idiolect styles` filters the same way, `--all` on either shows everything, an empty project sees everything. `idiolect use <style...>` writes `styles` into the repo config, one style per language plus the one that owns the commit rules, and syncs. No `~/.idiolect` is needed.
   `composeStyles` turns the picked styles into one borrowed profile, so render, check, Unbot and the MCP server need no special case. `styles` wins over `profile`.
   A shipped style is read-only. Rule decisions made in a repo are stored in `<repo>/.idiolect/overrides.json` and applied on load.
   A style nobody who writes the language has reviewed is marked `experimental`
+- Style names, changed 2026-10-03 for 0.2.1 on the owner's decision: a style is idiolect's own, so its id is the language and one word for how it reads, `kotlin-quiet`, `typescript-terse`, `python-spare`, `go-annotated`, and no longer the project it was learned from.
+  The project, licence, commit and snapshot stay in the style file as `title` and `source` and are shown nowhere in the CLI, not in the list, not in `styles show` and not in the block agents read, whose header names the style ids and the date of the code.
+  `aliases` in the file holds the ids a style shipped under before, `kotlin-tivi`, `typescript-vue`, `python-httpx`, `go-caddy`. `loadStyle` and `composeStyles` accept them, so a repo config written by 0.1.x or 0.2.0 keeps working, and `use` rewrites it to the current ids.
+  Two rule texts still quote an identifier from their source as an example, `::TiviShow` and `httpx.ReadTimeout`. They are reviewed, frozen rules and were left as written
 
 Precedence when serving rules:
 1. Scope first: team beats personal, always. A path-scoped personal rule never overrides a team rule.
@@ -356,7 +360,7 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
   "refresh": { "everyCommits": 50 },
   "check": { "minItems": 10, "minLines": 100, "minLocated": 3, "excess": 2 },
   "ignore": ["**/build/**", "**/generated/**"],
-  "styles": { "kotlin": "kotlin-tivi", "typescript": "typescript-vue", "commits": "kotlin-tivi" },
+  "styles": { "kotlin": "kotlin-quiet", "typescript": "typescript-terse", "commits": "kotlin-quiet" },
   "profile": "someone@example.com",
   "borrow": ["voice", "layout"]
 }
@@ -412,5 +416,5 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
 - Grab domain (idiolect.dev) and GitHub org
 - Pricing: free personal, paid team mode?
 - Should profiles be shareable/exportable ("use my style on a new machine")? Shipped styles answer half of it: `styles build` already cuts a shareable file from a profile. Loading a style file from outside the package is not built
-- Naming a style after its author needs that person's consent. Until someone asks one, styles are named after the project
+- Naming a style after its author needs that person's consent. Since 0.2.1 a style is named after neither the author nor the project, see Shipped styles in the data model
 - How the catalogue grows: one project and one main author per style. Merging four authors into one profile on 2026-10-03 produced rules that contradicted each other

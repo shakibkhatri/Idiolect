@@ -1,6 +1,9 @@
 {
   "version": 1,
-  "id": "kotlin-tivi",
+  "id": "kotlin-quiet",
+  "aliases": [
+    "kotlin-tivi"
+  ],
   "title": "Tivi",
   "summary": "Few comments, no KDoc, noun-phrase names, short plain commits",
   "language": "kotlin",

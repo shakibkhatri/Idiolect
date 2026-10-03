@@ -94,7 +94,7 @@ export function stylesCommand(): Command {
       console.log(`House styles, each the way one open source project writes its code.\n\n${renderList(shown, { hidden })}\n\ndetails: idiolect styles show <style>\npick: idiolect use`);
     });
 
-  styles.command("show <id>").description("where a style comes from and the rules it serves")
+  styles.command("show <id>").description("what a house style is like and the rules it serves")
     .action(async (id: string) => {
       const s = await loadStyle(id);
       const md = renderStyleMd({ ...(await composeStyles({ [s.language]: s.id })), borrowed: ["voice", "layout"] }, { threshold: 0.6 });
@@ -102,8 +102,7 @@ export function stylesCommand(): Command {
       console.log([
         `${s.id}  ${LANGUAGE_NAMES[s.language]}${s.experimental ? "  experimental: nobody who writes the language has reviewed it" : ""}`,
         s.summary, "",
-        `source    ${s.title}, ${s.source.project}, ${s.source.license}`,
-        `snapshot  ${s.source.snapshot ? `code up to ${monthYear(s.source.snapshot)}, ` : ""}commit ${s.source.commit.slice(0, 8)}, ${s.source.lines} lines`,
+        `learned   from ${s.source.lines} lines of open source code${s.source.snapshot ? `, written up to ${monthYear(s.source.snapshot)}` : ""}`,
         `rules     ${s.rules.length - held} served${held ? `, ${held} on language features held back` : ""}`, "",
         md.slice(md.indexOf("## ")).trimEnd(),
       ].join("\n"));
@@ -111,8 +110,8 @@ export function stylesCommand(): Command {
 
   styles.command("build").description("maintainers: cut a house style from a scan you have reviewed")
     .requiredOption("--email <email>", "the email the scan is stored under in ~/.idiolect/profiles")
-    .requiredOption("--id <id>", "style id, like kotlin-tivi")
-    .requiredOption("--title <title>", "the project the style is named after")
+    .requiredOption("--id <id>", "style id: the language and one word for how it reads, like kotlin-quiet")
+    .requiredOption("--title <title>", "the project it was learned from, kept in the file and not shown")
     .requiredOption("--summary <text>", "one short line on what the style feels like, shown in the list")
     .requiredOption("--language <language>", LANGUAGES.join(" | "))
     .requiredOption("--project <url>", "where the code lives, like github.com/shakibkhatri/Idiolect")
@@ -188,6 +187,8 @@ export function useCommand(): Command {
       if (o.none) return removeStyle(repo);
       const chosen = ids.length ? await Promise.all(ids.map((id) => loadStyle(id))) : await pickFromMenu(repo, o.all);
       const picked: Picked = { ...(await loadRepoConfig(repo)).styles };
+      // a config written under an older name of a style moves to its current id
+      for (const key of Object.keys(picked) as (keyof Picked)[]) if (picked[key]) picked[key] = (await loadStyle(picked[key]!)).id;
       for (const s of chosen) picked[s.language] = s.id;
       // commit rules come from one style: keep the owner while it is still picked, else the first one named now
       const inUse = new Set(LANGUAGES.map((l) => picked[l]).filter(Boolean));

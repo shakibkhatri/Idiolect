@@ -6,7 +6,7 @@ import { analyzeCommits, emptyStats } from "./analyzer.js";
 import { emptyProfile, saveProfile, type Profile, type Rule } from "./profile.js";
 import { renderStyleMd } from "./render.js";
 import { loadServedProfile, saveOverrides } from "./served.js";
-import { buildStyle, composeStyles, listStyles } from "./styles.js";
+import { buildStyle, composeStyles, listStyles, loadStyle } from "./styles.js";
 
 const rule = (r: Partial<Rule> & { id: string; text: string }): Rule => ({
   scope: "personal", language: "kotlin", category: "comments", confidence: 0.9, status: "auto", evidence: { examples: [{ file: "A.kt", line: 3, snippet: "val secret = 1" }] }, ...r,
@@ -31,7 +31,7 @@ function scanned(): Profile {
     ],
   };
 }
-const build = (id: string, language: "kotlin" | "typescript", p = scanned()) => buildStyle(p, { id, title: id, summary: `summary of ${id}`, language, project: `github.com/x/${id}`, license: "MIT" });
+const build = (id: string, language: "kotlin" | "typescript", p = scanned()) => buildStyle(p, { id, title: "Some Project", summary: `summary of ${id}`, language, project: `github.com/x/${id}`, license: "MIT" });
 
 test("a built style holds measured rules and reviewed voice rules, without emails, code or project rules", () => {
   const style = build("kotlin-x", "kotlin");
@@ -56,11 +56,17 @@ test("composed styles serve each language from its own style and commit rules fr
   const p = await composeStyles({ kotlin: "kotlin-x", typescript: "typescript-y", commits: "typescript-y" }, dir);
   expect(p.rules.map((r) => r.id).sort()).toEqual(["any.commits.lower", "kotlin.comments.approved", "kotlin.comments.edited", "kotlin.comments.period", "typescript.comments.terse"]);
   expect(p.shipped).toBe(true);
-  expect(p.provenance).toContain("Kotlin from kotlin-x (code up to December 2023)");
-  expect(p.provenance).not.toContain("github.com");
-  expect(p.provenance).toContain("commit messages from typescript-y");
+  expect(p.provenance).toContain("Kotlin is kotlin-x (code up to December 2023)");
+  expect(p.provenance).toContain("commit messages follow typescript-y");
   const md = renderStyleMd({ ...p, borrowed: ["voice", "layout"] }, { threshold: 0.6 });
-  expect(md).toContain("# Code style: borrowed from kotlin-x, typescript-y");
+  expect(md).toContain("# Code style: kotlin-x, typescript-y");
+  // what the agent reads names the style, never the project it was learned from
+  for (const hidden of ["github.com", "Some Project"]) expect(md).not.toContain(hidden);
+
+  // a style keeps answering to the id it shipped under before
+  await writeFile(join(dir, "kotlin-x.json"), JSON.stringify({ ...build("kotlin-x", "kotlin"), aliases: ["kotlin-old"] }));
+  expect((await loadStyle("kotlin-old", dir)).id).toBe("kotlin-x");
+  expect((await composeStyles({ kotlin: "kotlin-old", commits: "kotlin-old" }, dir)).developer.name).toBe("kotlin-x");
   expect(md).toContain("- TypeScript: Terse TypeScript comments.");
   expect(md).toContain("- Lowercase subjects.");
   expect(md).not.toContain("Call cleanups Tidy up.");
@@ -95,10 +101,14 @@ test("a repo that picked shipped styles needs no personal profile, and its decis
   }
 });
 
-test("every shipped style is free of emails, code snippets and project rules", async () => {
+test("every shipped style is free of emails, code snippets and project rules, and is not named after its source", async () => {
   const styles = await listStyles();
   expect(styles.length).toBeGreaterThan(0);
+  expect(styles.map((s) => s.id).sort()).toEqual(["go-annotated", "kotlin-quiet", "python-spare", "typescript-terse"]);
+  expect((await loadStyle("kotlin-tivi")).id).toBe("kotlin-quiet");
   for (const s of styles) {
+    expect(s.id.startsWith(`${s.language}-`)).toBe(true);
+    expect(s.id.toLowerCase()).not.toContain(s.source.project.split("/").pop()!.toLowerCase());
     expect(JSON.stringify(s)).not.toMatch(/[\w.+-]+@[\w-]+\.[a-z]{2,}/i);
     for (const r of s.rules) {
       expect(r.repo).toBeUndefined();

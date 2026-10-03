@@ -204,7 +204,7 @@ Without that key removed the run measures the shipped styles, not his profile.
 
 ## 30. Reviewers for the Python and Go styles (open)
 
-`python-httpx` and `go-caddy` were reviewed by the agent and by nobody who writes those languages, so they ship marked experimental.
+`python-spare` and `go-annotated`, until 0.2.1 `python-httpx` and `go-caddy`, were reviewed by the agent and by nobody who writes those languages, so they ship marked experimental.
 A reviewer reads the rules with `idiolect styles show <id>`, or with the evidence through `idiolect ui` on the scanned profile, and the style is rebuilt without `--experimental`.
 
 ## 31. More styles per language (open)
