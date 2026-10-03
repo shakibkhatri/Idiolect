@@ -6,10 +6,16 @@ Name: **Idiolect** (the unique way one person speaks and writes). The linter fea
 
 A local-first tool that learns how a developer writes code, comments and commits, turns that into a style profile, and feeds it to AI coding agents (Claude, Cursor, Copilot, any MCP client) so their output reads like the developer wrote it.
 
-Three outputs:
+Four outputs:
 1. A **style profile** learned from the developer's own git history
 2. An **MCP server** that serves the profile and checks/rewrites code against it
 3. **Unbot**, an AI-tell linter that flags code and comments that "sound like AI"
+4. **Shipped styles**, frozen profiles learned from open source projects, for people whose code is written by an agent and who have no history to learn from. Added 2026-10-03
+
+Two audiences since then.
+A developer gets "code that sounds like me".
+Someone who prompts an agent for everything gets "code that looks professional": few comments, plain names, short commits, no AI tells.
+The second is an extension of the first, not a replacement, and both run through the same profile model.
 
 Later: **team mode**, which learns team rules from PR review comments.
 
@@ -61,6 +67,8 @@ data/
 fixtures/         # test repos (small, committed)
 ```
 
+`packages/core/styles/` holds the shipped styles, one JSON file each, and ships inside core like the grammars and the tells.
+
 ## 5. Data model
 
 The **profile JSON is the source of truth**. `STYLE.md` is rendered from it.
@@ -70,7 +78,7 @@ type Profile = {
   version: 1
   developer: { name: string; emails: string[] }
   generatedAt: string
-  sources: { repo: string; commits: number; linesOwned: number; stats: Record<Language, LanguageStats> }[]
+  sources: { repo: string; head: string; headDate?: string; commits: number; linesOwned: number; stats: Record<Language, LanguageStats> }[]
   stats: Record<Language, LanguageStats>   // merged across repos, counts and histograms only
   rules: Rule[]
 }
@@ -88,6 +96,7 @@ type Rule = {
   }
   confidence: number               // 0..1
   status: "auto" | "pending" | "approved" | "rejected" | "edited"
+  kind?: "voice" | "layout" | "idiom"   // what a borrowed profile may serve, see Borrowed profiles below
   paths?: string[]                 // optional glob scope, e.g. "shared/src/**"
   learnedIn?: string               // repo the examples came from, so a rescan replaces only its own rules
   repo?: string                    // set on project rules: served only inside this repo
@@ -166,6 +175,8 @@ Start with **Kotlin only**, add others after M5. TypeScript, Python and Go added
 - **Avoid section:** check each item in `data/ai-tells.json` against the user's code. If the user basically never does it, add an "avoid" rule.
   Each tell references a metric id from `core/metrics.ts`, so detection is counted by the analyzer, never guessed by the LLM
 - **Personal vs project.** The LLM labels each rule personal (holds in any codebase) or project (depends on this codebase's vocabulary, libraries, team conventions). Project rules carry `repo` and are served only inside that repo. Every LLM rule carries `learnedIn`, and a rescan replaces only the rules learned in that repo
+- **Kind and wording.** The LLM labels each rule voice, layout or idiom, see Borrowed profiles in the data model. Its own wording uses plain punctuation, no em dashes, arrows or emoji, while a pattern quoted from the samples stays as written. Added 2026-10-03 after a rescan put an em dash into a synced instruction file
+- **Not reproducible.** Three scans of the same Tivi code on 2026-10-03 gave three rule sets, one of them contradicting another on a naming habit. For a developer's own profile the review with `idiolect rules` absorbs that. A shipped style therefore takes LLM rules only after a person approved or edited them
 - **LLM rules must cite samples.** The model returns rules with example references (file and line). References that were not in the samples sent are dropped, and a rule left without examples is dropped
 - Confidence for metric rules is the 95% Wilson lower bound of the ratio, so small samples lower confidence without being dropped outright
 - Rules below confidence threshold (default 0.6) are stored but not served
@@ -189,6 +200,8 @@ Start with **Kotlin only**, add others after M5. TypeScript, Python and Go added
      The quiz opens in the browser from a localhost server built into the CLI: the two outputs side by side, shared lines dimmed, differing lines highlighted, keys A, B and S. The page never learns which side is the profile until the last pick. `--tty` keeps the terminal version for a shell without a browser. One HTML string in `cli/src/quiz.ts`, no framework, no dependency. This is where the dashboard starts if real usage asks for one
 - **The quiz is the headline number.** The judge shares a model with the generator and may flatter its own styled output, so it is a cheap proxy for iteration. The quiz, taken seriously by the author, is the truth
 - First real quiz, 2026-10-02, Dissent, 15 tasks, 55-rule profile: the author picked the profile output 5 of 15 times while the judge picked it 15 of 15. He took it several times and stands by it. That is below chance: the profile as served makes the output read less like him, not more, and the judge is flattering its own styled output. This is the verdict the harness was built to produce, and suggestion 13 is the response: fewer, sharper rules, then re-run the eval and the quiz until the quiz is clearly above chance. Context worth keeping in mind: much of Dissent was itself written by agents the author steered, so the profile partly describes an accepted agent style
+- Every eval before 2026-10-03 had a tainted baseline. The headless Claude call loaded the author's CLAUDE.md, a SessionStart hook and the agent system prompt, 20 instructions in all, so the "without profile" side was already written under his own style rules. The provider now runs in safe mode with its own system prompt. The quiz has not been retaken since, so the numbers above stand as measured, not as the truth about the profile
+- Borrowed styles were measured on 2026-10-03 with the Chris Banes profile on the 15 Kotlin tasks, in an empty repo so no project rules were served: comment lines 17 against 34, KDoc blocks 0 against 7, commit messages 5 to 6 lines against 10 to 12, metric distance to his real code 0.091 against 0.116, code 7% longer from the one-argument-per-line layout. The judge had no reference samples there and its 1 of 15 means nothing
 - Output: report with win rate, quiz picks per task and metric distance per category, saved as JSON + Markdown under `<repo>/.idiolect/eval/`
 
 **Done when:** `idiolect eval` prints a win rate, and re-running after a profile change shows the difference.
@@ -233,7 +246,9 @@ Published 2026-10-02 as `idiolect@0.0.1` on npm. The org name `idiolect` was tak
   - `.github/copilot-instructions.md`
 - Only between `<!-- idiolect:start -->` and `<!-- idiolect:end -->`. Never touch anything else.
   A missing block is appended at the end of the file, an existing block is replaced in place
-- Targets: without `sync.targets` in config, the four known files are updated if they exist and only `AGENTS.md` is created.
+- `GEMINI.md` is the fifth known file since 2026-10-03
+- `idiolect use` creates more than sync does, because someone picking a style has no agent files yet: `AGENTS.md` always, `CLAUDE.md` when the `claude` command is installed or the repo has a `.claude` folder, the Cursor rule when it has a `.cursor` folder. The lookup uses `where` on Windows, `which` elsewhere
+- Targets: without `sync.targets` in config, the known files are updated if they exist and only `AGENTS.md` is created.
   With `sync.targets` set, or `--target` on the command line, every listed file is written and created if missing.
   A fresh `.mdc` file gets the Cursor frontmatter with `alwaysApply: true`
 - Project rules are included because sync runs inside one repo, the same as `idiolect show`
@@ -283,7 +298,7 @@ Published 2026-10-02 as `idiolect@0.0.1` on npm. The org name `idiolect` was tak
 ```
 idiolect init                 # detect emails, languages, create config
 idiolect scan [--repo ...]    # collect + analyze + write profile
-idiolect show [--lang kotlin] # print STYLE.md
+idiolect show [--lang kotlin] [--email <profile>] # print STYLE.md as served here, or one stored profile in full
 idiolect sync                 # write into agent instruction files
 idiolect rules list|show|approve|reject|edit <id>   # decide on pending or wrong rules, decisions survive rescans
 idiolect unbot [files] [--fix] [--llm] [--strict]
@@ -294,7 +309,13 @@ idiolect refresh [--force]
 idiolect team scan            # team mode
 idiolect mcp                  # start MCP server
 idiolect ui [--repo] [--port] [--no-open]   # dashboard
+idiolect styles [--all]       # shipped styles for the languages of this project
+idiolect styles show <id>     # source project, licence, snapshot and rules of one style
+idiolect styles build ...     # maintainers: cut a style from a scanned, reviewed profile
+idiolect use [style...] [--all] [--target <file...>]   # pick styles by number, or by id, and sync
 ```
+
+Commands that only read rules need no `~/.idiolect/config.json`: `use`, `styles`, `sync`, `show`, `rules`, `unbot` without `--llm` and `--fix`, `ui` and `mcp`.
 
 ## 8. Config
 
@@ -321,9 +342,17 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
   "sync": { "targets": ["AGENTS.md", "CLAUDE.md", ".cursor/rules/idiolect.mdc"] },
   "refresh": { "everyCommits": 50 },
   "check": { "minItems": 10, "minLines": 100, "minLocated": 3, "excess": 2 },
-  "ignore": ["**/build/**", "**/generated/**"]
+  "ignore": ["**/build/**", "**/generated/**"],
+  "styles": { "kotlin": "kotlin-tivi", "typescript": "typescript-vue", "commits": "kotlin-tivi" },
+  "profile": "someone@example.com",
+  "borrow": ["voice", "layout"]
 }
 ```
+
+`styles` is written by `idiolect use` and wins over `profile`.
+`profile` names a stored profile to serve instead of the developer's own.
+`borrow` lists the kinds of rules served from either, idiom is left out by default.
+`<repo>/.idiolect/overrides.json` holds the rule decisions made on shipped styles in that repo and is safe to commit.
 
 ## 9. Privacy and security
 
@@ -332,6 +361,8 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
 - Redact secrets in samples (API keys, tokens, `.env` style values) before sending
 - Fully offline option via any OpenAI-compatible local server (Ollama, LM Studio, vLLM, llama.cpp)
 - `idiolect init` asks which provider to use and explains what each one receives
+- The headless Claude Code call runs in safe mode with idiolect's own system prompt, so the user's CLAUDE.md, hooks, skills and plugins are neither sent along nor allowed to shape the rules
+- A shipped style holds no author email, no code snippet and no project rule. A test checks every style file for all three
 - Team mode tokens read from env or `gh`, never stored in plain config
 
 ## 10. Testing
@@ -354,6 +385,7 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
 6. **Launch:** README with before/after examples, post on Hacker News, r/programming, r/ClaudeAI
 7. Add languages (Swift, TS, Python, Go), **M8 Auto refresh**. M8 done 2026-10-02. TypeScript, Python and Go done 2026-10-02, TypeScript and Python verified in Dissent, Go on its fixture. Swift still needs its grammar built
 8. **M9 Team mode**, **M10 Dashboard** - only after real usage. M10 built 2026-10-02 as one page in the CLI, see M10
+9. **Shipped styles**, 2026-10-03, released as 0.1.0 to 0.1.2. In order: a repo can serve another profile, borrowed profiles serve voice and layout only, the headless Claude leak fixed, the catalogue with `styles` and `use`, the short list with `styles show`, the numbered picker limited to the project's languages, Claude Code found on Windows. Installed from npm on a Windows laptop and picked a style there
 
 ## 12. Out of scope for v1
 
@@ -365,4 +397,6 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
 
 - Grab domain (idiolect.dev) and GitHub org
 - Pricing: free personal, paid team mode?
-- Should profiles be shareable/exportable ("use my style on a new machine")?
+- Should profiles be shareable/exportable ("use my style on a new machine")? Shipped styles answer half of it: `styles build` already cuts a shareable file from a profile. Loading a style file from outside the package is not built
+- Naming a style after its author needs that person's consent. Until someone asks one, styles are named after the project
+- How the catalogue grows: one project and one main author per style. Merging four authors into one profile on 2026-10-03 produced rules that contradicted each other

@@ -1,11 +1,14 @@
 # Idiolect
 
-Idiolect learns how you write code, comments and commits from your own git history and feeds that to AI coding agents, so what they write reads like you wrote it.
+Idiolect gives AI coding agents a style to write in, so their code stops sounding like AI.
+
+If you write code yourself, it learns how you write code, comments and commits from your own git history, and what the agent writes reads like you wrote it.
+If an agent writes most of your code, you pick a style that ships with idiolect, learned from a well-known open source project, and the agent writes clean code in that.
 
 It runs on your machine.
 It reads only the lines you authored, measures them, and turns the numbers and a few real examples into a style profile.
-Claude Code, Cursor, Copilot and any MCP client can read the profile.
-Unbot, the linter, flags code that breaks your habits or sounds like AI, and can rewrite it in your voice.
+Claude Code, Cursor, Copilot, Gemini CLI, anything that reads `AGENTS.md` and any MCP client can read the style.
+Unbot, the linter, flags code that breaks the style or sounds like AI, and can rewrite it.
 
 Kotlin, TypeScript, Python and Go. Swift comes next.
 
@@ -80,6 +83,7 @@ Every rule it followed is backed by a number or a cited line from that developer
 ## Install
 
 Needs Node 22 and git.
+Works on macOS, Linux and Windows.
 
 ```
 npm install -g idiolect
@@ -118,6 +122,7 @@ A language with under 5% of the project's source files is left out, `--all` show
 `use` always creates `AGENTS.md`, the file most agents read.
 It creates `CLAUDE.md` only when Claude Code is in use, meaning it is installed or the repo has a `.claude` folder, and a Cursor rule only when the repo has a `.cursor` folder.
 It updates `.github/copilot-instructions.md` and `GEMINI.md` when they exist, and `--target <file>` writes any other file.
+The files it did not write are named in one line at the end.
 
 That is the whole setup: no scan, no LLM call, no account.
 Your agent now writes fewer and shorter comments, plainer names and short commit messages, and `idiolect unbot` flags code that sounds like AI.
@@ -128,7 +133,7 @@ The code already in your repo and your formatter always win over it.
 `idiolect rules reject <id>` and `idiolect rules edit <id>` change a style for your repo only, the decisions live in `.idiolect/overrides.json`.
 Styles marked experimental have not been reviewed by someone who writes that language.
 
-## Use
+## Learn your own style
 
 ```
 cd your-repo
@@ -140,6 +145,7 @@ idiolect show      # the profile as the agent reads it
 The scan works without any LLM and gives you the metric rules.
 With an LLM it also phrases voice rules from real samples, and every one of them cites the file and line it came from.
 The default LLM is the Claude Code you already have, run headless under your own login, so no API key.
+It runs in safe mode with idiolect's own prompt, so your `CLAUDE.md`, hooks and plugins do not leak into the rules it writes.
 Anthropic, OpenAI, Gemini and any OpenAI-compatible local server such as Ollama work too.
 Run `idiolect scan --dry-run` to see exactly what would be sent.
 
@@ -189,7 +195,7 @@ A rule whose evidence changed after you approved it comes back as pending.
 ### Unbot
 
 ```
-idiolect unbot                  # Kotlin files changed since HEAD
+idiolect unbot                  # source files changed since HEAD
 idiolect unbot --all            # the whole repo
 idiolect unbot --llm            # the LLM also checks voice rules, with line numbers
 idiolect unbot --fix            # rewrite flagged files in your style
@@ -199,6 +205,23 @@ idiolect hooks install          # warn-only pre-commit hook
 
 Fast mode is deterministic: it measures the file and compares it to your numbers, in any supported language.
 AI tells like buzzwords, restating comments, `!!`, emoji and TODOs are flagged only if you never do them yourself.
+
+### Dashboard
+
+```
+idiolect ui                     # opens in your browser, local only
+```
+
+Review every rule with its evidence, approve, reject or edit in place, read the style as it is served in this repo, and browse eval runs.
+
+### Keep it fresh
+
+```
+idiolect status                 # profile age, pending rules, commits since the last scan
+idiolect refresh                # rescans in the background once enough commits have landed
+```
+
+`idiolect hooks install` runs the refresh after each commit.
 
 ### Measure it
 
@@ -217,7 +240,11 @@ Your identity lives in `~/.idiolect/config.json`, never in a repo.
 `<repo>/.idiolect/config.json` holds repo settings only and is safe to commit.
 No telemetry, no accounts, no backend.
 
+A shipped style holds rules and numbers only: no author emails and no code from the project it was learned from.
+`idiolect styles show <style>` names that project, its licence and the date of the code.
+
 ## Status
 
 Personal project, early.
-`SPEC.md` is the design, `HANDOFF.md` the current state, `SUGGESTIONS.md` and `bugs/` the backlog.
+Four styles ship: `kotlin-tivi` and `typescript-vue` are reviewed, `python-httpx` and `go-caddy` are experimental until someone who writes those languages has read them.
+`SPEC.md` is the design, `HANDOFF.md` the current state, `SUGGESTIONS.md` and `bugs/` the backlog, `scripts/styles/README.md` the recipe for adding a style.

@@ -156,3 +156,63 @@ For the author's Dissent most of the code came from agents he steered, so the qu
 A second question, "Which would you merge into this repo as-is?", measures what the profile is for in practice: fewer edits before accepting agent output.
 Offer it as `--quiz-merge` alongside the existing quiz, keep the picks in the same report shape, and say in the report which question was asked.
 The author stands by the existing quiz, so this is an addition, not a replacement.
+
+## 24. The avoid rule for TODO fires for authors who leave them (open)
+
+"Do not leave TODO comments" is served in all four shipped styles, including Caddy, whose author has 56 `TODO:` comments.
+The tell fires when under 5% of comments are TODOs, and 56 of 9229 is 0.6%.
+A ratio hides a real habit in a heavily commented codebase.
+An absolute floor, say no avoid rule when the developer has more than ten of the thing, would keep it honest.
+For a vibe coder the rule is welcome either way, so this matters for the personal profile first.
+
+## 25. Python function names counted as camelCase (open)
+
+In encode/httpx the analyzer reports 140 snake_case and 108 camelCase function names, in a codebase that is snake_case throughout.
+Not investigated.
+The likely cause is single-word lowercase names such as `get` or `send`, which are both.
+`scripts/verify/ast_count.py` can settle it.
+
+## 26. Unbot check for functions that should not exist (open)
+
+The second audience wants code without "unwanted functions": an unused helper, a wrapper around one call, an abstraction with one implementation.
+The profile measures function length, parameters and nesting and flags generic names, it has no notion of a function that is not needed.
+A first version is deterministic: private functions with no call site in the file, and functions whose body is one call with the same arguments.
+The rest needs the LLM in deep mode.
+
+## 27. The claude-cli provider on Windows (open)
+
+The provider starts `claude` with `execFile` and no shell.
+On Windows the command is usually `claude.cmd`, which Node may refuse to start that way.
+Picking and syncing styles makes no LLM call and works there, verified on a Windows laptop with 0.1.1.
+A scan with voice rules, `eval`, `unbot --llm` and `--fix` are untested on Windows.
+
+## 28. Own profile for one language, a shipped style for another (open)
+
+`styles` in the repo config replaces the developer's profile for the whole repo.
+A developer who writes Kotlin by hand and lets an agent write the TypeScript would want their own Kotlin rules and a shipped TypeScript style.
+`composeStyles` already takes rules per language, so the own profile could be one more source.
+
+## 29. Retake the quiz with a clean baseline (open)
+
+Every quiz so far compared the profile output with a baseline written under the author's own CLAUDE.md, see the eval module in the spec.
+The chance-level result may partly be the two sides sharing those rules.
+One run of `idiolect eval --quiz` in Dissent with the `styles` key removed answers it.
+Without that key removed the run measures the shipped styles, not his profile.
+
+## 30. Reviewers for the Python and Go styles (open)
+
+`python-httpx` and `go-caddy` were reviewed by the agent and by nobody who writes those languages, so they ship marked experimental.
+A reviewer reads the rules with `idiolect styles show <id>`, or with the evidence through `idiolect ui` on the scanned profile, and the style is rebuilt without `--experimental`.
+
+## 31. More styles per language (open)
+
+The catalogue has one style per language.
+More projects mean more styles, never bigger ones, and the picker then asks for a real choice.
+The summary line of at most 60 characters is what a user chooses by, so it has to say how the style differs from its neighbours.
+`scripts/styles/README.md` is the recipe.
+The 2024 cutoff keeps agent-written code out and is the default. A newer snapshot is possible for a project whose agent commits carry a trailer, since the collector drops those.
+
+## 32. Load a style file from outside the package (open)
+
+`idiolect styles build --out <dir>` writes a style anywhere, but only the styles inside the package are listed and served.
+A `stylesDir` in the repo config, or `idiolect use ./my-style.json`, would let a team share a house style without publishing it.

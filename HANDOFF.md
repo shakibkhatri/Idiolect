@@ -2,6 +2,7 @@
 
 Read this first, then `SPEC.md`, then `SUGGESTIONS.md` and `bugs/`.
 Written on 2026-10-02 at the end of the first day of work, rewritten the same night after the release, and again late that night after suggestion 13 and six smaller items.
+Updated on 2026-10-03 after shipped styles and the 0.1.0, 0.1.1 and 0.1.2 releases.
 Every statement here was true at that point.
 Verify against the code before relying on anything that could have moved.
 
@@ -9,18 +10,19 @@ Verify against the code before relying on anything that could have moved.
 
 A local-first CLI that learns how one developer writes code, comments and commits from their own git history, turns that into a style profile, and feeds it to AI coding agents through instruction files and an MCP server.
 Unbot is its linter: flags code that breaks the developer's measured habits or sounds like AI, and can rewrite it.
+Since 2026-10-03 it has a second audience: people whose code is written by an agent and who have no history to learn from. They pick a shipped style, a frozen profile learned from an open source project, and get "code that looks professional" instead of "code that sounds like me". It is an extension, the personal flow is unchanged.
 The owner is Shakib Khatri, GitHub `shakibkhatri`, repo `github.com/shakibkhatri/Idiolect`.
 Commits use `shakibkhatri@gmail.com`, set in the repo-local git config.
 The first commit still carries his work email because the amend needs a force-push he has to run himself.
 
 ## Where things stand
 
-Published on npm as `idiolect@0.0.1` with `@shakibkhatri/idiolect-core`, `-eval` and `-mcp` at 0.0.1, tagged `v0.0.1`, pushed to GitHub.
-Shakib installed it with `npm install -g idiolect` on a second laptop and it worked.
+Published on npm as `idiolect@0.1.2` with `@shakibkhatri/idiolect-core`, `-eval` and `-mcp` at the same version, tagged `v0.1.2`, pushed to GitHub. 0.0.1 was the first day, 0.1.0 added shipped styles, 0.1.1 the short list and the numbered picker, 0.1.2 found Claude Code on Windows.
+Shakib installs each release with `npm install -g idiolect` on a Windows laptop. With 0.1.1 he listed the styles and picked `typescript-vue` by number in a TypeScript project there. Scans and other LLM calls are untested on Windows, suggestion 27.
 Everything in the spec build order up to and including M8 exists: collector, analyzer, profile writer, eval, MCP server, sync, Unbot, auto refresh, plus the `rules` command.
 Languages: Kotlin, TypeScript, Python, Go. Swift is the only spec language left and needs its grammar built with the tree-sitter CLI.
-Not built: M9 team mode, M10 dashboard. The spec says only after real usage, and that still holds.
-Tests: `pnpm test`, 55 vitest tests, all green. `pnpm typecheck`. `pnpm build` must run before the global `idiolect` picks up changes.
+Built on top since: the dashboard `idiolect ui` (M10), shipped styles with `idiolect styles` and `idiolect use`. Not built: M9 team mode.
+Tests: `pnpm test`, 58 vitest tests, all green. `pnpm typecheck`. `pnpm build` must run before the global `idiolect` picks up changes.
 On this machine `idiolect` is the npm-linked dev build from `packages/cli`, not the published one. Keep it that way while developing.
 
 ## The verdict, where it stands
@@ -34,18 +36,23 @@ What the lost pairs taught: once the over-commenting was gone, the two outputs r
 The round 2 profile was scanned under a backup and his live profile was restored afterwards. His live profile is still the 79-rule one from before Python, the test names, the spread and the agent-trailer exclusion. One `idiolect scan` in Dissent rebuilds it with everything.
 Reports in Dissent: `2026-10-02T15-08-05-753Z` is the first profile with his 6 of 15 retake, `2026-10-02T20-49-47-640Z` round 1 with 7 of 15, `2026-10-02T21-29-38-667Z` round 2 ungraded, `2026-10-02T21-38-39-950Z` a two-task TypeScript smoke test.
 
+The baseline of every quiz and eval above was tainted, found 2026-10-03: the headless Claude call carried Shakib's own CLAUDE.md, so the plain output was already written under his rules. See the leak entry under things that bit us. The quiz has not been retaken with the fixed provider, suggestion 29.
+Borrowed styles were measured the same day with the Chris Banes profile in an empty repo: comment lines 17 against 34, no KDoc against 7 blocks, commit messages half as long, code 7% longer. Shakib used it for real work in Dissent and judged it better than plain agent rules. Reports are in `~/idiolect-oss/reports/`.
+
 ## Repo layout
 
 ```
-packages/core    collector, analyzers, metrics, baseline rules, sampler, redact, llm providers, writer, render, check, unbot, config, profile
-packages/cli     idiolect init | scan | show | rules | unbot | hooks | status | refresh | eval | mcp | sync
-packages/eval    task loading, with/without generation, judge, metric distance, report; tasks/ holds 15 Kotlin tasks
+packages/core    collector, analyzers, metrics, baseline rules, sampler, redact, llm providers, writer, render, check, unbot, config, profile, styles, served
+packages/cli     idiolect init | scan | show | rules | unbot | hooks | status | refresh | eval | mcp | sync | ui | styles | use
+packages/eval    task loading, with/without generation, judge, metric distance, report; tasks/ holds 15 Kotlin and 5 TypeScript tasks
 packages/mcp     createIdiolectServer: get_style, check_style, rewrite_like_me, get_team_rules, one resource, one prompt
 packages/core/grammars   vendored kotlin, typescript, tsx, python, go wasm plus licenses
 packages/core/data/ai-tells.json   AI writing habits tied to metric ids, some per language
+packages/core/styles/    the shipped styles, one JSON file each: kotlin-tivi, typescript-vue, python-httpx, go-caddy
 fixtures/kotlin|typescript|python|go   one parallel sample program per language, plus AiWritten.kt for Unbot
 scripts/update-grammars.sh   refreshes the vendored grammars from npm, edit the table, run, commit
 scripts/verify/              second-opinion counters per language and the recipe for checking a language on a real repo
+scripts/styles/README.md     the recipe for adding a shipped style
 ```
 
 ## How the pipeline works
@@ -115,16 +122,19 @@ Screenshots for checking the page were taken headless with Playwright's chromium
 
 ## Publishing
 
-`pnpm -r publish` after bumping the version in all four package.json files together, then tag and push with `--follow-tags`.
-Every package has `files`, `license`, `repository`, `publishConfig.access: public`, and excludes compiled tests. Grammars and tells ship inside core, tasks inside eval, so nothing resolves outside its package. The CLI copies the root README in `prepack`.
+`pnpm -r publish --no-git-checks` after bumping the version in all four package.json files and in the `McpServer` version in `packages/mcp/src/index.ts`, then `git tag -a vX.Y.Z -m vX.Y.Z` and `git push --follow-tags`.
+`--no-git-checks` is needed because pnpm refuses to publish with untracked files and the Android Studio files, `.idea/` and `Idiolect.iml`, are untracked.
+Shakib runs `npm login` and the publish himself, this machine is not logged in to npm between releases.
+Before publishing, pack the four packages, install the tarballs into a clean folder with an empty `HOME` and run the CLI from there. That is how 0.1.0 was checked.
+Every package has `files`, `license`, `repository`, `publishConfig.access: public`, and excludes compiled tests. Grammars and tells ship inside core, tasks inside eval, and the styles inside core, so nothing resolves outside its package. The CLI copies the root README in `prepack`.
 The npm org name `idiolect` is taken by someone else, which is why the internal packages sit under Shakib's user scope.
 
 ## Config and storage
 
 `~/.idiolect/config.json`: name, all emails, LLM provider. Never inside a repo. `init` accumulates emails, it never removes one.
-`<repo>/.idiolect/config.json`: languages, ignore, sync targets, thresholds, all optional, safe to commit.
+`<repo>/.idiolect/config.json`: languages, ignore, sync targets, thresholds, plus `styles`, `profile` and `borrow` for what is served, all optional, safe to commit. `<repo>/.idiolect/overrides.json`: rule decisions made on shipped styles in that repo.
 `~/.idiolect/profiles/<first email>.json` and `.STYLE.md` next to it: one profile per developer, merged over every repo.
-Shakib's profile is under `shakib.khatri@ires.de`. A stray `kenediid.ali@ires.de.json` from a mis-click is safe to delete.
+Shakib's profile is under `shakib.khatri@ires.de`. A stray `kenediid.ali@ires.de.json` from a mis-click is safe to delete. The same folder holds the four scanned author profiles and a merged `oss-baseline@idiolect.local` from the first attempt, which nothing serves.
 
 ## Real data so far
 
@@ -148,6 +158,8 @@ Quantity rules in the check have floors because a per-file median over three fun
 The doc-ratio rule has no line finder on purpose: a developer who documents some files fully and others not at all would see every doc comment flagged.
 Avoid rule ids carry the language because the same tell for two languages produced one id twice.
 
+Dissent serves the shipped styles `kotlin-tivi` and `typescript-vue` since 2026-10-03, with commit rules from Tivi. Its config still carries an ignored `profile` key. Its Kotlin is indented with 4 spaces and the styles carry layout rules, so `"borrow": ["voice"]` is worth adding there.
+
 ## Working agreements with Shakib
 
 The spec is a draft. Question it, change it, say what changed.
@@ -158,14 +170,23 @@ He tests as an end user and pastes terminal output or screenshots. Treat what he
 He wants modules built, verified in `~/AndroidStudioProjects/Dissent`, committed, and the next one started without waiting for him. Restore anything you change there, and back up `~/.idiolect/profiles/` before a test scan and restore it after.
 Never run anything that changes his repos or his Claude Code config without asking. Scanning is read-only apart from `.idiolect/` inside the repo.
 He uses a global `~/.claude/CLAUDE.md` with his general rules, read it.
+He decides step by step: he asks what you understood and what you will build, then says go. Explain first, recommend one option, and build after the go.
+He wants a branch per piece of work. A fast-forward merge into `main` once the work is verified is fine as long as it is reported. Pushing and publishing are his to run.
+The agent cannot start headless `claude` in his setup, the permission classifier blocks it, and cannot edit its own permission settings. Anything that calls the LLM, a scan with voice rules or an eval, is written as a script for him to run with `!`, and he pastes the output.
 
 ## Open items, in order
 
-1. Shakib runs `idiolect scan` in Dissent once, then `idiolect sync`, `idiolect hooks install`, and `claude mcp add idiolect -- npx -y idiolect mcp`. None of that has been done on his machine yet. `.idiolect/` is still untracked in Dissent. These touch his repo and his Claude Code config, so they are his to run.
-2. Swift (suggestion 3). `tree-sitter-swift` 0.7.1 ships no wasm and `tree-sitter build --wasm` needs emscripten or docker, neither is installed. Installing emscripten with Homebrew changes his machine, ask first.
-3. Launch post once there is a number worth posting. README has the before and after.
-4. Suggestion 15's judge half, suggestion 22, the "do less" rule family from suggestion 13, then the older open suggestions, or M9 and M10 after real usage.
-5. The quiz page is the seed of the dashboard. If M10 starts, grow it from `cli/src/quiz.ts`, not from a framework.
+1. Shakib's own profile is the stale 79-rule one from before the leak fix, and Dissent no longer serves it. One `idiolect scan` in Dissent rebuilds it clean. To serve it again he removes `styles` from Dissent's config.
+2. Retake the quiz with the clean baseline, suggestion 29. It is the only way to know whether the chance-level verdict was real.
+3. More styles, suggestion 31. Shakib wants to learn from more open source projects. One project and one main author per style, recipe in `scripts/styles/README.md`.
+4. Reviewers for `python-httpx` and `go-caddy`, suggestion 30.
+5. The unwanted-function check for Unbot, suggestion 26. He named it as part of what the second audience wants.
+6. Windows: the LLM calls are untested there, suggestion 27.
+7. Smaller: the TODO avoid rule, suggestion 24, and the Python name count, suggestion 25.
+8. Swift (suggestion 3). `tree-sitter-swift` 0.7.1 ships no wasm and `tree-sitter build --wasm` needs emscripten or docker, neither is installed. Installing emscripten with Homebrew changes his machine, ask first.
+9. Launch post. The README now leads with both audiences and has the before and after.
+10. Suggestion 15's judge half, suggestion 22, the "do less" rule family from suggestion 13, then the older open suggestions, or M9 after real usage.
+11. Local branches `served-profile`, `borrowed-style`, `clean-claude-cli`, `plain-rule-text`, `catalogue`, `release-0.1.0`, `styles-list`, `pick-by-number`, `windows-claude-detect` and `docs-0.1.2` are all contained in `main` and can be deleted.
 
 ## Things that bit us, so you do not repeat them
 
@@ -184,3 +205,11 @@ zsh does not word-split `$files`. Pipe `git ls-files` into `xargs` or loop with 
 A long timestamped `--from` path sent Shakib to the wrong report, he graded the old profile again and it looked like a result. `--from latest` and the run subtitle on the quiz page exist because of that.
 zsh treats a bare `=word` argument as a command lookup, so `echo ====` fails. Quote it.
 In a Python heredoc, a TypeScript template literal that contains `\\"` needs a raw string or doubled backslashes, otherwise the replacement silently never matches.
+The same code scanned three times gave three sets of LLM rules, one contradicting another on whether lookups take a `get` prefix. A scan proposes, a person decides, and a shipped style is frozen after review.
+Merging four authors into one profile made the rules contradict each other and mixed four commit styles. One main author per profile.
+A search for comments piped through `grep -v test` hid a line that contained the word "test" for another reason. Count matches before and after a filter.
+`which` does not exist on Windows. The check for an installed `claude` uses `where` there.
+`pnpm -r publish` refuses to run with untracked files in the tree, and `pnpm pack --dry-run` in `packages/cli` runs `prepack` and copies the README in.
+An eval judge with no reference samples still returns a confident verdict. An empty repo gives zero references, read the count in the first line of the eval output.
+The eval inside the source repo of a borrowed profile serves that repo's project rules, which put a Tivi copyright header into 10 of 12 outputs. Measure a borrowed style in a neutral repo.
+
