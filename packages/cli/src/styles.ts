@@ -111,7 +111,7 @@ export function stylesCommand(): Command {
     .requiredOption("--title <title>", "the project the style is named after")
     .requiredOption("--summary <text>", "one short line on what the style feels like, shown in the list")
     .requiredOption("--language <language>", LANGUAGES.join(" | "))
-    .requiredOption("--project <url>", "where the code lives, like github.com/chrisbanes/tivi")
+    .requiredOption("--project <url>", "where the code lives, like github.com/shakibkhatri/Idiolect")
     .requiredOption("--license <license>", "license of the source project")
     .option("--experimental", "nobody who writes the language has reviewed it")
     .option("--out <dir>", "where to write the style", STYLES_DIR)

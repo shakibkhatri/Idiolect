@@ -28,10 +28,10 @@ HOME=/tmp/idiolect-home idiolect show --lang go
 
 ## Results so far, 2026-10-02
 
-Python, dabeaz/sly, 15 files: matched `ast` exactly on every count except f-strings, 103 against 106, because `ast` also counts the nested format spec of an f-string.
-Go, tidwall/gjson, 2 files: matched the regex count on functions, types, error checks and panics.
-TypeScript, sindresorhus/ky, 87 files: exact on classes, doc comments, try, non-null assertions, any, arrow functions, type aliases, interfaces and the parameter histogram. Functions 578 against 580, the two are overload signatures. Comments 734 against 702, the compiler counter's closing-brace gap.
-Kotlin, JakeWharton/picnic, 14 files: functions 149 against 149, comment nodes match grep per file exactly, classes 39 against 38 where the regex skips a companion object.
+Python, sly, 15 files: matched `ast` exactly on every count except f-strings, 103 against 106, because `ast` also counts the nested format spec of an f-string.
+Go, gjson, 2 files: matched the regex count on functions, types, error checks and panics.
+TypeScript, ky, 87 files: exact on classes, doc comments, try, non-null assertions, any, arrow functions, type aliases, interfaces and the parameter histogram. Functions 578 against 580, the two are overload signatures. Comments 734 against 702, the compiler counter's closing-brace gap.
+Kotlin, picnic, 14 files: functions 149 against 149, comment nodes match grep per file exactly, classes 39 against 38 where the regex skips a companion object.
 
 Lesson from picnic: the author has three emails and `shortlog | head -3` hid one, so the first scan owned no test functions. Always read the whole author list before `init --email`. The real `init` prompt shows every author for exactly this reason.
 Adding the third email and rescanning changed nothing, which exposed a real bug: the blame cache ignored the email list. It is keyed on the emails now and a changed list throws it away. With all three emails picnic owns 2208 lines and 41 test functions.

@@ -165,7 +165,7 @@ The MCP server re-reads the profile on every call, so a rescan or a rule decisio
 ### Serve another profile in a repo
 
 ```
-{ "profile": "chris@banes.me" }      # in <repo>/.idiolect/config.json
+{ "profile": "shakib@example.com" }      # in <repo>/.idiolect/config.json
 ```
 
 `sync`, `show`, `rules`, `unbot`, `eval`, `ui` and the MCP server then use that profile from `~/.idiolect/profiles/` inside this repo.

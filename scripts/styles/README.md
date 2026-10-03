@@ -30,7 +30,7 @@ The same person often commits under three or four addresses, and a missed one si
 ```
 export H=/path/to/isolated-home
 mkdir -p $H/.idiolect
-echo '{ "name": "<Author>", "emails": ["<email>", "<email>"], "llm": { "provider": "claude-cli" } }' > $H/.idiolect/config.json
+echo '{ "name": "<Project> lead", "emails": ["<email>", "<email>"], "llm": { "provider": "claude-cli" } }' > $H/.idiolect/config.json
 mkdir -p .idiolect && echo '{ "languages": ["<language>"] }' > .idiolect/config.json
 HOME=$H idiolect scan
 ```
@@ -75,11 +75,15 @@ Then run `idiolect use <id>` in a throwaway folder and read the block it writes.
 
 ## What exists today
 
-| Style | Project | Author | Reviewed by |
-|---|---|---|---|
-| kotlin-tivi | chrisbanes/tivi | Chris Banes | Shakib |
-| typescript-vue | vuejs/core | Evan You | Shakib |
-| python-httpx | encode/httpx | Tom Christie | nobody who writes Python, experimental |
-| go-caddy | caddyserver/caddy | Matt Holt | nobody who writes Go, experimental |
+| Style | Project | Reviewed by |
+|---|---|---|
+| kotlin-tivi | Tivi | Shakib |
+| typescript-vue | Vue core | Shakib |
+| python-httpx | HTTPX | nobody who writes Python, experimental |
+| go-caddy | Caddy | nobody who writes Go, experimental |
+
+Each was learned from the lines of the project's lead author only.
+Their names and emails stay out of the repo, the docs and the style files.
+`idiolect styles show <id>` gives the address of the source project, which is the one place a GitHub handle appears.
 
 On Shakib's machine the clones, the isolated homes with the review decisions and the scripts are in `~/idiolect-oss/`.

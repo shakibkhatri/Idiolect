@@ -147,7 +147,7 @@ test("a text shared by some of the served languages is labelled with exactly tho
 
 test("a borrowed profile serves voice and layout, labelled, without idiom or project rules, under its own header", () => {
   const src = { ...source("/tivi", () => {}), headDate: "2023-12-30T10:00:00+00:00" };
-  const p = upsertSource(emptyProfile("Chris", ["chris@x"]), src);
+  const p = upsertSource(emptyProfile("Shakib", ["shakib@x"]), src);
   const ex = { examples: [{ file: "A.kt", line: 1, snippet: "x" }] };
   const base = { scope: "personal" as const, language: "kotlin" as const, confidence: 0.9, status: "auto" as const };
   const rules = [
@@ -160,13 +160,13 @@ test("a borrowed profile serves voice and layout, labelled, without idiom or pro
     { ...base, id: "kotlin.comments.header", category: "comments" as const, kind: "voice" as const, repo: "/tivi", text: "Start every file with the Tivi header.", evidence: ex },
   ];
   const own = renderStyleMd({ ...p, rules }, { threshold: 0.6, repo: "/tivi" });
-  expect(own).toContain("# Code style: Chris\n");
+  expect(own).toContain("# Code style: Shakib\n");
   expect(own).toContain("Resolve nullables with elvis.");
   expect(own).toContain("Start every file with the Tivi header.");
   expect(own).toContain("- Use when instead of if/else chains");
 
   const md = renderStyleMd({ ...p, rules, borrowed: ["voice", "layout"] }, { threshold: 0.6, repo: "/tivi" });
-  expect(md).toContain("# Code style: borrowed from Chris");
+  expect(md).toContain("# Code style: borrowed from Shakib");
   expect(md).toContain("written up to December 2023");
   expect(md).toContain("It shapes naming, comments, commit messages and layout.");
   expect(md).toContain("its formatter and current language practice win");

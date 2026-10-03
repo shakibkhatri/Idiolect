@@ -37,7 +37,7 @@ The round 2 profile was scanned under a backup and his live profile was restored
 Reports in Dissent: `2026-10-02T15-08-05-753Z` is the first profile with his 6 of 15 retake, `2026-10-02T20-49-47-640Z` round 1 with 7 of 15, `2026-10-02T21-29-38-667Z` round 2 ungraded, `2026-10-02T21-38-39-950Z` a two-task TypeScript smoke test.
 
 The baseline of every quiz and eval above was tainted, found 2026-10-03: the headless Claude call carried Shakib's own CLAUDE.md, so the plain output was already written under his rules. See the leak entry under things that bit us. The quiz has not been retaken with the fixed provider, suggestion 29.
-Borrowed styles were measured the same day with the Chris Banes profile in an empty repo: comment lines 17 against 34, no KDoc against 7 blocks, commit messages half as long, code 7% longer. Shakib used it for real work in Dissent and judged it better than plain agent rules. Reports are in `~/idiolect-oss/reports/`.
+Borrowed styles were measured the same day with the profile learned from Tivi in an empty repo: comment lines 17 against 34, no KDoc against 7 blocks, commit messages half as long, code 7% longer. Shakib used it for real work in Dissent and judged it better than plain agent rules. Reports are in `~/idiolect-oss/reports/`.
 
 ## Repo layout
 
@@ -100,7 +100,7 @@ Borrowed profiles (2026-10-03): when the named profile is not the developer's ow
 Shipped styles (2026-10-03): `core/src/styles.ts` has `buildStyle`, `listStyles`, `composeStyles`, `core/src/served.ts` has `loadServedProfile` and the repo overrides, `cli/src/styles.ts` has `idiolect styles`, `styles build` and `use`. Four styles ship in `packages/core/styles/`: kotlin-tivi, typescript-vue, and the experimental python-httpx and go-caddy.
 The review behind them was done by the agent, not by Shakib: every personal LLM rule approved except three rejected (TypeScript non-null assertions on invariants, Python `# pragma: no cover`, Caddy's candid commit bodies) and three edited (Tivi "Tidy up" without WIP and [ci skip], the Tivi bug URL rule without its em dash, Caddy comments without the "yikes" asides). Shakib read the Kotlin and TypeScript rules on 2026-10-03 and confirmed them without changes. Python and Go stay experimental. The decisions live in the profiles under `~/idiolect-oss/homes/`, rebuild with `idiolect styles build` from there.
 Commands that only read rules no longer need `~/.idiolect/config.json`, so `use`, `sync`, `show`, `rules`, `unbot` and `mcp` work for someone who never ran `init`.
-Four single-author profiles learned from pre-2024 open source code sit in `~/.idiolect/profiles/`: Chris Banes (tivi, Kotlin), Evan You (vue core, TypeScript), Tom Christie (httpx, Python), Matt Holt (caddy, Go). The repos, isolated homes, scan and eval scripts and two eval reports are in `~/idiolect-oss/`. Dissent serves the Chris Banes profile.
+Four single-author profiles learned from pre-2024 open source code sit in `~/.idiolect/profiles/`: the lead author of Tivi (Kotlin), of Vue core (TypeScript), of HTTPX (Python) and of Caddy (Go). The repos, isolated homes, scan and eval scripts and two eval reports are in `~/idiolect-oss/`. 
 Render labels a text shared by some served languages with exactly those, "Kotlin, TypeScript: ...", and leaves the label off only when every served language shares it.
 `init` keeps the other keys of an existing repo config, it used to rewrite the file with languages and ignore only.
 
@@ -134,7 +134,7 @@ The npm org name `idiolect` is taken by someone else, which is why the internal 
 `~/.idiolect/config.json`: name, all emails, LLM provider. Never inside a repo. `init` accumulates emails, it never removes one.
 `<repo>/.idiolect/config.json`: languages, ignore, sync targets, thresholds, plus `styles`, `profile` and `borrow` for what is served, all optional, safe to commit. `<repo>/.idiolect/overrides.json`: rule decisions made on shipped styles in that repo.
 `~/.idiolect/profiles/<first email>.json` and `.STYLE.md` next to it: one profile per developer, merged over every repo.
-Shakib's profile is under `shakib.khatri@ires.de`. A stray `kenediid.ali@ires.de.json` from a mis-click is safe to delete. The same folder holds the four scanned author profiles and a merged `oss-baseline@idiolect.local` from the first attempt, which nothing serves.
+Shakib's profile is under `shakib.khatri@ires.de`. A stray second profile from a mis-click during `init` is safe to delete. The same folder holds the four scanned author profiles and a merged `oss-baseline@idiolect.local` from the first attempt, which nothing serves.
 
 ## Real data so far
 
@@ -143,7 +143,7 @@ Shakib's live profile has 79 rules from his own rescan of Dissent on 2026-10-02 
 Shakib reviewed the earlier 55 rules and called them mostly correct.
 Eval on Dissent, 15 tasks: judge 15/15, quiz 5/15 on the first profile; 11/15 and 7/15 with the capped render; 13/15 and no quiz after the rescan. Eval on the work repo, 7 tasks: judge 7/7, no quiz.
 
-Other developers' repos, scanned with an isolated `HOME` so nothing of Shakib's was touched: tidwall/gjson (Go), dabeaz/sly (Python), sindresorhus/ky (TypeScript), JakeWharton/picnic (Kotlin). Each analyzer matched an independent counter within a few percent and exactly on the idiom counters. `scripts/verify/README.md` has the numbers and the recipe.
+Other developers' repos, scanned with an isolated `HOME` so nothing of Shakib's was touched: gjson (Go), sly (Python), ky (TypeScript), picnic (Kotlin). Each analyzer matched an independent counter within a few percent and exactly on the idiom counters. `scripts/verify/README.md` has the numbers and the recipe.
 
 ## Decisions and why
 
