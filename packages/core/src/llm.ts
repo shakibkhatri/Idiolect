@@ -38,24 +38,37 @@ function jsonSchema(schema: z.ZodType): Record<string, unknown> {
   return rest;
 }
 
-/** Runs the user's installed Claude Code in headless mode. Uses their existing login, no API key, we never touch their tokens. */
+/**
+ * Runs the user's installed Claude Code in headless mode. Uses their existing login, no API key, we never touch their tokens.
+ * Safe mode and our own system prompt keep their CLAUDE.md, skills and the agent prompt out of the call.
+ */
 function claudeCliProvider(model?: string): LlmProvider {
+  let safeMode = true;
+  const run = <T>(req: LlmRequest<T>): Promise<T> => {
+    const args = ["-p", ...(safeMode ? ["--safe-mode"] : []), "--output-format", "json", "--no-session-persistence", "--tools", "", "--system-prompt", req.system, "--json-schema", JSON.stringify(jsonSchema(req.schema))];
+    if (model) args.push("--model", model);
+    return new Promise<T>((resolve, reject) => {
+      const child = execFile("claude", args, { cwd: tmpdir(), maxBuffer: 64 * 1024 * 1024, timeout: 15 * 60 * 1000 }, (err, stdout, stderr) => {
+        if (err && !stdout) return reject(new Error(`claude CLI failed: ${err.message} ${stderr}`.trim()));
+        let out: { is_error?: boolean; result?: string; structured_output?: unknown };
+        try { out = JSON.parse(stdout); } catch { return reject(new Error(`claude CLI returned non-JSON: ${stdout.slice(0, 200)}`)); }
+        if (out.is_error) return reject(new Error(`claude CLI: ${out.result ?? "unknown error"}`));
+        if (out.structured_output === undefined) return reject(new Error(`claude CLI returned no structured output: ${String(out.result).slice(0, 200)}`));
+        try { resolve(req.schema.parse(out.structured_output)); } catch (e) { reject(new Error(`claude CLI output failed validation: ${(e as Error).message.slice(0, 300)}`)); }
+      });
+      child.stdin!.end(req.user);
+    });
+  };
   return {
     name: "claude-cli", model: model ?? "default",
-    complete<T>(req: LlmRequest<T>): Promise<T> {
-      const args = ["-p", "--output-format", "json", "--no-session-persistence", "--tools", "", "--append-system-prompt", req.system, "--json-schema", JSON.stringify(jsonSchema(req.schema))];
-      if (model) args.push("--model", model);
-      return new Promise<T>((resolve, reject) => {
-        const child = execFile("claude", args, { cwd: tmpdir(), maxBuffer: 64 * 1024 * 1024, timeout: 15 * 60 * 1000 }, (err, stdout, stderr) => {
-          if (err && !stdout) return reject(new Error(`claude CLI failed: ${err.message} ${stderr}`.trim()));
-          let out: { is_error?: boolean; result?: string; structured_output?: unknown };
-          try { out = JSON.parse(stdout); } catch { return reject(new Error(`claude CLI returned non-JSON: ${stdout.slice(0, 200)}`)); }
-          if (out.is_error) return reject(new Error(`claude CLI: ${out.result ?? "unknown error"}`));
-          if (out.structured_output === undefined) return reject(new Error(`claude CLI returned no structured output: ${String(out.result).slice(0, 200)}`));
-          try { resolve(req.schema.parse(out.structured_output)); } catch (e) { reject(new Error(`claude CLI output failed validation: ${(e as Error).message.slice(0, 300)}`)); }
-        });
-        child.stdin!.end(req.user);
-      });
+    async complete<T>(req: LlmRequest<T>): Promise<T> {
+      try { return await run(req); } catch (e) {
+        // a Claude Code too old for safe mode still works, it just reads the user's own instructions too
+        if (!safeMode || !/unknown option.*--safe-mode/i.test((e as Error).message)) throw e;
+        safeMode = false;
+        process.stderr.write("warning: this Claude Code has no --safe-mode, your CLAUDE.md is part of every call. Update Claude Code to keep it out\n");
+        return run(req);
+      }
     },
   };
 }
