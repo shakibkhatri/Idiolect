@@ -247,4 +247,4 @@ A shipped style holds rules and numbers only: no author emails and no code from 
 
 Personal project, early.
 Four styles ship: `kotlin-tivi` and `typescript-vue` are reviewed, `python-httpx` and `go-caddy` are experimental until someone who writes those languages has read them.
-`SPEC.md` is the design, `HANDOFF.md` the current state, `SUGGESTIONS.md` and `bugs/` the backlog, `scripts/styles/README.md` the recipe for adding a style.
+`SPEC.md` is the design, `HANDOFF.md` the current state, `CLI.md` the planned CLI redesign, `SUGGESTIONS.md` and `bugs/` the backlog, `scripts/styles/README.md` the recipe for adding a style.

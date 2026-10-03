@@ -295,6 +295,9 @@ Published 2026-10-02 as `idiolect@0.0.1` on npm. The org name `idiolect` was tak
 
 ## 7. CLI
 
+The commands below are what 0.1.2 ships.
+`CLI.md` is the brief for a redesign that keeps every command and reorders how they are presented: a guided bare `idiolect`, help grouped by audience, one vocabulary, quiet output, progress, and `use --none`. Not built yet.
+
 ```
 idiolect init                 # detect emails, languages, create config
 idiolect scan [--repo ...]    # collect + analyze + write profile
