@@ -1,4 +1,4 @@
-import type { CommitStats, Counter, Histogram, Language, LanguageStats } from "@shakibkhatri/idiolect-core";
+import type { CommitStats, Counter, Histogram, Language, LanguageStats, Profile } from "@shakibkhatri/idiolect-core";
 
 const pct = (a: number, b: number) => (b ? `${Math.round((100 * a) / b)}%` : "n/a");
 const top = (c: Counter, n = 6) => Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, n).map(([k, v]) => `${k} ${v}`).join(", ") || "none";
@@ -43,4 +43,24 @@ export function summarizeLanguage(lang: Language, s: LanguageStats): string {
 
 export function summarizeCommits(s: CommitStats): string {
   return `Commits ${s.count}  subject p50 ${percentile(s.subjectLength, 0.5)} chars, lowercase ${pct(s.lowercaseStart, s.count)}, conventional ${pct(s.conventionalPrefix, s.count)}, trailing period ${pct(s.trailingPeriod, s.count)}, with body ${pct(s.withBody, s.count)}, tense ${top(s.tense, 3)}`;
+}
+
+const NAMES: Record<Language, string> = { kotlin: "Kotlin", typescript: "TypeScript", python: "Python", go: "Go" };
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/** What a scan prints by default: one line per language, the commits, a total and the next step. */
+export function scanSummary(profile: Profile, stats: Partial<Record<Language, LanguageStats>>, o: { commits: number; agentCommits?: number; llm: boolean }): string {
+  const rulesFor = (language: string) => profile.rules.filter((r) => r.language === language).length;
+  const rows = (Object.entries(stats) as [Language, LanguageStats][]).map(([l, st]) => [NAMES[l], plural(st.files, "file"), plural(st.loc, "line"), plural(rulesFor(l), "rule")] as const);
+  const w = (i: 0 | 1 | 2) => Math.max(i ? 0 : "Commits".length, ...rows.map((r) => r[i].length));
+  const examples = profile.rules.filter((r) => !r.evidence.metric).length;
+  const pending = profile.rules.filter((r) => r.status === "pending").length;
+  return [
+    ...rows.map((r) => `${r[0].padEnd(w(0))}  ${r[1].padStart(w(1))}, ${r[2].padStart(w(2))}, ${r[3]}`),
+    `${"Commits".padEnd(w(0))}  ${plural(o.commits, "commit")}, ${plural(rulesFor("any"), "rule")}${o.agentCommits ? `, ${o.agentCommits} written by an agent left out` : ""}`,
+    "",
+    o.llm ? `Learned ${plural(profile.rules.length, "rule")}, ${examples} of them from examples of your code.` : `Learned ${plural(profile.rules.length, "rule")} from measurements alone, no LLM was used.`,
+    ...(pending ? [`${plural(pending, "rule")} changed and ${pending === 1 ? "waits" : "wait"} for your decision: idiolect rules list --status pending`] : []),
+    "Next: idiolect show to read them, idiolect sync to give them to your agent.",
+  ].join("\n");
 }

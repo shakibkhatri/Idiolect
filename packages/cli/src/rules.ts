@@ -1,9 +1,10 @@
-import { loadServedProfile, loadRepoConfig, ruleKind, profilePath, renderStyleMd, saveOverrides, saveProfile, updateRules, type Profile, type Rule } from "@shakibkhatri/idiolect-core";
+import { git, isServed, loadServedProfile, loadRepoConfig, ruleKind, profilePath, renderStyleMd, saveOverrides, saveProfile, SECTIONS, updateRules, type Profile, type Rule } from "@shakibkhatri/idiolect-core";
 import { Command } from "commander";
 import { spawnSync } from "node:child_process";
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { term, type Term } from "./term.js";
 
 /** STYLE.md next to the profile mirrors the stored rules, so every rule change re-renders it. */
 export async function writeStyle(profile: Profile, threshold: number) {
@@ -34,26 +35,57 @@ async function decide(ids: string[], status: "approved" | "rejected" | "edited",
 
 const tag = (r: Rule) => (r.repo ? `[${r.repo.split("/").pop()}] ` : "");
 
+// no output may need more than 100 columns, the Windows terminal it is tested in is that narrow
+const WIDTH = 100;
+function wrap(text: string, width: number): string[] {
+  const lines: string[] = [];
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    if (lines.length && lines.at(-1)!.length + 1 + word.length <= width) lines.push(`${lines.pop()} ${word}`); else lines.push(word);
+  }
+  return lines.length ? lines : [""];
+}
+
+type Mark = "served" | "held back" | "pending" | "rejected";
+const MARKS: Record<Mark, string> = { served: "+", "held back": "-", pending: "?", rejected: "x" };
+
+/** Grouped by section the way the rendered style is, the rule text first and the id last, where it is only needed to type a command. */
+export function renderRules(rows: Rule[], served: (r: Rule) => boolean, t: Term = term): string {
+  if (!rows.length) return "No rules match.";
+  const markOf = (r: Rule): Mark => (r.status === "pending" ? "pending" : r.status === "rejected" ? "rejected" : served(r) ? "served" : "held back");
+  const paint: Record<Mark, (s: string) => string> = { served: t.ok, "held back": t.dim, pending: t.warn, rejected: t.bad };
+  const out: string[] = [];
+  for (const [category, title] of SECTIONS) {
+    const rules = rows.filter((r) => r.category === category);
+    if (!rules.length) continue;
+    out.push(t.bold(title), ...rules.map((r) => {
+      const lines = wrap(`${tag(r)}${r.text}`, WIDTH - 4);
+      // the id stays on the last line of the text when it fits, else it gets its own
+      if (lines.at(-1)!.length + 2 + r.id.length <= WIDTH - 4) lines.push(`${lines.pop()}  ${t.dim(r.id)}`); else lines.push(t.dim(r.id));
+      return `  ${paint[markOf(r)](MARKS[markOf(r)])} ${lines.join("\n    ")}`;
+    }), "");
+  }
+  const count = (m: Mark) => rows.filter((r) => markOf(r) === m).length;
+  const marks = Object.keys(MARKS) as Mark[];
+  out.push(`${rows.length} ${rows.length === 1 ? "rule" : "rules"}: ${marks.map((m) => `${count(m)} ${m}`).join(", ")}.`);
+  out.push(t.dim(`${marks.map((m) => `${MARKS[m]} ${m}`).join("   ")}. Held back means your agent does not get the rule.`));
+  out.push("Next: idiolect rules approve|reject|edit <id>, or idiolect ui to do it in the browser.");
+  return out.join("\n");
+}
+
 export function rulesCommand(): Command {
   const rules = new Command("rules").description("approve, reject or edit rules");
   const repoOpt = (c: Command) => c.option("--repo <path>", "repository path, for the confidence threshold", ".");
 
-  repoOpt(rules.command("list").description("one line per rule: status, confidence, id, text"))
+  repoOpt(rules.command("list").description("the rules by section, each marked served, held back, pending or rejected"))
     .option("--status <status>", "auto | pending | approved | rejected | edited")
-    .option("--lang <language>", "kotlin | any")
+    .option("--lang <language>", "kotlin | typescript | python | go | any")
     .option("--category <category>", "naming | comments | structure | errors | framework | commits | avoid")
     .action(async (o: { repo: string; status?: string; lang?: string; category?: string }) => {
       const profile = await load(o.repo);
-      const { confidenceThreshold } = await loadRepoConfig(resolve(o.repo));
-      const width = (process.stdout.columns || 120) - 1;
+      const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"]).catch(() => "")).trim() || resolve(o.repo);
+      const { confidenceThreshold } = await loadRepoConfig(repo);
       const rows = profile.rules.filter((r) => (!o.status || r.status === o.status) && (!o.lang || r.language === o.lang) && (!o.category || r.category === o.category));
-      for (const r of rows) {
-        const served = r.confidence >= confidenceThreshold ? " " : "-";
-        const line = `${r.status.padEnd(8)} ${served}${r.confidence.toFixed(2)}  ${r.id}  ${tag(r)}${r.text}`;
-        console.log(line.length > width ? `${line.slice(0, width - 1)}…` : line);
-      }
-      const by = (st: string) => rows.filter((r) => r.status === st).length;
-      console.log(`\n${rows.length} rules (${by("auto")} auto, ${by("pending")} pending, ${by("approved")} approved, ${by("edited")} edited, ${by("rejected")} rejected). "-" before the confidence means below the threshold ${confidenceThreshold}, stored but not served.`);
+      console.log(renderRules(rows, (r) => isServed(r, confidenceThreshold, profile.borrowed) && (!r.repo || r.repo === repo)));
     });
 
   repoOpt(rules.command("show <id>").description("full text and evidence of one rule")).action(async (id: string, o: { repo: string }) => {

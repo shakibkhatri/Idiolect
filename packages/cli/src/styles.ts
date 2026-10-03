@@ -69,7 +69,9 @@ async function ask(q: string): Promise<string> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   try { return await rl.question(q); } catch { return ""; } finally { rl.close(); }
 }
-const names = (ls: Language[]) => ls.map((l) => LANGUAGE_NAMES[l]).join(ls.length === 2 ? " and " : ", ");
+const list = (xs: string[]) => (xs.length < 3 ? xs.join(" and ") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
+const names = (ls: Language[]) => list(ls.map((l) => LANGUAGE_NAMES[l]));
+export const FOLLOWS = "Your agent follows the style from its next session.";
 
 /** The styles for the languages this project uses. Every style when it has no source yet or when asked for all. */
 async function forProject(repo: string, everything?: boolean) {
@@ -180,14 +182,19 @@ export function useCommand(): Command {
       const inUse = new Set(LANGUAGES.map((l) => picked[l]).filter(Boolean));
       if (!picked.commits || !inUse.has(picked.commits)) picked.commits = chosen[0]!.id;
       await updateRepoConfig(repo, { styles: picked });
-      for (const l of LANGUAGES) if (picked[l]) console.log(`${l.padEnd(10)} ${picked[l]}`);
-      console.log(`${"commits".padEnd(10)} ${picked.commits}`);
-      if (!o.sync) return;
+      // someone who just picked from the menu knows the mapping, ids on the command line get it confirmed
+      if (ids.length) {
+        for (const l of LANGUAGES) if (picked[l]) console.log(`${l.padEnd(10)} ${picked[l]}`);
+        console.log(`${"commits".padEnd(10)} ${picked.commits}\n`);
+      }
+      if (!o.sync) { console.log("Recorded in .idiolect/config.json, the agent files are untouched.\nNext: idiolect sync to write them."); return; }
       const config = await loadRepoConfig(repo);
       const profile = (await loadServedProfile(repo))!;
       const create = await filesToCreate(repo, await onPath("claude"));
       const results = await syncTargets(repo, renderStyleMd(profile, { threshold: config.confidenceThreshold, repo }), o.target ?? config.sync.targets, create);
-      for (const r of results) if (r.status !== "skipped") console.log(`${r.status.padEnd(9)} ${r.file}`);
+      const written = results.filter((r) => r.status === "created" || r.status === "updated").map((r) => r.file);
+      console.log(written.length ? `Written to ${list(written)}.\n${FOLLOWS}` : `${list(results.filter((r) => r.status === "unchanged").map((r) => r.file))} already ${results.filter((r) => r.status === "unchanged").length === 1 ? "holds" : "hold"} this style.`);
+      console.log("Check existing code: idiolect unbot --all.");
       // one line for the agents that are not set up here, a row each was noise for someone who uses one agent
       const skipped = results.filter((r) => r.status === "skipped").map((r) => r.file);
       if (skipped.length) console.log(`\nnot written, those agents are not set up here: ${skipped.join(", ")}\nto write one anyway: idiolect use --target <file>`);

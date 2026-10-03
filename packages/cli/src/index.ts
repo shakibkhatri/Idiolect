@@ -3,9 +3,10 @@ import { analyze, fileSpread, languageOf, EXTENSIONS, isTestPath, collect, detec
 import { DEFAULT_TASKS_DIR, loadTasks, renderReport, runEval, type Report } from "@shakibkhatri/idiolect-eval";
 import { createIdiolectServer } from "@shakibkhatri/idiolect-mcp";
 import { renderHelp, TAGLINE } from "./help.js";
+import { scanSummary } from "./summary.js";
 import { syncTargets } from "./sync.js";
 import { NO_PROFILE, rulesCommand, writeStyle } from "./rules.js";
-import { onPath, stylesCommand, useCommand } from "./styles.js";
+import { FOLLOWS, onPath, stylesCommand, useCommand } from "./styles.js";
 import { hooksCommand, unbotCommand } from "./unbot.js";
 import { refreshCommand } from "./refresh.js";
 import { start, statusCommand } from "./start.js";
@@ -100,7 +101,8 @@ program.command("scan")
   .option("--no-cache", "ignore the blame cache")
   .option("--no-llm", "metric rules only, no LLM call")
   .option("--dry-run", "print what would be sent to the LLM and stop")
-  .action(async (o: { repo: string; cache: boolean; llm: boolean; dryRun?: boolean }) => {
+  .option("--verbose", "also print the measured statistics per language")
+  .action(async (o: { repo: string; cache: boolean; llm: boolean; dryRun?: boolean; verbose?: boolean }) => {
     const repo = resolve(o.repo);
     const user = await loadUserConfig();
     if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
@@ -109,7 +111,7 @@ program.command("scan")
     const c = await collect({ repo, emails: user.emails, ignore: config.ignore, cache: o.cache, extensions: config.languages.flatMap((l) => EXTENSIONS[l]) });
     const linesOwned = c.files.reduce((n, f) => n + f.ownedLines, 0);
     if (!c.files.length && !c.commits.length) throw new Error(`none of your emails (${user.emails.join(", ")}) appear in this repo, run: idiolect init`);
-    process.stderr.write(`collected ${c.files.length} files, ${linesOwned} owned lines, ${c.commits.length} commits${c.agentCommits ? `, ${c.agentCommits} agent commits excluded` : ""} (${Date.now() - t0}ms)\n`);
+    if (o.verbose) process.stderr.write(`collected ${c.files.length} files, ${linesOwned} owned lines, ${c.commits.length} commits${c.agentCommits ? `, ${c.agentCommits} agent commits excluded` : ""} (${Date.now() - t0}ms)\n`);
 
     const stats: Partial<Record<Language, LanguageStats>> = {};
     const perFile: Partial<Record<Language, LanguageStats[]>> = {};
@@ -151,8 +153,12 @@ program.command("scan")
     await saveProfile(profile);
     await writeStyle(profile, config.confidenceThreshold);
     const project = profile.rules.filter((r) => r.repo === repo).length;
-    if (project) process.stderr.write(`${project} rules for this repo only, shown by idiolect show inside it\n`);
+    if (project && o.verbose) process.stderr.write(`${project} rules for this repo only, shown by idiolect show inside it\n`);
 
+    if (!o.verbose) {
+      console.log(scanSummary(profile, stats, { commits: c.commits.length, agentCommits: c.agentCommits, llm: !!provider }));
+      return;
+    }
     const { summarizeLanguage, summarizeCommits } = await import("./summary.js");
     console.log(`\nThis repo`);
     for (const [lang, st] of Object.entries(stats) as [Language, LanguageStats][]) console.log(summarizeLanguage(lang, st));
@@ -193,7 +199,8 @@ program.command("sync")
     const config = await loadRepoConfig(repo);
     const body = renderStyleMd(profile, { threshold: config.confidenceThreshold, repo });
     const results = await syncTargets(repo, body, o.target ?? config.sync.targets);
-    for (const r of results) console.log(`${r.status.padEnd(9)} ${r.file}${r.status === "skipped" ? "  (not present, list it in sync.targets or pass --target to create it)" : ""}`);
+    for (const r of results) if (r.status !== "skipped") console.log(`${r.status.padEnd(9)} ${r.file}`);
+    console.log(results.some((r) => r.status === "created" || r.status === "updated") ? `\n${FOLLOWS}` : "\nNothing to write, the agent files already hold this style.");
   });
 
 program.addCommand(stylesCommand());

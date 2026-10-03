@@ -13,7 +13,7 @@ export { redact } from "./redact.js";
 export { collectSamples, estimateTokens, type Samples, type Sample, type SampleInput } from "./sampler.js";
 export { createProvider, type LlmProvider, type LlmRequest } from "./llm.js";
 export { writeRules, buildPrompt, reconcile, isServed, SYSTEM_PROMPT } from "./writer.js";
-export { renderStyleMd, appliesTo, monthYear, type RenderOptions } from "./render.js";
+export { renderStyleMd, appliesTo, monthYear, type RenderOptions, SECTIONS } from "./render.js";
 export { checkStyle, type Violation, type CheckOptions } from "./check.js";
 export { unbot, deepCheck, voiceRules, rewriteLikeMe, type RewriteScope } from "./unbot.js";
 export { loadServedProfile, saveOverrides } from "./served.js";
