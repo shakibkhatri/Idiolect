@@ -94,10 +94,26 @@ Pick a style that ships with idiolect instead.
 Each one was learned from a well-known open source project, reviewed by a person and frozen.
 
 ```
-npx -y idiolect styles                              # what ships, one line each
-npx -y idiolect styles show kotlin-tivi             # where a style comes from and its rules
-npx -y idiolect use kotlin-tivi typescript-vue      # one per language, written into CLAUDE.md and AGENTS.md
+cd your-project
+npx -y idiolect use
 ```
+
+`use` looks at what the project is written in, shows the styles for those languages as a numbered list, and asks for a number.
+
+```
+This project is written in Kotlin and TypeScript.
+
+Kotlin
+   1  kotlin-tivi     Few comments, no KDoc, noun-phrase names, short plain commits
+
+TypeScript
+   2  typescript-vue  No semicolons, terse lowercase comments, short functions
+
+Type the number of the style you want, one per language [1 2]:
+```
+
+A language with under 5% of the project's source files is left out, `--all` shows every style.
+`idiolect styles` prints the same list without asking, `idiolect styles show kotlin-tivi` says where a style comes from and lists its rules, and `idiolect use kotlin-tivi typescript-vue` picks by name for scripts.
 
 `use` always creates `AGENTS.md`, the file most agents read.
 It creates `CLAUDE.md` only when Claude Code is in use, meaning it is installed or the repo has a `.claude` folder, and a Cursor rule only when the repo has a `.cursor` folder.

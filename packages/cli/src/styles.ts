@@ -1,33 +1,94 @@
-import { buildStyle, composeStyles, git, listStyles, loadProfile, loadRepoConfig, loadServedProfile, loadStyle, monthYear, renderStyleMd, STYLES_DIR, updateRepoConfig, type Language, type Picked, type Style } from "@shakibkhatri/idiolect-core";
+import { buildStyle, composeStyles, git, languageOf, listStyles, loadProfile, loadRepoConfig, loadServedProfile, loadStyle, monthYear, renderStyleMd, STYLES_DIR, updateRepoConfig, type Language, type Picked, type Style } from "@shakibkhatri/idiolect-core";
 import { Command } from "commander";
 import { execFile } from "node:child_process";
-import { mkdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
+import { createInterface } from "node:readline/promises";
 import { join, resolve } from "node:path";
 import { syncTargets } from "./sync.js";
 
 const LANGUAGES = ["kotlin", "typescript", "python", "go"] as const;
 const LANGUAGE_NAMES: Record<Language, string> = { kotlin: "Kotlin", typescript: "TypeScript", python: "Python", go: "Go" };
 
-/** One short line per style under its language, so a long catalogue stays readable in a narrow terminal. */
-export function renderList(all: Style[]): string {
+/** One short line per style under its language, so a long catalogue stays readable in a narrow terminal. Numbered when it is a menu. */
+export function renderList(all: Style[], opts: { numbered?: boolean; hidden?: number } = {}): string {
   if (!all.length) return "no styles ship with this build";
   const width = Math.max(...all.map((s) => s.id.length));
   const out: string[] = [];
+  let n = 0;
   for (const l of LANGUAGES) {
     const styles = all.filter((s) => s.language === l);
     if (!styles.length) continue;
     out.push(LANGUAGE_NAMES[l]);
-    for (const s of styles) out.push(`  ${s.id.padEnd(width)}  ${s.summary}${s.experimental ? "  (experimental)" : ""}`);
+    for (const s of styles) out.push(`  ${opts.numbered ? `${String(++n).padStart(2)}  ` : ""}${s.id.padEnd(width)}  ${s.summary}${s.experimental ? "  (experimental)" : ""}`);
     out.push("");
   }
-  out.push("details: idiolect styles show <style>", "pick one per language: idiolect use <style...>");
-  return out.join("\n");
+  if (opts.hidden) out.push(`${opts.hidden} more for other languages: idiolect styles --all`);
+  return out.join("\n").trimEnd();
 }
+
+/** The order the menu numbers follow: by language, then as listed. */
+export const menuOrder = (all: Style[]) => LANGUAGES.flatMap((l) => all.filter((s) => s.language === l));
+
+/** Languages worth offering a style for: at least 5% of the project's source files, and always the biggest one. */
+export function relevantLanguages(counts: Partial<Record<Language, number>>): Language[] {
+  const entries = (Object.entries(counts) as [Language, number][]).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+  const total = entries.reduce((n, [, c]) => n + c, 0);
+  return entries.filter(([, c], i) => i === 0 || c / total >= 0.05).map(([l]) => l);
+}
+
+const SKIP_DIRS = new Set(["node_modules", "build", "dist", "out", "vendor", "target"]);
+async function walk(dir: string, depth: number, files: string[]) {
+  for (const e of await readdir(dir, { withFileTypes: true }).catch(() => [])) {
+    if (e.isDirectory()) { if (depth > 0 && !e.name.startsWith(".") && !SKIP_DIRS.has(e.name)) await walk(join(dir, e.name), depth - 1, files); }
+    else files.push(e.name);
+  }
+}
+
+/** Counts source files per language: what git tracks or would track, or a shallow walk outside a git repo. */
+export async function projectLanguages(repo: string): Promise<Language[]> {
+  let files = (await git(repo, ["ls-files", "--cached", "--others", "--exclude-standard"]).catch(() => "")).split("\n").filter(Boolean);
+  if (!files.length) await walk(repo, 6, files = []);
+  const counts: Partial<Record<Language, number>> = {};
+  for (const f of files) { const l = languageOf(f); if (l) counts[l] = (counts[l] ?? 0) + 1; }
+  return relevantLanguages(counts);
+}
+
+/** Reads menu numbers. One style per language, so two numbers of the same language are refused. */
+export function parsePick(input: string, shown: Style[]): Style[] {
+  const picked = input.split(/[\s,]+/).filter(Boolean).map((t) => {
+    const s = /^\d+$/.test(t) ? shown[Number(t) - 1] : undefined;
+    if (!s) throw new Error(`${t} is not one of 1 to ${shown.length}`);
+    return s;
+  });
+  const twice = LANGUAGES.find((l) => picked.filter((s) => s.language === l).length > 1);
+  if (twice) throw new Error(`pick one ${LANGUAGE_NAMES[twice]} style, not several`);
+  return picked;
+}
+
+async function ask(q: string): Promise<string> {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try { return await rl.question(q); } catch { return ""; } finally { rl.close(); }
+}
+const names = (ls: Language[]) => ls.map((l) => LANGUAGE_NAMES[l]).join(ls.length === 2 ? " and " : ", ");
+
+/** The styles for the languages this project uses. Every style when it has no source yet or when asked for all. */
+async function forProject(repo: string, everything?: boolean) {
+  const all = await listStyles();
+  const languages = everything ? [] : await projectLanguages(repo);
+  const shown = languages.length ? all.filter((s) => languages.includes(s.language)) : all;
+  return { languages, shown: shown.length ? shown : all, hidden: shown.length ? all.length - shown.length : 0 };
+}
+
 const toplevel = async (path: string) => (await git(resolve(path), ["rev-parse", "--show-toplevel"]).catch(() => resolve(path))).trim();
 
 export function stylesCommand(): Command {
-  const styles = new Command("styles").description("list the styles that ship with idiolect, learned from open source code and reviewed")
-    .action(async () => console.log(renderList(await listStyles())));
+  const styles = new Command("styles").description("list the styles for the languages this project uses, learned from open source code and reviewed")
+    .option("--repo <path>", "repository path", ".")
+    .option("--all", "every style, whatever the project is written in")
+    .action(async (o: { repo: string; all?: boolean }) => {
+      const { shown, hidden } = await forProject(await toplevel(o.repo), o.all);
+      console.log(`${renderList(shown, { hidden })}\n\ndetails: idiolect styles show <style>\npick: idiolect use`);
+    });
 
   styles.command("show <id>").description("where a style comes from and the rules it serves")
     .action(async (id: string) => {
@@ -80,15 +141,38 @@ export async function filesToCreate(repo: string, claudeInstalled: boolean): Pro
   return create;
 }
 
+/** Shows the numbered styles for this project and reads the choice. Enter takes the only style of each language when there is no choice to make. */
+async function pickFromMenu(repo: string, everything?: boolean): Promise<Style[]> {
+  const { languages, shown, hidden } = await forProject(repo, everything);
+  const menu = menuOrder(shown);
+  if (languages.length) console.log(`This project is written in ${names(languages)}.\n`);
+  console.log(`${renderList(menu, { numbered: true, hidden })}\n`);
+  const single = LANGUAGES.every((l) => menu.filter((s) => s.language === l).length <= 1);
+  const preset = single && languages.length ? menu.map((_, i) => i + 1).join(" ") : "";
+  for (;;) {
+    const answer = (await ask(`Type the number of the style you want, one per language${preset ? ` [${preset}]` : ""}: `)).trim() || preset;
+    if (!answer) throw new Error("no style picked");
+    try {
+      const picked = parsePick(answer, menu);
+      console.log("");
+      return picked;
+    } catch (e) {
+      console.log(`  ${(e as Error).message}`);
+      if (!process.stdin.isTTY) throw e;
+    }
+  }
+}
+
 export function useCommand(): Command {
   return new Command("use").description("serve shipped styles in this repo, one per language, and write them into the agent files")
-    .argument("<style...>", "style ids from idiolect styles")
+    .argument("[style...]", "style ids, leave out to pick from a numbered list")
     .option("--repo <path>", "repository path", ".")
     .option("--target <file...>", "agent files to write, overrides sync.targets in .idiolect/config.json")
+    .option("--all", "offer every style, whatever the project is written in")
     .option("--no-sync", "only record the choice, do not write agent files")
-    .action(async (ids: string[], o: { repo: string; target?: string[]; sync: boolean }) => {
+    .action(async (ids: string[], o: { repo: string; target?: string[]; all?: boolean; sync: boolean }) => {
       const repo = await toplevel(o.repo);
-      const chosen = await Promise.all(ids.map((id) => loadStyle(id)));
+      const chosen = ids.length ? await Promise.all(ids.map((id) => loadStyle(id))) : await pickFromMenu(repo, o.all);
       const picked: Picked = { ...(await loadRepoConfig(repo)).styles };
       for (const s of chosen) picked[s.language] = s.id;
       // commit rules come from one style: keep the owner while it is still picked, else the first one named now
