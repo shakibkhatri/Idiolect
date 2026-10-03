@@ -2,6 +2,7 @@
   "version": 1,
   "id": "typescript-vue",
   "title": "Vue core",
+  "summary": "No semicolons, terse lowercase comments, short functions",
   "language": "typescript",
   "source": {
     "project": "github.com/vuejs/core",

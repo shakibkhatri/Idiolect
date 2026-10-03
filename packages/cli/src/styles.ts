@@ -1,4 +1,4 @@
-import { buildStyle, git, listStyles, loadProfile, loadRepoConfig, loadServedProfile, loadStyle, monthYear, renderStyleMd, STYLES_DIR, updateRepoConfig, type Language, type Picked } from "@shakibkhatri/idiolect-core";
+import { buildStyle, composeStyles, git, listStyles, loadProfile, loadRepoConfig, loadServedProfile, loadStyle, monthYear, renderStyleMd, STYLES_DIR, updateRepoConfig, type Language, type Picked, type Style } from "@shakibkhatri/idiolect-core";
 import { Command } from "commander";
 import { execFile } from "node:child_process";
 import { mkdir, stat, writeFile } from "node:fs/promises";
@@ -6,35 +6,60 @@ import { join, resolve } from "node:path";
 import { syncTargets } from "./sync.js";
 
 const LANGUAGES = ["kotlin", "typescript", "python", "go"] as const;
+const LANGUAGE_NAMES: Record<Language, string> = { kotlin: "Kotlin", typescript: "TypeScript", python: "Python", go: "Go" };
+
+/** One short line per style under its language, so a long catalogue stays readable in a narrow terminal. */
+export function renderList(all: Style[]): string {
+  if (!all.length) return "no styles ship with this build";
+  const width = Math.max(...all.map((s) => s.id.length));
+  const out: string[] = [];
+  for (const l of LANGUAGES) {
+    const styles = all.filter((s) => s.language === l);
+    if (!styles.length) continue;
+    out.push(LANGUAGE_NAMES[l]);
+    for (const s of styles) out.push(`  ${s.id.padEnd(width)}  ${s.summary}${s.experimental ? "  (experimental)" : ""}`);
+    out.push("");
+  }
+  out.push("details: idiolect styles show <style>", "pick one per language: idiolect use <style...>");
+  return out.join("\n");
+}
 const toplevel = async (path: string) => (await git(resolve(path), ["rev-parse", "--show-toplevel"]).catch(() => resolve(path))).trim();
 
 export function stylesCommand(): Command {
   const styles = new Command("styles").description("list the styles that ship with idiolect, learned from open source code and reviewed")
-    .action(async () => {
-      const all = await listStyles();
-      if (!all.length) { console.log("no styles ship with this build"); return; }
-      const width = Math.max(...all.map((s) => s.id.length));
-      for (const s of all) {
-        const served = s.rules.filter((r) => r.kind !== "idiom").length;
-        console.log(`${s.id.padEnd(width)}  ${s.language.padEnd(10)}  ${s.title}, ${s.source.project}${s.source.snapshot ? `, code up to ${monthYear(s.source.snapshot)}` : ""}, ${served} rules${s.experimental ? "  (experimental, not reviewed by someone who writes the language)" : ""}`);
-      }
-      console.log("\npick one per language: idiolect use <style...>");
+    .action(async () => console.log(renderList(await listStyles())));
+
+  styles.command("show <id>").description("where a style comes from and the rules it serves")
+    .action(async (id: string) => {
+      const s = await loadStyle(id);
+      const md = renderStyleMd({ ...(await composeStyles({ [s.language]: s.id })), borrowed: ["voice", "layout"] }, { threshold: 0.6 });
+      const held = s.rules.filter((r) => r.kind === "idiom").length;
+      console.log([
+        `${s.id}  ${LANGUAGE_NAMES[s.language]}${s.experimental ? "  experimental: nobody who writes the language has reviewed it" : ""}`,
+        s.summary, "",
+        `source    ${s.title}, ${s.source.project}, ${s.source.license}`,
+        `snapshot  ${s.source.snapshot ? `code up to ${monthYear(s.source.snapshot)}, ` : ""}commit ${s.source.commit.slice(0, 8)}, ${s.source.lines} lines`,
+        `rules     ${s.rules.length - held} served${held ? `, ${held} on language features held back` : ""}`, "",
+        md.slice(md.indexOf("## ")).trimEnd(),
+      ].join("\n"));
     });
 
   styles.command("build").description("maintainers: cut a shippable style from a scanned and reviewed profile")
     .requiredOption("--email <email>", "the scanned profile in ~/.idiolect/profiles")
     .requiredOption("--id <id>", "style id, like kotlin-tivi")
     .requiredOption("--title <title>", "the project the style is named after")
+    .requiredOption("--summary <text>", "one short line on what the style feels like, shown in the list")
     .requiredOption("--language <language>", LANGUAGES.join(" | "))
     .requiredOption("--project <url>", "where the code lives, like github.com/chrisbanes/tivi")
     .requiredOption("--license <license>", "license of the source project")
     .option("--experimental", "nobody who writes the language has reviewed it")
     .option("--out <dir>", "where to write the style", STYLES_DIR)
-    .action(async (o: { email: string; id: string; title: string; language: string; project: string; license: string; experimental?: boolean; out: string }) => {
+    .action(async (o: { email: string; id: string; title: string; summary: string; language: string; project: string; license: string; experimental?: boolean; out: string }) => {
       if (!(LANGUAGES as readonly string[]).includes(o.language)) throw new Error(`unknown language ${o.language}`);
+      if (o.summary.length > 60) throw new Error(`the summary is ${o.summary.length} characters, keep it to 60 so the list fits a terminal line`);
       const profile = await loadProfile(o.email);
       if (!profile) throw new Error(`no profile for ${o.email}`);
-      const style = buildStyle(profile, { id: o.id, title: o.title, language: o.language as Language, project: o.project, license: o.license, experimental: o.experimental });
+      const style = buildStyle(profile, { id: o.id, title: o.title, summary: o.summary, language: o.language as Language, project: o.project, license: o.license, experimental: o.experimental });
       const unreviewed = profile.rules.filter((r) => !r.evidence.metric && !r.repo && r.status === "auto").length;
       await mkdir(o.out, { recursive: true });
       await writeFile(join(o.out, `${o.id}.json`), JSON.stringify(style, null, 2) + "\n");

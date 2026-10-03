@@ -10,6 +10,7 @@ export type Style = {
   version: 1;
   id: string;
   title: string;
+  summary: string;      // one line on what the style feels like, written by whoever builds it
   language: Language;
   experimental?: boolean;
   source: { project: string; license: string; commit: string; snapshot?: string; lines: number };
@@ -32,7 +33,7 @@ export async function loadStyle(id: string, dir = STYLES_DIR): Promise<Style> {
   return style;
 }
 
-export type BuildOptions = { id: string; title: string; language: Language; project: string; license: string; experimental?: boolean };
+export type BuildOptions = { id: string; title: string; summary: string; language: Language; project: string; license: string; experimental?: boolean };
 
 /**
  * Metric rules go in as measured. A rule the LLM wrote goes in only once a person approved or edited it,
@@ -53,7 +54,7 @@ export function buildStyle(profile: Profile, o: BuildOptions): Style {
   const newest = profile.sources.map((s) => s.headDate).filter((d): d is string => !!d).sort().at(-1);
   const head = profile.sources.find((s) => s.headDate === newest) ?? profile.sources[0];
   return {
-    version: 1, id: o.id, title: o.title, language: o.language, ...(o.experimental ? { experimental: true } : {}),
+    version: 1, id: o.id, title: o.title, summary: o.summary, language: o.language, ...(o.experimental ? { experimental: true } : {}),
     source: { project: o.project, license: o.license, commit: head?.head ?? "", ...(newest ? { snapshot: newest } : {}), lines: stats.loc },
     stats, commitStats: profile.commitStats, rules,
   };
@@ -77,7 +78,8 @@ export async function composeStyles(picked: Picked, dir = STYLES_DIR): Promise<P
 
   const rules = [...languages.flatMap(({ language, style }) => style.rules.filter((r) => r.language === language)), ...owner.rules.filter((r) => r.language === "any")];
   const used = [...new Map([...languages.map((l) => l.style), owner].map((s) => [s.id, s])).values()];
-  const from = (s: Style) => `${s.title} (${s.source.project}${s.source.snapshot ? `, code up to ${monthYear(s.source.snapshot)}` : ""})`;
+  // the agent needs the name and the age, where the code lives is in idiolect styles show
+  const from = (s: Style) => `${s.title}${s.source.snapshot ? ` (code up to ${monthYear(s.source.snapshot)})` : ""}`;
   const parts = [...languages.map(({ language, style }) => `${LANGUAGE_NAMES[language]} from ${from(style)}`), `commit messages from ${owner.title}`];
   return {
     version: 1,

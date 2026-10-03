@@ -2,6 +2,7 @@
   "version": 1,
   "id": "go-caddy",
   "title": "Caddy",
+  "summary": "Documented declarations, short locals, inline error checks",
   "language": "go",
   "experimental": true,
   "source": {

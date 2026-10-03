@@ -2,6 +2,7 @@
   "version": 1,
   "id": "kotlin-tivi",
   "title": "Tivi",
+  "summary": "Few comments, no KDoc, noun-phrase names, short plain commits",
   "language": "kotlin",
   "source": {
     "project": "github.com/chrisbanes/tivi",

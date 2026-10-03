@@ -94,7 +94,8 @@ Pick a style that ships with idiolect instead.
 Each one was learned from a well-known open source project, reviewed by a person and frozen.
 
 ```
-npx -y idiolect styles                              # what ships
+npx -y idiolect styles                              # what ships, one line each
+npx -y idiolect styles show kotlin-tivi             # where a style comes from and its rules
 npx -y idiolect use kotlin-tivi typescript-vue      # one per language, written into CLAUDE.md and AGENTS.md
 ```
 

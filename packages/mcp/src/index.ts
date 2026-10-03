@@ -20,7 +20,7 @@ Rules with numbers bound how much to write. Match those before matching voice.`;
 
 /** Profile, repo and threshold for one call. Resolves file against cwd and the repo from the file, else from cwd. */
 export function createIdiolectServer(deps: ServerDeps): McpServer {
-  const server = new McpServer({ name: "idiolect", version: "0.1.0" });
+  const server = new McpServer({ name: "idiolect", version: "0.1.1" });
   const cwd = deps.cwd ?? process.cwd();
 
   const toplevel = (dir: string) => git(dir, ["rev-parse", "--show-toplevel"]).then((x) => x.trim()).catch(() => "");

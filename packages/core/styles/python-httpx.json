@@ -2,6 +2,7 @@
   "version": 1,
   "id": "python-httpx",
   "title": "HTTPX",
+  "summary": "Sparse sentence comments, f-strings, small flat functions",
   "language": "python",
   "experimental": true,
   "source": {
