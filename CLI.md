@@ -73,7 +73,7 @@ Each point was observed in the running tool, not guessed.
 It has four states, decided from the repo config, `~/.idiolect` and the agent files.
 
 **No style served, no personal profile.**
-Say what the tool does in two lines, then offer the two paths: pick a shipped style, or learn your own from this repo's history.
+Say what the tool does in two lines, then offer the two paths: pick a house style, or learn your own from this repo's history.
 In a TTY this is a two-item numbered prompt that runs `use` or `init` then `scan`.
 In a pipe it prints the two commands and exits 0.
 
@@ -100,7 +100,7 @@ That fixes point 6.
 
 ```
 Get a style
-  use        pick a ready-made style for this project
+  use        pick a house style for this project
   init       set up learning your own style from your git history
   scan       learn or update your own style
   sync       write the style into your agent's instruction files
@@ -110,7 +110,7 @@ Review and check
   rules      approve, reject or edit rules
   ui         do the same in the browser
   unbot      flag code that breaks the style or sounds like AI
-  styles     list the ready-made styles
+  styles     list the house styles
 
 Advanced
   mcp, hooks, status, refresh, eval
@@ -118,7 +118,7 @@ Advanced
 
 The Advanced group names its commands without descriptions, `idiolect help <command>` gives the detail.
 `styles build` is a maintainer command and is not listed anywhere except under `idiolect help styles`.
-The top-level description becomes one line that covers both audiences, for example "Give your AI coding agent a style to write in: your own, or a ready-made one".
+The top-level description becomes one line that covers both audiences, for example "Give your AI coding agent a style to write in: your own, or a house style".
 commander supports this with `configureHelp` or `addHelpText`, no new dependency.
 
 ### 3. One vocabulary
@@ -130,10 +130,16 @@ The user-facing word is **style**, whether shipped or learned.
 | Today, in user-facing text | After |
 |---|---|
 | your profile, your style profile | your style |
-| shipped styles | ready-made styles |
+| shipped styles | house styles |
 | the profile as served | the style your agent reads |
 | project rules | rules for this repo only |
 | borrowed | not shown to users, the header in the agent files keeps it |
+
+**House styles** is the name for the styles that ship with idiolect, decided by Shakib on 2026-10-03.
+In publishing a house style is the way one publisher writes, here it is the way one project writes its code, which fits naming a style after the project and not the person.
+Say "the house style of Vue core" and "pick a house style", the command stays `idiolect styles` and the ids stay as they are.
+"Shipped style" remains the internal word in code, the spec and this brief.
+"Voices" was the runner-up and was dropped because voice is already one of the three rule kinds.
 
 Every `description`, every error message and every line of output in `packages/cli/src` gets this pass.
 `NO_PROFILE` in `rules.ts` is the one message most new users see, it should read as a next step and not as an error.
@@ -230,7 +236,8 @@ Each step is a branch, verified, merged and reported before the next starts.
 1. **`term.ts`**: TTY check, colour with `NO_COLOR`, spinner.
    Done when a unit test shows plain output in a pipe and coloured output in a fake TTY.
 2. **Vocabulary pass** over every user-facing string.
-   Done when no user-facing line says "profile" and `grep` over `packages/cli/src` shows it only in identifiers and paths.
+   Done when no user-facing line says "profile" or "shipped", the styles that ship are called house styles everywhere a user reads, and `grep` over `packages/cli/src` shows "profile" only in identifiers and paths.
+   The README's section "No code of your own yet" and the list printed by `idiolect styles` get the same wording.
 3. **Grouped help** and the new top-level description.
    Done when `idiolect --help` fits 80 columns and shows the three groups.
 4. **Bare `idiolect`** with its four states, and `status` as its alias.
@@ -258,7 +265,8 @@ Steps 6 and 7 are polish and can ship in a later release.
 
 ## Open decisions for Shakib
 
-1. Whether "ready-made styles" is the right user-facing name for shipped styles.
-2. Whether bare `idiolect` should prompt at all, or only report and print the commands.
-3. Whether `use --none` should delete an `AGENTS.md` that idiolect created and that holds nothing else.
-4. Whether 0.2.0 waits for steps 6 and 7 or ships after step 5.
+1. Whether bare `idiolect` should prompt at all, or only report and print the commands.
+2. Whether `use --none` should delete an `AGENTS.md` that idiolect created and that holds nothing else.
+3. Whether 0.2.0 waits for steps 6 and 7 or ships after step 5.
+
+Decided: the user-facing name for shipped styles is "house styles", see the vocabulary section.

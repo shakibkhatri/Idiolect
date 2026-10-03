@@ -177,7 +177,7 @@ The agent cannot start headless `claude` in his setup, the permission classifier
 
 ## Open items, in order
 
-1. The CLI redesign in `CLI.md`. Shakib finds the CLI basic and cluttered. He asked for the brief on 2026-10-03 and has not yet said go, and it ends with four decisions that are his. Steps 1 to 5 are the redesign, 6 and 7 are polish, it ships as 0.2.0.
+1. The CLI redesign in `CLI.md`. Shakib finds the CLI basic and cluttered. He asked for the brief on 2026-10-03 and has not yet said go, and it ends with three decisions that are his. He already decided that shipped styles are called "house styles" in everything a user reads. Steps 1 to 5 are the redesign, 6 and 7 are polish, it ships as 0.2.0.
 1. Shakib's own profile is the stale 79-rule one from before the leak fix, and Dissent no longer serves it. One `idiolect scan` in Dissent rebuilds it clean. To serve it again he removes `styles` from Dissent's config.
 2. Retake the quiz with the clean baseline, suggestion 29. It is the only way to know whether the chance-level verdict was real.
 3. More styles, suggestion 31. Shakib wants to learn from more open source projects. One project and one main author per style, recipe in `scripts/styles/README.md`.
