@@ -65,3 +65,27 @@ test("during closes the spinner with done on success and failed on an error", as
   await expect(t.during("asking again", async () => { throw new Error("no"); })).rejects.toThrow("no");
   expect(out.chunks).toEqual(["asking\n", "done in 0s\n", "asking again\n", "failed after 0s\n"]);
 });
+
+test("select moves with the arrow keys, wraps around, jumps on a digit and returns the row under Enter", async () => {
+  const { EventEmitter } = await import("node:events");
+  const { select } = await import("./term.js");
+  const keys = Object.assign(new EventEmitter(), { isTTY: true, raw: [] as boolean[], setRawMode(on: boolean) { this.raw.push(on); }, resume() {}, pause() {} });
+  const screen = fake(true);
+  const choices = [{ value: "a", label: "alpha", hint: "first" }, { value: "b", label: "be", hint: "second" }, { value: "c", label: "gamma" }];
+  const picked = select(choices, 0, keys, createTerm(screen, { NO_COLOR: "1" }), screen);
+  expect(screen.chunks.at(-1)).toContain("> alpha - first\n");
+  expect(screen.chunks.at(-1)).toContain("  be    - second\n");
+  keys.emit("keypress", undefined, { name: "up" }); // wraps to the last row
+  expect(screen.chunks.at(-1)).toContain("> gamma\n");
+  keys.emit("keypress", "2", { name: "2" });
+  keys.emit("keypress", undefined, { name: "down" });
+  keys.emit("keypress", "x", { name: "x" }); // an unknown key changes nothing
+  keys.emit("keypress", undefined, { name: "return" });
+  expect(await picked).toBe("c");
+  expect(keys.raw).toEqual([true, false]);
+  expect(screen.chunks.at(-1)).toContain(`${ESC}[?25h`); // the cursor is shown again
+
+  // without a terminal there is no list, the caller asks for a typed answer
+  expect(await select(choices, 0, Object.assign(new EventEmitter(), { isTTY: false, resume() {}, pause() {} }), createTerm(screen, {}), screen)).toBeUndefined();
+  expect(await select(choices, 0, keys, createTerm(fake(false), {}), screen)).toBeUndefined();
+});

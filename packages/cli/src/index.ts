@@ -5,7 +5,7 @@ import { createIdiolectServer } from "@shakibkhatri/idiolect-mcp";
 import { renderHelp, TAGLINE } from "./help.js";
 import { removeCommand } from "./remove.js";
 import { llmHint, scanSummary } from "./summary.js";
-import { progress } from "./term.js";
+import { progress, select, type Choice } from "./term.js";
 import { syncTargets } from "./sync.js";
 import { NO_PROFILE, rulesCommand, writeStyle } from "./rules.js";
 import { FOLLOWS, onPath, stylesCommand, useCommand } from "./styles.js";
@@ -67,14 +67,23 @@ program.command("init")
     if (!provider || provider === "none" && !o.provider && !user) {
       const hasClaude = await onPath("claude");
       const def = hasClaude ? "claude-cli" : "none";
+      const choices: Choice<Provider>[] = [
+        { value: "claude-cli", label: "claude-cli", hint: `your installed Claude Code, uses your existing plan${hasClaude ? ", found" : ", not found on PATH"}` },
+        { value: "anthropic", label: "anthropic", hint: "API key in ANTHROPIC_API_KEY" },
+        { value: "openai", label: "openai", hint: "API key in OPENAI_API_KEY, model in llm.model" },
+        { value: "gemini", label: "gemini", hint: "API key in GEMINI_API_KEY, model in llm.model" },
+        { value: "openai-compatible", label: "openai-compatible", hint: "Ollama, LM Studio, vLLM, any local server" },
+        { value: "none", label: "none", hint: "nothing is sent, metric rules only" },
+      ];
       console.log(`\nLLM provider. Samples of your code go to it to phrase the rules.`);
-      console.log(`  claude-cli         your installed Claude Code, uses your existing plan${hasClaude ? "  <- found" : "  (not found on PATH)"}`);
-      console.log(`  anthropic          API key in ANTHROPIC_API_KEY`);
-      console.log(`  openai, gemini     API key, and llm.model in ~/.idiolect/config.json`);
-      console.log(`  openai-compatible  Ollama, LM Studio, vLLM, any local server`);
-      console.log(`  none               nothing is sent, metric rules only`);
-      const answer = o.yes ? "" : (await ask(`Provider [${def}]: `)).trim();
-      provider = (answer || def) as Provider;
+      // arrow keys in a terminal, the typed name everywhere else
+      const picked = o.yes ? def : await select(choices, choices.findIndex((c) => c.value === def));
+      if (picked) provider = picked;
+      else {
+        const width = Math.max(...choices.map((c) => c.label.length));
+        for (const c of choices) console.log(`  ${c.label.padEnd(width)} - ${c.hint}`);
+        provider = ((await ask(`Provider [${def}]: `)).trim() || def) as Provider;
+      }
     }
     if (!PROVIDERS.includes(provider)) throw new Error(`unknown provider ${provider}`);
 

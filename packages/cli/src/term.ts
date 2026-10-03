@@ -1,4 +1,6 @@
-/** Colour, spinner and the TTY check for every command, so none of them writes ANSI codes itself. */
+import { emitKeypressEvents } from "node:readline";
+
+/** Colour, spinner, the arrow-key list and the TTY check for every command, so none of them writes ANSI codes itself. */
 export type Out = { isTTY?: boolean; write(text: string): unknown };
 type Env = Record<string, string | undefined>;
 
@@ -60,3 +62,48 @@ export function createTerm(stream: Out = process.stdout, env: Env = process.env,
 export const term = createTerm();
 // progress goes to stderr, so a piped stdout holds only the result
 export const progress = createTerm(process.stderr);
+
+export type Choice<T> = { value: T; label: string; hint?: string };
+type Keys = { isTTY?: boolean; setRawMode?(raw: boolean): unknown; resume(): unknown; pause(): unknown; on(event: "keypress", fn: KeyHandler): unknown; off(event: "keypress", fn: KeyHandler): unknown };
+type KeyHandler = (text: string | undefined, key: { name?: string; ctrl?: boolean } | undefined) => void;
+
+/**
+ * A list to move through with the arrow keys, Enter chooses. Digits jump to a row and j, k move too.
+ * Returns undefined without a terminal on both ends, so the caller falls back to a typed answer.
+ */
+export function select<T>(choices: Choice<T>[], start = 0, input: Keys = process.stdin, t: Term = term, out: Out = process.stdout): Promise<T | undefined> {
+  if (!input.isTTY || !input.setRawMode || !t.interactive) return Promise.resolve(undefined);
+  const width = Math.max(...choices.map((c) => c.label.length));
+  let at = Math.min(Math.max(start, 0), choices.length - 1);
+  const row = (c: Choice<T>, i: number) => {
+    const text = `${c.label.padEnd(width)}${c.hint ? ` - ${c.hint}` : ""}`;
+    return i === at ? `${t.accent(">")} ${t.bold(text)}` : `  ${text}`;
+  };
+  const draw = (first: boolean) => out.write(`${first ? "" : `\x1b[${choices.length + 1}A`}${choices.map((c, i) => `\x1b[2K${row(c, i)}\n`).join("")}\x1b[2K${t.dim("Up and down to move, Enter to choose")}\n`);
+  return new Promise((done) => {
+    const finish = (value: T | undefined) => {
+      input.off("keypress", onKey);
+      input.setRawMode!(false);
+      input.pause();
+      // the hint line goes, the list stays with the choice marked
+      out.write("\x1b[1A\x1b[2K\x1b[?25h");
+      done(value);
+    };
+    const onKey: KeyHandler = (text, key) => {
+      if (key?.ctrl && key.name === "c") { finish(undefined); process.exit(130); }
+      if (key?.name === "return" || key?.name === "enter") return finish(choices[at]!.value);
+      const digit = text && /^[1-9]$/.test(text) ? Number(text) - 1 : -1;
+      if (key?.name === "up" || key?.name === "k") at = (at + choices.length - 1) % choices.length;
+      else if (key?.name === "down" || key?.name === "j") at = (at + 1) % choices.length;
+      else if (digit >= 0 && digit < choices.length) at = digit;
+      else return;
+      draw(false);
+    };
+    emitKeypressEvents(input as unknown as NodeJS.ReadableStream);
+    input.setRawMode!(true);
+    input.resume();
+    out.write("\x1b[?25l");
+    draw(true);
+    input.on("keypress", onKey);
+  });
+}
