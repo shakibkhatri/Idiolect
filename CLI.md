@@ -281,7 +281,7 @@ It ends with one line per thing removed and one line on what is left, for exampl
 - `status` stays as an alias of the bare report.
 - Output that scripts are known to read keeps its shape: `idiolect --version`, `unbot` violation lines and exit codes, `sync` status words, the `error: ` prefix.
 - The pre-commit and post-commit hooks call `idiolect unbot --staged` and `idiolect refresh`, both must stay silent when they have nothing to say.
-- The changes are user-visible, so they ship as 0.2.0.
+- The changes are user-visible, so they ship as 0.2.0, after step 7 of the order of work.
 
 ## Out of scope
 
@@ -312,12 +312,13 @@ Each step is a branch, verified, merged and reported before the next starts.
 7. **`idiolect remove`** with its three levels, and `use --none`.
    Done when, in a throwaway repo with a hand-written `CLAUDE.md` and an existing pre-commit hook, `use` then `hooks install` then `remove --project` leaves `git status` clean and both files byte for byte as they were, and the `AGENTS.md` idiolect created is gone.
    Level 3 is tested with an isolated `HOME`, never against Shakib's real `~/.idiolect`.
-8. **Picker preview.**
-9. **README and SPEC** updated to the new output, then release 0.2.0.
+8. **README and SPEC** updated to the new output, then release 0.2.0.
+   Shakib decided on 2026-10-03 that 0.2.0 ships after step 7.
+9. **Picker preview**, in a later release.
 
-Steps 1 to 5 are the redesign.
-Step 7 gives the user a way back and belongs in the same release as the redesign.
-Steps 6 and 8 are polish and can ship later.
+Steps 1 to 5 are the redesign, step 6 is progress and step 7 gives the user a way back.
+All seven are in 0.2.0.
+Only the picker preview waits.
 
 ## How to verify
 
@@ -333,8 +334,8 @@ Steps 6 and 8 are polish and can ship later.
 ## Open decisions for Shakib
 
 1. Whether bare `idiolect` should prompt at all, or only report and print the commands.
-2. Whether 0.2.0 waits for the polish steps 6 and 8 or ships after step 7.
 
 Decided on 2026-10-03:
+- 0.2.0 ships after step 7. The picker preview follows in a later release.
 - The user-facing name for shipped styles is "house styles", see the vocabulary section.
 - Removing deletes an agent file idiolect created that holds nothing else, and the user picks how much to remove, up to everything idiolect did, see section 7.
