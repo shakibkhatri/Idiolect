@@ -4,6 +4,7 @@ A brief for the agent who implements it.
 Written 2026-10-03 against `idiolect@0.1.2`.
 Steps 1 to 8 were built the same day and ship as 0.2.0, section 7 of `SPEC.md` says what exists.
 0.2.1 followed with what testing found and with new names for the house styles, so the ids in this brief, `kotlin-tivi` and the like, are the old ones.
+0.2.2 turned every menu into an arrow-key list, so where this brief says "type a number" a terminal now shows a list, and the typed number is what a pipe still gets.
 Step 9, the picker preview, is the only part not built.
 The text below is the brief as it was written, kept for the reasoning.
 Read `HANDOFF.md` first, it holds the working agreements and the things that bit us.

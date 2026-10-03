@@ -124,7 +124,7 @@ Storage:
 - Shipped styles, added 2026-10-03 for people whose code is written by an agent and who have no history to learn from.
   A style is a frozen file in `packages/core/styles/<language>-<word>.json`: the personal rules of one scanned profile for one language, its stats, and its source project, licence, commit and snapshot date. It is named after neither the project nor the person, see Style names below, and holds no emails, no code snippets and no project rules.
   `idiolect styles build` cuts one from a scanned profile. Metric rules go in as measured. A rule the LLM wrote goes in only when a person approved or edited it, because three scans of the same code gave three different rule sets.
-  `idiolect styles` lists them by language with a one-line summary of at most 60 characters, written when the style is built. `idiolect styles show <id>` gives the size and date of the code it was learned from and the rules. The source project is kept out of everything the CLI prints and out of the block agents read. One project and one main author per style, more projects mean more styles. `idiolect use` without ids is the picker: it counts the project's source files per language, offers only the styles for languages with at least 5% of them, numbers them and reads the numbers, Enter takes them all when each language has one style. `idiolect styles` filters the same way, `--all` on either shows everything, an empty project sees everything. `idiolect use <style...>` writes `styles` into the repo config, one style per language plus the one that owns the commit rules, and syncs. No `~/.idiolect` is needed.
+  `idiolect styles` lists them by language with a one-line summary of at most 60 characters, written when the style is built. `idiolect styles show <id>` gives the size and date of the code it was learned from and the rules. The source project is kept out of everything the CLI prints and out of the block agents read. One project and one main author per style, more projects mean more styles. `idiolect use` without ids is the picker: it counts the project's source files per language, offers only the styles for languages with at least 5% of them, and shows them as a checklist with one tick per language, where the only style of each language starts ticked. Without a terminal it numbers them and reads typed numbers. `idiolect styles` filters the same way, `--all` on either shows everything, an empty project sees everything. `idiolect use <style...>` writes `styles` into the repo config, one style per language plus the one that owns the commit rules, and syncs. No `~/.idiolect` is needed.
   `composeStyles` turns the picked styles into one borrowed profile, so render, check, Unbot and the MCP server need no special case. `styles` wins over `profile`.
   A shipped style is read-only. Rule decisions made in a repo are stored in `<repo>/.idiolect/overrides.json` and applied on load.
   A style nobody who writes the language has reviewed is marked `experimental`
@@ -302,7 +302,7 @@ Published 2026-10-02 as `idiolect@0.0.1` on npm. The org name `idiolect` was tak
 The commands below are what 0.2.2 ships.
 0.2.0 is the redesign briefed in `CLI.md`, built 2026-10-03: every 0.1.2 command and flag still works, and how they are presented changed.
 
-- Bare `idiolect` is the front door. It reports one of four states, no style, a house style, the developer's own, or their own without a scan of this repo, and in a terminal lists the next steps by number and runs the one picked. Enter leaves and changes nothing. Without a terminal, with `--no-prompt`, and as `idiolect status`, it prints the report and the commands and exits 0. It lives in `cli/src/start.ts`
+- Bare `idiolect` is the front door. It reports one of four states, no style, a house style, the developer's own, or their own without a scan of this repo, and in a terminal lists the next steps and runs the one picked. Enter alone leaves and changes nothing. Without a terminal, with `--no-prompt`, and as `idiolect status`, it prints the report and the commands and exits 0. It lives in `cli/src/start.ts`
 - Whether the agent files are current is a dry run of `syncTargets`, its `write` flag
 - `idiolect --help` shows three groups, Get a style, Review and check, Advanced, at most 80 columns, from `cli/src/help.ts`. A registered command that is not grouped lands under Advanced
 - One vocabulary. Users read "style", and "house style" for the shipped ones. "Profile" is the stored JSON and stays in code, comments and paths. "Borrowed" is only said in the block the agent reads
@@ -310,7 +310,7 @@ The commands below are what 0.2.2 ships.
 - Progress. `cli/src/term.ts` holds colour, the spinner and the TTY check, and no command writes ANSI codes itself. Colour only in a terminal without `NO_COLOR`. The four LLM commands show a spinner with elapsed seconds on stderr in a terminal and print the announcing line and "done in Ns" in a pipe. The blame pass counts files in a terminal only
 - `idiolect remove` takes idiolect out again at one of three levels: the style, everything in the project, everything on the machine. It lists first and changes nothing, levels 2 and 3 ask before deleting what cannot be brought back. `use --none` is level 1. `removeBlock` in `sync.ts` and `removeHook` in `unbot.ts` undo what `syncBlock` and `installHook` wrote, and a file left with nothing of the user's is deleted. A file that ended without a newline, or with two, before the block was added comes back ending in one
 
-0.2.1, 2026-10-03, is what testing 0.2.0 in real terminals on the Mac and on Windows found:
+0.2.1, 2026-10-03, is what testing 0.2.0 in real terminals on the Mac and on Windows found. Its typed answers, `yes`, `no` and `all`, were replaced by the lists of 0.2.2 below and remain only where there is no terminal:
 
 - The question before level 2 and 3 of `remove` names both answers. `yes` removes, `no`, `n` or Enter keeps everything, anything else is asked again. The warning is one sentence so the terminal wraps it to the window
 - The picker takes `all` or `--all` and then lists every style, because its own hint named a command that cannot be run from inside a prompt. With one style listed a wrong answer is told that 1 is the only one
@@ -329,7 +329,7 @@ The commands below are what 0.2.2 ships.
 - Without a terminal nothing changed: the report and the commands are printed, and where an answer is read it is typed as before. `canAsk` decides
 
 ```
-idiolect                      # where this project stands, and the next steps by number
+idiolect                      # where this project stands, and the next steps as a list
 idiolect init                 # detect emails, languages, create config
 idiolect scan [--repo ...] [--verbose]   # collect + analyze + write profile
 idiolect show [--lang kotlin] [--email <profile>] # print STYLE.md as served here, or one stored profile in full
@@ -346,7 +346,7 @@ idiolect ui [--repo] [--port] [--no-open]   # dashboard
 idiolect styles [--all]       # shipped styles for the languages of this project
 idiolect styles show <id>     # source project, licence, snapshot and rules of one style
 idiolect styles build ...     # maintainers: cut a style from a scanned, reviewed profile
-idiolect use [style...] [--all] [--target <file...>] [--none]   # pick styles by number, or by id, and sync
+idiolect use [style...] [--all] [--target <file...>] [--none]   # pick styles from a checklist, or by id, and sync
 idiolect remove [--style|--project|--everything] [--yes] [--dry-run]   # take idiolect out again
 ```
 

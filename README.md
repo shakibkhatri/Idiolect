@@ -92,7 +92,7 @@ npm install -g idiolect
 Or run it without installing: `npx -y idiolect <command>`.
 
 Then type `idiolect` in your project.
-It says where the project stands and lists what you can do next by number.
+It says where the project stands and shows what you can do next as a list to choose from.
 
 ```
 > idiolect
