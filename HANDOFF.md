@@ -23,8 +23,9 @@ Shakib installs each release with `npm install -g idiolect` on a Windows laptop.
 Everything in the spec build order up to and including M8 exists: collector, analyzer, profile writer, eval, MCP server, sync, Unbot, auto refresh, plus the `rules` command.
 Languages: Kotlin, TypeScript, Python, Go. Swift is the only spec language left and needs its grammar built with the tree-sitter CLI.
 Built on top since: the dashboard `idiolect ui` (M10), shipped styles with `idiolect styles` and `idiolect use`. Not built: M9 team mode.
-Version 0.2.0 is prepared on `main` and not yet published: the CLI redesign of `CLI.md`, steps 1 to 8. Shakib pushes and publishes, and tests the release on the Windows laptop.
-Tests: `pnpm test`, 70 vitest tests, all green. `pnpm typecheck`. `pnpm build` must run before the global `idiolect` picks up changes.
+0.2.0, the CLI redesign of `CLI.md`, steps 1 to 8, was published on 2026-10-03 and tested by Shakib on the Mac and on the Windows laptop.
+Version 0.2.1 is prepared on `main` and not yet published. It holds what that testing found: the remove question takes no, the picker takes `all`, `init` defaults to the only author, a failed LLM call says what to run, and the house styles have idiolect's own names.
+Tests: `pnpm test`, 71 vitest tests, all green. `pnpm typecheck`. `pnpm build` must run before the global `idiolect` picks up changes.
 On this machine `idiolect` is the npm-linked dev build from `packages/cli`, not the published one. Keep it that way while developing.
 
 ## The verdict, where it stands
@@ -182,7 +183,7 @@ The agent cannot start headless `claude` in his setup, the permission classifier
 
 ## Open items, in order
 
-1. Release 0.2.0. The CLI redesign in `CLI.md` is built, steps 1 to 8, and the version is bumped on `main`. Shakib pushes, publishes and tests on Windows. Not verified by the agent: the spinner against the real `claude-cli` provider, and a successful `eval` run under the spinner, both need an LLM call he runs himself. Then step 9, the picker preview: `?` and a number in the menu prints that style's rules.
+1. Release 0.2.1, bumped on `main`, Shakib pushes and publishes. Still unverified: a successful `claude-cli` call on Windows, the one try there failed on an expired login, and a successful `eval` run under the spinner. `unbot --llm` and `--fix` do not yet add the what-to-run line to a failed LLM call, `scan` and `eval` do. Two rule texts still quote `::TiviShow` and `httpx.ReadTimeout`, Shakib has not said whether to change them. Then step 9, the picker preview: `?` and a number in the menu prints that style's rules.
 1. Shakib's own profile is the stale 79-rule one from before the leak fix, and Dissent no longer serves it. One `idiolect scan` in Dissent rebuilds it clean. To serve it again he removes `styles` from Dissent's config.
 2. Retake the quiz with the clean baseline, suggestion 29. It is the only way to know whether the chance-level verdict was real.
 3. More styles, suggestion 31. Shakib wants to learn from more open source projects. One project and one main author per style, recipe in `scripts/styles/README.md`.
