@@ -98,6 +98,9 @@ npx -y idiolect styles                              # what ships
 npx -y idiolect use kotlin-tivi typescript-vue      # one per language, written into CLAUDE.md and AGENTS.md
 ```
 
+`use` creates `CLAUDE.md` for Claude Code and `AGENTS.md` for the agents that read that file, and a Cursor rule when the repo has a `.cursor` folder.
+It updates `.github/copilot-instructions.md` and `GEMINI.md` when they exist, and `--target <file>` writes any other file.
+
 That is the whole setup: no scan, no LLM call, no account.
 Your agent now writes fewer and shorter comments, plainer names and short commit messages, and `idiolect unbot` flags code that sounds like AI.
 
@@ -128,7 +131,7 @@ Rules that only hold in one repo, like a team's commit prefixes, are kept as pro
 ### Feed it to your agent
 
 ```
-idiolect sync                               # writes STYLE.md into CLAUDE.md, AGENTS.md, Cursor and Copilot files
+idiolect sync                               # writes STYLE.md into CLAUDE.md, AGENTS.md, GEMINI.md, Cursor and Copilot files
 claude mcp add idiolect -- npx -y idiolect mcp     # MCP server: get_style, check_style, rewrite_like_me
 ```
 

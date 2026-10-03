@@ -1,6 +1,6 @@
 import { buildStyle, git, listStyles, loadProfile, loadRepoConfig, loadServedProfile, loadStyle, monthYear, renderStyleMd, STYLES_DIR, updateRepoConfig, type Language, type Picked } from "@shakibkhatri/idiolect-core";
 import { Command } from "commander";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { syncTargets } from "./sync.js";
 
@@ -63,7 +63,10 @@ export function useCommand(): Command {
       if (!o.sync) return;
       const config = await loadRepoConfig(repo);
       const profile = (await loadServedProfile(repo))!;
-      const results = await syncTargets(repo, renderStyleMd(profile, { threshold: config.confidenceThreshold, repo }), o.target ?? config.sync.targets);
+      // someone picking a style has no agent files yet: Claude Code reads CLAUDE.md, most other agents AGENTS.md
+      const create = new Set(["AGENTS.md", "CLAUDE.md"]);
+      if (await stat(join(repo, ".cursor")).then((s) => s.isDirectory(), () => false)) create.add(".cursor/rules/idiolect.mdc");
+      const results = await syncTargets(repo, renderStyleMd(profile, { threshold: config.confidenceThreshold, repo }), o.target ?? config.sync.targets, create);
       for (const r of results) console.log(`${r.status.padEnd(9)} ${r.file}${r.status === "skipped" ? "  (not present, pass --target to create it)" : ""}`);
     });
 }

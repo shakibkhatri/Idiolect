@@ -26,8 +26,16 @@ test("syncTargets creates only AGENTS.md by default and updates files that exist
   expect(first).toEqual([
     { file: "AGENTS.md", status: "created" }, { file: "CLAUDE.md", status: "updated" },
     { file: ".cursor/rules/idiolect.mdc", status: "skipped" }, { file: ".github/copilot-instructions.md", status: "skipped" },
+    { file: "GEMINI.md", status: "skipped" },
   ]);
   expect(await readFile(join(repo, "CLAUDE.md"), "utf8")).toMatch(/^# Mine\n\n<!-- idiolect:start -->/);
-  expect((await syncTargets(repo, "- rule")).map((r) => r.status)).toEqual(["unchanged", "unchanged", "skipped", "skipped"]);
+  expect((await syncTargets(repo, "- rule")).map((r) => r.status)).toEqual(["unchanged", "unchanged", "skipped", "skipped", "skipped"]);
   expect(await syncTargets(repo, "- rule", [".cursor/rules/idiolect.mdc"])).toEqual([{ file: ".cursor/rules/idiolect.mdc", status: "created" }]);
+});
+
+test("a caller can name more files to create, the rest are still only updated", async () => {
+  const repo = await mkdtemp(join(tmpdir(), "idiolect-sync-"));
+  const results = await syncTargets(repo, "body", undefined, new Set(["AGENTS.md", "CLAUDE.md"]));
+  expect(results.filter((r) => r.status === "created").map((r) => r.file)).toEqual(["AGENTS.md", "CLAUDE.md"]);
+  expect(results.filter((r) => r.status === "skipped").map((r) => r.file)).toEqual([".cursor/rules/idiolect.mdc", ".github/copilot-instructions.md", "GEMINI.md"]);
 });
