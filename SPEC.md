@@ -106,6 +106,12 @@ Storage:
 - Served profile: `profile` in the repo config names the email of the profile this repo serves instead of the developer's own.
   Every command that reads rules goes through `loadServedProfile(repo)`, only `scan`, `status` and `refresh` stay on the developer's own profile.
   Added 2026-10-03 so a profile learned from human-written open source code can be served while the developer's own, mostly agent-written, keeps scanning
+- Borrowed profiles: a served profile whose email is not one of the developer's is borrowed.
+  Every rule has a kind: voice (naming, phrasing, quantities, does not age), layout (what a formatter decides) or idiom (the choice of a language feature or API, dates with the language).
+  The LLM labels its rules, metric rules derive the kind from the metric, older rules fall back on their category.
+  `borrow` in the repo config lists the kinds served, default voice and layout. Project rules are never served from a borrowed profile, approved and edited rules always are.
+  The render says the style is borrowed, gives the date of the newest commit it was learned from (`headDate` on the source), states that the repo's code, formatter and current language practice win, and labels every language rule.
+  The marker is `profile.borrowed`, set by `loadServedProfile` in memory and stripped by `saveProfile`
 
 Precedence when serving rules:
 1. Scope first: team beats personal, always. A path-scoped personal rule never overrides a team rule.

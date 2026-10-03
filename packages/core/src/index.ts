@@ -2,7 +2,7 @@ export { parse, type SupportedLanguage } from "./parser.js";
 export { collect, detectEmail, git, DEFAULT_IGNORE, type Collection, type CollectOptions, type OwnedFile, type Commit, type LineRange } from "./collector.js";
 export { analyzeKotlin, analyzeCommits, isTestPath, languageOf, grammarFor, EXTENSIONS, allExtensions, mergeStats, emptyStats, casing, commentText, BUZZWORDS, EMOJI, RESTATES, TODO_TAG, type AnalyzeOptions, type LanguageStats, type CommitStats, type Histogram, type Counter, type NameKind, type Casing } from "./analyzer.js";
 export { UserConfigSchema, RepoConfigSchema, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, ensureRepoDir, userConfigPath, repoConfigPath, type UserConfig, type RepoConfig } from "./config.js";
-export { emptyProfile, loadProfile, loadServedProfile, saveProfile, upsertSource, updateRules, profilePath, type Profile, type Source, type Rule, type Language } from "./profile.js";
+export { emptyProfile, loadProfile, loadServedProfile, saveProfile, upsertSource, updateRules, profilePath, ruleKind, type Profile, type Source, type Rule, type RuleKind, type Language } from "./profile.js";
 export { METRICS, COMMIT_METRICS, metric, percentile, fileSpread, isRatioMetric, type Metric, type Spread } from "./metrics.js";
 export { analyzeTypeScript } from "./analyzer-ts.js";
 export { analyzePython } from "./analyzer-py.js";

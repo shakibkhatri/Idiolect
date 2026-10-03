@@ -20,7 +20,7 @@ export type CheckOptions = { language: Language; threshold: number; repo?: strin
 
 /** Runs the analyzer on the code and compares every served metric rule against it. No LLM, so it cannot judge voice. */
 export async function checkStyle(profile: Profile, code: string, opts: CheckOptions): Promise<Violation[]> {
-  const rules = profile.rules.filter((r) => isServed(r, opts.threshold) && appliesTo(r, opts) && (!r.repo || r.repo === opts.repo)
+  const rules = profile.rules.filter((r) => isServed(r, opts.threshold, profile.borrowed) && appliesTo(r, opts) && (!r.repo || r.repo === opts.repo)
     && r.evidence.metric && !(r.evidence.metric.name in COMMIT_METRICS));
   const stats = await analyze(code, opts.language, undefined, { test: !!opts.file && isTestPath(opts.file), path: opts.file });
   const found = await locateNodes(code, opts);

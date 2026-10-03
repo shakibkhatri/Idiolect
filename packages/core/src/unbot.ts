@@ -7,7 +7,7 @@ import { isServed } from "./writer.js";
 
 /** Served rules backed only by examples. checkStyle cannot measure these, so the LLM judges them. */
 export function voiceRules(profile: Profile, opts: CheckOptions): Rule[] {
-  return profile.rules.filter((r) => isServed(r, opts.threshold) && appliesTo(r, opts) && (!r.repo || r.repo === opts.repo) && !r.evidence.metric && r.category !== "commits");
+  return profile.rules.filter((r) => isServed(r, opts.threshold, profile.borrowed) && appliesTo(r, opts) && (!r.repo || r.repo === opts.repo) && !r.evidence.metric && r.category !== "commits");
 }
 
 const Found = z.object({ violations: z.array(z.object({

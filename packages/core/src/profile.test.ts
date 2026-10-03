@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
@@ -49,8 +49,18 @@ test("a repo serves the profile its config names, otherwise the developer's own"
 
     await mkdir(join(repo, ".idiolect"), { recursive: true });
     await writeFile(join(repo, ".idiolect", "config.json"), JSON.stringify({ profile: "other@x.com" }));
-    expect((await loadServedProfile(repo))!.developer.name).toBe("someone else");
+    const borrowed = (await loadServedProfile(repo))!;
+    expect(borrowed.developer.name).toBe("someone else");
+    expect(borrowed.borrowed).toEqual(["voice", "layout"]);
     expect((await loadServedProfile())!.developer.name).toBe("me");
+
+    // the marker is for serving only, a rule decision must not write it into the stored profile
+    await saveProfile(borrowed);
+    expect(await readFile(join(home, ".idiolect", "profiles", "other@x.com.json"), "utf8")).not.toContain("borrowed");
+
+    // naming your own email is not borrowing
+    await writeFile(join(repo, ".idiolect", "config.json"), JSON.stringify({ profile: "ME@x.com" }));
+    expect((await loadServedProfile(repo))!.borrowed).toBeUndefined();
 
     await writeFile(join(repo, ".idiolect", "config.json"), JSON.stringify({ profile: "nobody@x.com" }));
     await expect(loadServedProfile(repo)).rejects.toThrow(/no profile .*nobody@x.com/);

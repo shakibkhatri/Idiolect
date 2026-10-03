@@ -6,7 +6,7 @@ import { emptyProfile, upsertSource, type Profile, type Source } from "./profile
 import { redact } from "./redact.js";
 import { renderStyleMd } from "./render.js";
 import { collectSamples } from "./sampler.js";
-import { reconcile, writeRules } from "./writer.js";
+import { isServed, reconcile, writeRules } from "./writer.js";
 
 function source(repo: string, tweak: (s: ReturnType<typeof emptyStats>, c: ReturnType<typeof analyzeCommits>) => void): Source {
   const s = emptyStats(); const c = analyzeCommits([]);
@@ -143,6 +143,41 @@ test("a text shared by some of the served languages is labelled with exactly tho
   expect(md).toContain("- Kotlin, TypeScript: No doc comments.");
   expect(md).toContain("- Go: Document everything.");
   expect(md).toContain("- No emoji.");
+});
+
+test("a borrowed profile serves voice and layout, labelled, without idiom or project rules, under its own header", () => {
+  const src = { ...source("/tivi", () => {}), headDate: "2023-12-30T10:00:00+00:00" };
+  const p = upsertSource(emptyProfile("Chris", ["chris@x"]), src);
+  const ex = { examples: [{ file: "A.kt", line: 1, snippet: "x" }] };
+  const base = { scope: "personal" as const, language: "kotlin" as const, confidence: 0.9, status: "auto" as const };
+  const rules = [
+    ...baselineRules(p, opts),
+    { ...base, id: "kotlin.naming.lookups", category: "naming" as const, kind: "voice" as const, text: "Name lookups as noun phrases.", evidence: ex },
+    { ...base, id: "kotlin.structure.indent", category: "structure" as const, kind: "layout" as const, text: "Indent with two spaces.", evidence: ex },
+    { ...base, id: "kotlin.errors.elvis", category: "errors" as const, kind: "idiom" as const, text: "Resolve nullables with elvis.", evidence: ex },
+    { ...base, id: "kotlin.structure.old", category: "structure" as const, text: "Untagged structure rule.", evidence: ex },
+    { ...base, id: "kotlin.errors.kept", category: "errors" as const, kind: "idiom" as const, status: "approved" as const, text: "Approved idiom rule.", evidence: ex },
+    { ...base, id: "kotlin.comments.header", category: "comments" as const, kind: "voice" as const, repo: "/tivi", text: "Start every file with the Tivi header.", evidence: ex },
+  ];
+  const own = renderStyleMd({ ...p, rules }, { threshold: 0.6, repo: "/tivi" });
+  expect(own).toContain("# Code style: Chris\n");
+  expect(own).toContain("Resolve nullables with elvis.");
+  expect(own).toContain("Start every file with the Tivi header.");
+  expect(own).toContain("- Use when instead of if/else chains");
+
+  const md = renderStyleMd({ ...p, rules, borrowed: ["voice", "layout"] }, { threshold: 0.6, repo: "/tivi" });
+  expect(md).toContain("# Code style: borrowed from Chris");
+  expect(md).toContain("written up to December 2023");
+  expect(md).toContain("It shapes naming, comments, commit messages and layout.");
+  expect(md).toContain("its formatter and current language practice win");
+  expect(md).toContain("- Kotlin: Name lookups as noun phrases.");
+  expect(md).toContain("- Kotlin: Indent with two spaces.");
+  expect(md).toContain("- Kotlin: Approved idiom rule.");
+  expect(md).toContain("- Kotlin: Keep functions short.");
+  expect(md).toContain("- Kotlin: No emoji in comments.");
+  for (const gone of ["Resolve nullables with elvis.", "Untagged structure rule.", "Tivi header", "Use when instead", "runCatching"]) expect(md).not.toContain(gone);
+  expect(renderStyleMd({ ...p, rules, borrowed: ["voice"] }, { threshold: 0.6 })).not.toContain("Indent with two spaces.");
+  expect(isServed(rules.find((r) => r.id === "kotlin.errors.elvis")!, 0.6)).toBe(true);
 });
 
 test("redact strips key-like strings and keeps the rest", () => {

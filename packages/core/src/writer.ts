@@ -2,7 +2,7 @@ import { z } from "zod";
 import { baselineRules } from "./baseline.js";
 import type { LlmProvider } from "./llm.js";
 import { COMMIT_METRICS, METRICS } from "./metrics.js";
-import type { Language, Profile, Rule } from "./profile.js";
+import { ruleKind, type Language, type Profile, type Rule, type RuleKind } from "./profile.js";
 import type { Samples } from "./sampler.js";
 
 export type WriteOptions = { minSampleSize: number; confidenceThreshold: number; repo?: string };
@@ -13,6 +13,7 @@ const LlmRules = z.object({
     scope: z.enum(["personal", "project"]),
     language: z.enum(["kotlin", "typescript", "python", "go", "any"]),
     category: z.enum(["naming", "comments", "structure", "errors", "framework", "commits", "avoid"]),
+    kind: z.enum(["voice", "layout", "idiom"]),
     text: z.string().min(10).max(400),
     examples: z.array(z.object({ file: z.string(), line: z.number().int() })).min(1).max(3),
     confidence: z.number().min(0).max(1),
@@ -32,6 +33,9 @@ Rules:
 - Never write a rule that would make an agent add a comment, doc block or structure the samples mostly lack. Describe how the developer writes when they do write, never where to add more.
 - scope is "personal" when the habit would hold in any codebase this developer works in: voice, phrasing, structure, error handling style, how they name and comment.
   scope is "project" when the rule depends on this codebase: its domain vocabulary, product or company names, specific libraries, wrappers, tokens, ticket formats, stakeholder names, team commit conventions. Project rules are only shown inside this repo, so be strict: anything naming a project-specific symbol, product or person is "project".
+- kind is "voice" for habits that do not depend on the language version: naming, comment and commit phrasing, how much to write, how code is split up.
+  kind is "layout" for what a formatter decides: indentation, line breaks, trailing commas, semicolons, quotes, brace placement.
+  kind is "idiom" for the choice of a language feature, API or library: when over if, runCatching over try, arrow functions over declarations, a framework pattern.
 - You may be given personal rules already learned from the developer's other repos. Never rewrite or duplicate one. If the samples show the same habit, put its id in "confirms" instead. Only write a new rule for a habit not already covered.
 - confidence is 0 to 1: the share of relevant samples that show the habit. 0.9 means nearly every relevant sample does it, 0.6 means some do.
 - id is lowercase dotted, like kotlin.comments.explain-why or any.commits.mention-screen. language is the language the samples are in, or "any" for commits and habits that hold across languages.
@@ -82,7 +86,7 @@ export async function writeRules(profile: Profile, samples: Samples, provider: L
       const id = r.id.startsWith(`${r.language}.`) ? r.id : `${r.language}.${r.id}`;
       if (ids.has(id)) continue;
       ids.add(id);
-      fresh.push({ id, scope: "personal", language: r.language as Language | "any", category: r.category, text: r.text, evidence: { examples }, confidence: Math.round(r.confidence * 100) / 100, status: "auto", learnedIn: opts.repo, ...(r.scope === "project" && opts.repo ? { repo: opts.repo } : {}) });
+      fresh.push({ id, scope: "personal", language: r.language as Language | "any", category: r.category, kind: r.kind, text: r.text, evidence: { examples }, confidence: Math.round(r.confidence * 100) / 100, status: "auto", learnedIn: opts.repo, ...(r.scope === "project" && opts.repo ? { repo: opts.repo } : {}) });
     }
   }
   return reconcile(profile.rules, fresh);
@@ -102,4 +106,7 @@ export function reconcile(previous: Rule[], fresh: Rule[]): Rule[] {
   });
 }
 
-export const isServed = (r: Rule, threshold: number) => (r.status === "auto" || r.status === "approved" || r.status === "edited") && r.confidence >= threshold;
+/** From a borrowed profile only the asked-for kinds are served and never a project rule. A rule the developer approved or edited is served whatever its kind. */
+export const isServed = (r: Rule, threshold: number, borrowed?: RuleKind[]) =>
+  (r.status === "auto" || r.status === "approved" || r.status === "edited") && r.confidence >= threshold
+  && (!borrowed || (!r.repo && (r.status !== "auto" || borrowed.includes(ruleKind(r)))));

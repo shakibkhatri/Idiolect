@@ -126,7 +126,7 @@ program.command("scan")
     const primary = user.emails[0]!;
     const name = user.name ?? primary;
     let profile = upsertSource(await loadProfile(primary) ?? emptyProfile(name, user.emails), {
-      repo, head: c.head, scannedAt: new Date().toISOString(), commits: c.commits.length, linesOwned, stats, commitStats, spread,
+      repo, head: c.head, headDate: (await git(repo, ["log", "-1", "--format=%cI", c.head])).trim(), scannedAt: new Date().toISOString(), commits: c.commits.length, linesOwned, stats, commitStats, spread,
     });
     profile = { ...profile, developer: { name, emails: user.emails } };
     await saveProfile(profile);

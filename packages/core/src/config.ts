@@ -24,6 +24,8 @@ export const RepoConfigSchema = z.object({
   ignore: z.array(z.string()).default([]),
   // email of the profile this repo serves instead of the developer's own, a scan still writes the developer's
   profile: z.string().optional(),
+  // which kinds of rules a borrowed profile serves here, idiom is left out because it dates
+  borrow: z.array(z.enum(["voice", "layout", "idiom"])).default(["voice", "layout"]),
 });
 export type RepoConfig = z.infer<typeof RepoConfigSchema>;
 

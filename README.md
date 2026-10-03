@@ -124,6 +124,14 @@ The MCP server re-reads the profile on every call, so a rescan or a rule decisio
 `sync`, `show`, `rules`, `unbot`, `eval`, `ui` and the MCP server then use that profile from `~/.idiolect/profiles/` inside this repo.
 A scan still writes your own profile, so this is how you serve a style learned from someone else's code while yours keeps growing.
 
+A profile that is not yours is borrowed, and a borrowed profile is served differently.
+Only its voice and layout rules are served: naming, comments, commit messages, formatting.
+Its idiom rules, the choice of language features and APIs, are left out because they date with the language.
+Its project rules are never served, and every language rule says which language it is for.
+The header tells the agent the style is borrowed, how old the code behind it is, and that the repo's own code and formatter win.
+`"borrow": ["voice"]` in the same file narrows it further, `["voice", "layout", "idiom"]` serves everything.
+A rule you approve or edit with `idiolect rules` is served whatever its kind.
+
 ### Decide on rules
 
 ```

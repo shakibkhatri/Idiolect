@@ -18,7 +18,7 @@ export async function buildState(profile: Profile, repo: string, threshold: numb
     repo: s.repo, scannedAt: s.scannedAt, commits: s.commits, linesOwned: s.linesOwned,
     commitsSince: Number((await git(s.repo, ["rev-list", "--count", `${s.head}..HEAD`]).catch(() => "0")).trim()),
   })));
-  const rules = profile.rules.map((r) => ({ ...r, served: isServed(r, threshold) && (!r.repo || r.repo === repo) }));
+  const rules = profile.rules.map((r) => ({ ...r, served: isServed(r, threshold, profile.borrowed) && (!r.repo || r.repo === repo) }));
   return { developer: profile.developer, generatedAt: profile.generatedAt, repo, threshold, languages, sources, rules, style: renderStyleMd(profile, { threshold, repo }), reports };
 }
 

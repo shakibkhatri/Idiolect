@@ -87,7 +87,7 @@ export function createIdiolectServer(deps: ServerDeps): McpServer {
   }, async ({ path }) => {
     try {
       const c = await context(path);
-      const team = c.profile.rules.filter((r) => r.scope === "team" && isServed(r, c.threshold) && appliesTo(r, { file: c.file }));
+      const team = c.profile.rules.filter((r) => r.scope === "team" && isServed(r, c.threshold, c.profile.borrowed) && appliesTo(r, { file: c.file }));
       if (!team.length) return text("No team rules for this path yet. Team mode (idiolect team scan) learns them from PR reviews.");
       return text(team.map((r) => `- ${r.text}${r.evidence.count ? ` (flagged ${r.evidence.count}x)` : ""}`).join("\n"));
     } catch (e) { return fail(e); }

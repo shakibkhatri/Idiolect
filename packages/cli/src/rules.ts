@@ -1,4 +1,4 @@
-import { loadServedProfile, loadRepoConfig, loadUserConfig, profilePath, renderStyleMd, saveProfile, updateRules, userConfigPath, type Profile, type Rule } from "@shakibkhatri/idiolect-core";
+import { loadServedProfile, loadRepoConfig, ruleKind, loadUserConfig, profilePath, renderStyleMd, saveProfile, updateRules, userConfigPath, type Profile, type Rule } from "@shakibkhatri/idiolect-core";
 import { Command } from "commander";
 import { spawnSync } from "node:child_process";
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
@@ -53,7 +53,7 @@ export function rulesCommand(): Command {
   repoOpt(rules.command("show <id>").description("full text and evidence of one rule")).action(async (id: string, o: { repo: string }) => {
     const r = (await load(o.repo)).rules.find((x) => x.id === id);
     if (!r) throw new Error(`no rule ${id}, see: idiolect rules list`);
-    console.log(`${r.id}\n  ${r.text}\n  status ${r.status}, confidence ${r.confidence}, ${r.scope}, ${r.language}, ${r.category}${r.repo ? `, project rule for ${r.repo}` : ""}${r.learnedIn ? `, learned in ${r.learnedIn}` : ""}`);
+    console.log(`${r.id}\n  ${r.text}\n  status ${r.status}, confidence ${r.confidence}, ${r.scope}, ${r.language}, ${r.category}, ${ruleKind(r)}${r.repo ? `, project rule for ${r.repo}` : ""}${r.learnedIn ? `, learned in ${r.learnedIn}` : ""}`);
     if (r.evidence.metric) console.log(`  metric ${r.evidence.metric.name} = ${r.evidence.metric.value}, n = ${r.evidence.metric.sampleSize}`);
     for (const e of r.evidence.examples) console.log(`  ${e.file.startsWith("commit:") ? e.file : `${e.file}:${e.line}`}\n    ${e.snippet.split("\n").join("\n    ")}`);
   });
