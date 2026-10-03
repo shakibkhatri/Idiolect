@@ -32,7 +32,7 @@
   "engines": {
     "node": ">=22"
   },
-  "description": "Learn your coding style from git history and feed it to AI coding agents",
+  "description": "Give your AI coding agent a style to write in: your own, learned from your git history, or a house style",
   "keywords": [
     "ai",
     "claude",

@@ -2,6 +2,7 @@
 import { analyze, fileSpread, languageOf, EXTENSIONS, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, updateRepoConfig, ensureRepoDir, userConfigPath, repoConfigPath, loadProfile, loadServedProfile, mergeStats, profilePath, saveProfile, upsertSource, analyzeCommits, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type UserConfig, type SampleInput, type Language, type LanguageStats } from "@shakibkhatri/idiolect-core";
 import { DEFAULT_TASKS_DIR, loadTasks, renderReport, runEval, type Report } from "@shakibkhatri/idiolect-eval";
 import { createIdiolectServer } from "@shakibkhatri/idiolect-mcp";
+import { renderHelp, TAGLINE } from "./help.js";
 import { syncTargets } from "./sync.js";
 import { NO_PROFILE, rulesCommand, writeStyle } from "./rules.js";
 import { onPath, stylesCommand, useCommand } from "./styles.js";
@@ -10,7 +11,7 @@ import { refreshCommand, statusCommand } from "./refresh.js";
 import { ttyQuiz, webQuiz } from "./quiz.js";
 import { uiCommand } from "./ui.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { Command } from "commander";
+import { Command, Help } from "commander";
 import { mkdir, readdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
@@ -19,7 +20,9 @@ import { join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 
 const VERSION = (JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8")) as { version: string }).version;
-const program = new Command().name("idiolect").description("Learn your coding style and feed it to AI agents").version(VERSION);
+const program = new Command().name("idiolect").description(TAGLINE).version(VERSION);
+// only the top level is grouped, a subcommand keeps commander's own help
+program.configureHelp({ formatHelp: (cmd, helper) => (cmd === program ? renderHelp(cmd.commands.map((c) => c.name())) : Help.prototype.formatHelp.call(helper, cmd, helper)) });
 const PROVIDERS = ["claude-cli", "anthropic", "openai", "gemini", "openai-compatible", "none"] as const;
 type Provider = UserConfig["llm"]["provider"];
 
