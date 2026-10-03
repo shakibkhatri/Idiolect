@@ -35,7 +35,7 @@ Later: **team mode**, which learns team rules from PR review comments.
 - `child_process` for git, no wrapper library
 - `@modelcontextprotocol/sdk` for the MCP server (stdio transport)
 - `commander` for the CLI, `zod` for schemas, `vitest` for tests
-- LLM provider interface with adapters: `claude-cli` (default when Claude Code is installed, headless `claude -p --json-schema`), Anthropic, OpenAI, Google Gemini, and `openai-compatible` (any base URL).
+- LLM provider interface with adapters: `claude-cli` (default when Claude Code is installed, headless `claude -p --safe-mode --system-prompt --json-schema`, so the user's CLAUDE.md, hooks and plugins stay out of the call), Anthropic, OpenAI, Google Gemini, and `openai-compatible` (any base URL).
   Later: `gemini-cli` and `codex-cli` the same way, once their non-interactive flags are verified.
   Longer term: an MCP prompt `learn_my_style` lets any agent do the writing itself through the MCP server, no CLI needed.
   The `openai-compatible` adapter covers Ollama, LM Studio, vLLM, llama.cpp server and corporate gateways, so local needs no dedicated code.

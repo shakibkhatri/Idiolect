@@ -20,7 +20,7 @@ Shakib installed it with `npm install -g idiolect` on a second laptop and it wor
 Everything in the spec build order up to and including M8 exists: collector, analyzer, profile writer, eval, MCP server, sync, Unbot, auto refresh, plus the `rules` command.
 Languages: Kotlin, TypeScript, Python, Go. Swift is the only spec language left and needs its grammar built with the tree-sitter CLI.
 Not built: M9 team mode, M10 dashboard. The spec says only after real usage, and that still holds.
-Tests: `pnpm test`, 47 vitest tests, all green. `pnpm typecheck`. `pnpm build` must run before the global `idiolect` picks up changes.
+Tests: `pnpm test`, 49 vitest tests, all green. `pnpm typecheck`. `pnpm build` must run before the global `idiolect` picks up changes.
 On this machine `idiolect` is the npm-linked dev build from `packages/cli`, not the published one. Keep it that way while developing.
 
 ## The verdict, where it stands
@@ -169,6 +169,7 @@ He uses a global `~/.claude/CLAUDE.md` with his general rules, read it.
 `idiolect scan --no-llm` once wiped LLM rules. Fixed, keep the test on `writeRules`.
 Backtick and camelCase sentence test names pollute verb stats unless routed to `testNames`.
 `claude -p --bare` cannot see the user's login, do not add `--bare`.
+Headless `claude -p` loads the user's CLAUDE.md, SessionStart hooks and the agent system prompt unless told not to. A probe on 2026-10-03 found 20 such instructions in every scan and eval call, so the "without profile" side of every eval before that date was not a plain baseline and the rules of every scan were phrased with them in view. The provider now passes `--safe-mode` and `--system-prompt`, the same probe sees none. `~/idiolect-oss/leak-probe.sh` repeats the check.
 Claude Code's `--json-schema` rejects the `$schema` key zod emits, `jsonSchema()` strips it.
 zod is v4 because the Anthropic helper needs it, use `.prefault({})` not `.default({})` for nested objects.
 The vendored Kotlin grammar errors on semicolon-separated class members, `bugs/001`.
