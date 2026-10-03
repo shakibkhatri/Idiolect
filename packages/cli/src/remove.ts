@@ -83,7 +83,8 @@ export function renderFound(repo: string, f: Found, t: Term = term): string {
   const width = Math.min(34, Math.max(...[...one, ...two, ...three].map(([path]) => path!.length)));
   const section = (n: Level, title: string, rows: string[][]) => [`${t.bold(String(n))}  ${t.bold(title)}`, ...(rows.length ? rows.map(([path, what]) => `     ${t.accent(path!.padEnd(width))}  ${what}`) : [t.dim("     nothing found")])];
   return [
-    `idiolect left this in ${repo}:`, "",
+    // no colon after the path, terminals that link paths take it into the link
+    `What idiolect left in ${repo}`, "",
     ...section(1, "The style", one),
     ...section(2, "Everything in this project, the style included", two),
     ...section(3, "Everything on this machine, this project included", three),
