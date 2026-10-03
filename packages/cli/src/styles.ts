@@ -131,7 +131,8 @@ export function stylesCommand(): Command {
 }
 
 const isDir = (path: string) => stat(path).then((s) => s.isDirectory(), () => false);
-const onPath = (cmd: string) => new Promise<boolean>((res) => execFile("which", [cmd], (err) => res(!err)));
+// Windows has no which, its lookup command is where
+export const onPath = (cmd: string) => new Promise<boolean>((res) => execFile(process.platform === "win32" ? "where" : "which", [cmd], (err) => res(!err)));
 
 /** AGENTS.md always. An agent's own file only when that agent is in use: Claude Code installed or a .claude folder, a .cursor folder. */
 export async function filesToCreate(repo: string, claudeInstalled: boolean): Promise<Set<string>> {
@@ -186,6 +187,9 @@ export function useCommand(): Command {
       const profile = (await loadServedProfile(repo))!;
       const create = await filesToCreate(repo, await onPath("claude"));
       const results = await syncTargets(repo, renderStyleMd(profile, { threshold: config.confidenceThreshold, repo }), o.target ?? config.sync.targets, create);
-      for (const r of results) console.log(`${r.status.padEnd(9)} ${r.file}${r.status === "skipped" ? "  (not present, pass --target to create it)" : ""}`);
+      for (const r of results) if (r.status !== "skipped") console.log(`${r.status.padEnd(9)} ${r.file}`);
+      // one line for the agents that are not set up here, a row each was noise for someone who uses one agent
+      const skipped = results.filter((r) => r.status === "skipped").map((r) => r.file);
+      if (skipped.length) console.log(`\nnot written, those agents are not set up here: ${skipped.join(", ")}\nto write one anyway: idiolect use --target <file>`);
     });
 }

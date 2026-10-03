@@ -4,7 +4,7 @@ import { DEFAULT_TASKS_DIR, loadTasks, renderReport, runEval, type Report } from
 import { createIdiolectServer } from "@shakibkhatri/idiolect-mcp";
 import { syncTargets } from "./sync.js";
 import { NO_PROFILE, rulesCommand, writeStyle } from "./rules.js";
-import { stylesCommand, useCommand } from "./styles.js";
+import { onPath, stylesCommand, useCommand } from "./styles.js";
 import { hooksCommand, unbotCommand } from "./unbot.js";
 import { refreshCommand, statusCommand } from "./refresh.js";
 import { ttyQuiz, webQuiz } from "./quiz.js";
@@ -56,7 +56,7 @@ program.command("init")
 
     let provider = (o.provider ?? user?.llm.provider) as Provider | undefined;
     if (!provider || provider === "none" && !o.provider && !user) {
-      const hasClaude = await hasCommand("claude");
+      const hasClaude = await onPath("claude");
       const def = hasClaude ? "claude-cli" : "none";
       console.log(`\nLLM provider. Samples of your code go to it to phrase the rules. "none" keeps everything local with metric rules only.`);
       console.log(`  claude-cli         your installed Claude Code, uses your existing plan${hasClaude ? "  <- found" : "  (not found on PATH)"}`);
@@ -283,7 +283,6 @@ async function listAuthors(repo: string) {
   return out.split("\n").map((l) => l.match(/^\s*(\d+)\s+(.*?)\s+<(.+)>$/)).filter((m): m is RegExpMatchArray => !!m)
     .map((m) => ({ commits: Number(m[1]), name: m[2]!, email: m[3]!.toLowerCase() }));
 }
-const hasCommand = (cmd: string) => new Promise<boolean>((res) => execFile("which", [cmd], (err) => res(!err)));
 const sameName = (a: string, b?: string) => !!b && a.toLowerCase().replace(/\s+/g, "") === b.toLowerCase().replace(/\s+/g, "");
 async function ask(q: string) {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
