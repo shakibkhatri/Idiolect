@@ -1,4 +1,4 @@
-import { git, isServed, loadProfile, loadRepoConfig, loadUserConfig, renderStyleMd, saveProfile, updateRules, userConfigPath, type Profile, type Rule } from "@shakibkhatri/idiolect-core";
+import { git, isServed, loadServedProfile, loadRepoConfig, loadUserConfig, renderStyleMd, saveProfile, updateRules, userConfigPath, type Profile, type Rule } from "@shakibkhatri/idiolect-core";
 import type { Report } from "@shakibkhatri/idiolect-eval";
 import { Command } from "commander";
 import { execFile } from "node:child_process";
@@ -42,8 +42,7 @@ export function uiCommand(): Command {
       const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"]).catch(() => resolve(o.repo))).trim();
       const user = await loadUserConfig();
       if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
-      const email = user.emails[0]!;
-      const load = async () => { const p = await loadProfile(email); if (!p) throw new Error("no profile, run: idiolect scan"); return p; };
+      const load = async () => { const p = await loadServedProfile(repo); if (!p) throw new Error("no profile, run: idiolect scan"); return p; };
       const { confidenceThreshold: threshold } = await loadRepoConfig(repo);
       const state = async () => buildState(await load(), repo, threshold, await listReports(repo));
 

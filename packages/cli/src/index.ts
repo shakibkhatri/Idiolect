@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { analyze, fileSpread, languageOf, EXTENSIONS, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, ensureRepoDir, userConfigPath, repoConfigPath, loadProfile, mergeStats, profilePath, saveProfile, upsertSource, analyzeCommits, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type UserConfig, type SampleInput, type Language, type LanguageStats } from "@shakibkhatri/idiolect-core";
+import { analyze, fileSpread, languageOf, EXTENSIONS, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, ensureRepoDir, userConfigPath, repoConfigPath, loadProfile, loadServedProfile, mergeStats, profilePath, saveProfile, upsertSource, analyzeCommits, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type UserConfig, type SampleInput, type Language, type LanguageStats } from "@shakibkhatri/idiolect-core";
 import { DEFAULT_TASKS_DIR, loadTasks, renderReport, runEval, type Report } from "@shakibkhatri/idiolect-eval";
 import { createIdiolectServer } from "@shakibkhatri/idiolect-mcp";
 import { syncTargets } from "./sync.js";
@@ -76,7 +76,9 @@ program.command("init")
       if ((await git(repo, ["ls-files", ...exts.map((e) => `*${e}`)])).split("\n").some((f) => f && languageOf(f))) languages.push(lang);
     }
     const repoConfig = await loadRepoConfig(repo);
-    await saveRepoConfig(repo, { languages, ignore: repoConfig.ignore });
+    // keep whatever else the repo config holds, init only owns the language list
+    const kept = JSON.parse(await readFile(repoConfigPath(repo), "utf8").catch(() => "{}")) as object;
+    await saveRepoConfig(repo, { ...kept, languages, ignore: repoConfig.ignore });
 
     const need = { "claude-cli": "your Claude Code login", anthropic: "needs ANTHROPIC_API_KEY", openai: "needs OPENAI_API_KEY and llm.model", gemini: "needs GEMINI_API_KEY and llm.model", "openai-compatible": "needs llm.model, default base url is Ollama", none: "metric rules only" }[provider];
     console.log(`\nwrote ${userConfigPath()}  (you, shared across repos)`);
@@ -169,11 +171,10 @@ program.command("show")
   .option("--lang <language>", "only rules for this language")
   .option("--evidence", "append metric and example evidence to each rule")
   .action(async (o: { repo: string; email?: string; lang?: string; evidence?: boolean }) => {
-    const email = o.email ?? (await loadUserConfig())?.emails[0];
-    if (!email) throw new Error("no ~/.idiolect/config.json, run: idiolect init");
-    const profile = await loadProfile(email);
-    if (!profile) throw new Error(`no profile for ${email}, run: idiolect scan`);
     const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"]).catch(() => "")).trim() || undefined;
+    if (!o.email && !(await loadUserConfig())) throw new Error("no ~/.idiolect/config.json, run: idiolect init");
+    const profile = o.email ? await loadProfile(o.email) : await loadServedProfile(repo ?? resolve(o.repo));
+    if (!profile) throw new Error(`no profile${o.email ? ` for ${o.email}` : ""}, run: idiolect scan`);
     const { confidenceThreshold } = await loadRepoConfig(resolve(o.repo));
     console.log(renderStyleMd(profile, { threshold: confidenceThreshold, language: o.lang, evidence: o.evidence, repo }));
   });
@@ -186,7 +187,7 @@ program.command("sync")
     const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"])).trim();
     const user = await loadUserConfig();
     if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
-    const profile = await loadProfile(user.emails[0]!);
+    const profile = await loadServedProfile(repo);
     if (!profile) throw new Error("no profile, run: idiolect scan");
     const config = await loadRepoConfig(repo);
     const body = renderStyleMd(profile, { threshold: config.confidenceThreshold, repo });
@@ -227,7 +228,7 @@ program.command("eval")
     }
     const user = await loadUserConfig();
     if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
-    const profile = await loadProfile(user.emails[0]!);
+    const profile = await loadServedProfile(repo);
     if (!profile) throw new Error("no profile, run: idiolect scan");
     const provider = createProvider(user.llm);
     if (!provider) throw new Error("eval needs an LLM provider, run: idiolect init");
@@ -265,7 +266,7 @@ program.command("mcp")
   .action(async () => {
     const user = () => loadUserConfig();
     const server = createIdiolectServer({
-      profile: async () => { const u = await user(); return u && loadProfile(u.emails[0]!); },
+      profile: (repo) => loadServedProfile(repo),
       provider: async () => { const u = await user(); return u && createProvider(u.llm); },
     });
     await server.connect(new StdioServerTransport());

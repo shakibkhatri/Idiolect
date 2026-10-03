@@ -1,4 +1,4 @@
-import { loadProfile, loadRepoConfig, loadUserConfig, profilePath, renderStyleMd, saveProfile, updateRules, userConfigPath, type Profile, type Rule } from "@shakibkhatri/idiolect-core";
+import { loadServedProfile, loadRepoConfig, loadUserConfig, profilePath, renderStyleMd, saveProfile, updateRules, userConfigPath, type Profile, type Rule } from "@shakibkhatri/idiolect-core";
 import { Command } from "commander";
 import { spawnSync } from "node:child_process";
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
@@ -10,16 +10,16 @@ export async function writeStyle(profile: Profile, threshold: number) {
   await writeFile(profilePath(profile.developer.emails[0]!).replace(/\.json$/, ".STYLE.md"), renderStyleMd(profile, { threshold }));
 }
 
-async function load() {
+async function load(repo: string) {
   const user = await loadUserConfig();
   if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
-  const profile = await loadProfile(user.emails[0]!);
+  const profile = await loadServedProfile(resolve(repo));
   if (!profile) throw new Error("no profile, run: idiolect scan");
   return profile;
 }
 
 async function decide(ids: string[], status: "approved" | "rejected" | "edited", repo: string, text?: string) {
-  const profile = updateRules(await load(), ids, status, text);
+  const profile = updateRules(await load(repo), ids, status, text);
   await saveProfile(profile);
   await writeStyle(profile, (await loadRepoConfig(resolve(repo))).confidenceThreshold);
   for (const id of ids) console.log(`${status.padEnd(9)} ${id}`);
@@ -37,7 +37,7 @@ export function rulesCommand(): Command {
     .option("--lang <language>", "kotlin | any")
     .option("--category <category>", "naming | comments | structure | errors | framework | commits | avoid")
     .action(async (o: { repo: string; status?: string; lang?: string; category?: string }) => {
-      const profile = await load();
+      const profile = await load(o.repo);
       const { confidenceThreshold } = await loadRepoConfig(resolve(o.repo));
       const width = (process.stdout.columns || 120) - 1;
       const rows = profile.rules.filter((r) => (!o.status || r.status === o.status) && (!o.lang || r.language === o.lang) && (!o.category || r.category === o.category));
@@ -50,8 +50,8 @@ export function rulesCommand(): Command {
       console.log(`\n${rows.length} rules (${by("auto")} auto, ${by("pending")} pending, ${by("approved")} approved, ${by("edited")} edited, ${by("rejected")} rejected). "-" before the confidence means below the threshold ${confidenceThreshold}, stored but not served.`);
     });
 
-  rules.command("show <id>").description("full text and evidence of one rule").action(async (id: string) => {
-    const r = (await load()).rules.find((x) => x.id === id);
+  repoOpt(rules.command("show <id>").description("full text and evidence of one rule")).action(async (id: string, o: { repo: string }) => {
+    const r = (await load(o.repo)).rules.find((x) => x.id === id);
     if (!r) throw new Error(`no rule ${id}, see: idiolect rules list`);
     console.log(`${r.id}\n  ${r.text}\n  status ${r.status}, confidence ${r.confidence}, ${r.scope}, ${r.language}, ${r.category}${r.repo ? `, project rule for ${r.repo}` : ""}${r.learnedIn ? `, learned in ${r.learnedIn}` : ""}`);
     if (r.evidence.metric) console.log(`  metric ${r.evidence.metric.name} = ${r.evidence.metric.value}, n = ${r.evidence.metric.sampleSize}`);
@@ -63,7 +63,7 @@ export function rulesCommand(): Command {
   repoOpt(rules.command("edit <id> [text]").description("replace the rule text, opens $EDITOR when no text is given"))
     .action(async (id: string, text: string | undefined, o: { repo: string }) => {
       if (!text) {
-        const r = (await load()).rules.find((x) => x.id === id);
+        const r = (await load(o.repo)).rules.find((x) => x.id === id);
         if (!r) throw new Error(`no rule ${id}, see: idiolect rules list`);
         const file = join(await mkdtemp(join(tmpdir(), "idiolect-rule-")), `${id}.md`);
         await writeFile(file, r.text + "\n");

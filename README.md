@@ -115,6 +115,15 @@ claude mcp add idiolect -- npx -y idiolect mcp     # MCP server: get_style, chec
 Sync only writes between `<!-- idiolect:start -->` and `<!-- idiolect:end -->` and never touches anything else.
 The MCP server re-reads the profile on every call, so a rescan or a rule decision is live at once.
 
+### Serve another profile in a repo
+
+```
+{ "profile": "chris@banes.me" }      # in <repo>/.idiolect/config.json
+```
+
+`sync`, `show`, `rules`, `unbot`, `eval`, `ui` and the MCP server then use that profile from `~/.idiolect/profiles/` inside this repo.
+A scan still writes your own profile, so this is how you serve a style learned from someone else's code while yours keeps growing.
+
 ### Decide on rules
 
 ```

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { analyzeCommits, emptyStats, mergeStats, type CommitStats, type LanguageStats } from "./analyzer.js";
 import type { Spread } from "./metrics.js";
 import type { Commit } from "./collector.js";
+import { loadRepoConfig, loadUserConfig, repoConfigPath } from "./config.js";
 
 export type Language = "kotlin" | "typescript" | "python" | "go";
 
@@ -48,6 +49,18 @@ export async function loadProfile(email: string): Promise<Profile | undefined> {
   // stats written before a language or counter existed get the zero shape, so metrics never see undefined
   const fill = (stats: Partial<Record<Language, LanguageStats>>) => Object.fromEntries(Object.entries(stats).map(([l, st]) => [l, mergeStats(emptyStats(), st!)]));
   return { ...profile, stats: fill(profile.stats), sources: profile.sources.map((s) => ({ ...s, stats: fill(s.stats) })) };
+}
+
+/** The profile a repo serves: the one `profile` names in its config, otherwise the developer's own. */
+export async function loadServedProfile(repo?: string): Promise<Profile | undefined> {
+  const named = repo ? (await loadRepoConfig(repo)).profile : undefined;
+  if (!named) {
+    const user = await loadUserConfig();
+    return user && loadProfile(user.emails[0]!);
+  }
+  const profile = await loadProfile(named);
+  if (!profile) throw new Error(`no profile ${profilePath(named)}, named by "profile" in ${repoConfigPath(repo!)}`);
+  return profile;
 }
 
 export async function saveProfile(profile: Profile) {

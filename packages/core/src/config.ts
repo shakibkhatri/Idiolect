@@ -22,6 +22,8 @@ export const RepoConfigSchema = z.object({
   // floors for Unbot and check_style: items before a ratio or median counts, lines before a density counts, items for located rules, excess over the developer's number
   check: z.object({ minItems: z.number().default(10), minLines: z.number().default(100), minLocated: z.number().default(3), excess: z.number().default(2) }).prefault({}),
   ignore: z.array(z.string()).default([]),
+  // email of the profile this repo serves instead of the developer's own, a scan still writes the developer's
+  profile: z.string().optional(),
 });
 export type RepoConfig = z.infer<typeof RepoConfigSchema>;
 

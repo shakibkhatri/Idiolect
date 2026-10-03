@@ -88,6 +88,10 @@ Unbot (`core/src/unbot.ts`, `cli/src/unbot.ts`): fast mode is `checkStyle`, `--l
 Default files are what changed since HEAD, `--staged` for hooks, `--all` for everything. `--strict` exits 1.
 `hooks install` writes a warn-only pre-commit hook and a post-commit refresh hook, honours `.husky`, points at lefthook.yml instead of editing it.
 
+Served profile (`core/src/profile.ts`, added 2026-10-03): `loadServedProfile(repo)` returns the profile named by `profile` in the repo config, otherwise the developer's own. `sync`, `show`, `rules`, `unbot`, `eval`, `ui` and the MCP server use it, `scan`, `status` and `refresh` do not.
+Render labels a text shared by some served languages with exactly those, "Kotlin, TypeScript: ...", and leaves the label off only when every served language shares it.
+`init` keeps the other keys of an existing repo config, it used to rewrite the file with languages and ignore only.
+
 Rules (`cli/src/rules.ts`): `list|show|approve|reject|edit` over `updateRules`. Decisions survive rescans.
 
 Refresh (`cli/src/refresh.ts`): `status` and `refresh`. Commits since the last scan come from `git rev-list --count <source.head>..HEAD`. At `refresh.everyCommits` it spawns `scan` detached and logs to `.idiolect/cache/refresh.log`.

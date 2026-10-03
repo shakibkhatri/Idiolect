@@ -4,7 +4,8 @@ import { dirname, relative, resolve } from "node:path";
 import { z } from "zod";
 
 export type ServerDeps = {
-  profile: () => Promise<Profile | undefined>;
+  /** `repo` is the repo of the call, so a repo that names another profile gets that one. */
+  profile: (repo?: string) => Promise<Profile | undefined>;
   provider?: () => Promise<LlmProvider | undefined>;
   cwd?: string;
 };
@@ -22,13 +23,13 @@ export function createIdiolectServer(deps: ServerDeps): McpServer {
   const server = new McpServer({ name: "idiolect", version: "0.0.1" });
   const cwd = deps.cwd ?? process.cwd();
 
+  const toplevel = (dir: string) => git(dir, ["rev-parse", "--show-toplevel"]).then((x) => x.trim()).catch(() => "");
   const context = async (file?: string) => {
-    const profile = await deps.profile();
-    if (!profile) throw new Error("no style profile yet. Run: idiolect init, then idiolect scan");
     const abs = file ? resolve(cwd, file) : undefined;
     // the file may not exist yet, so fall back to the directory the client started us in
-    const toplevel = (dir: string) => git(dir, ["rev-parse", "--show-toplevel"]).then((x) => x.trim()).catch(() => "");
     const repo = (abs && (await toplevel(dirname(abs)))) || (await toplevel(cwd)) || undefined;
+    const profile = await deps.profile(repo ?? cwd);
+    if (!profile) throw new Error("no style profile yet. Run: idiolect init, then idiolect scan");
     const { confidenceThreshold: threshold, check: floors } = await loadRepoConfig(repo ?? cwd);
     return { profile, repo, threshold, floors, file: abs ? relative(repo ?? cwd, abs) : undefined };
   };
@@ -94,7 +95,7 @@ export function createIdiolectServer(deps: ServerDeps): McpServer {
 
   server.registerResource("profile", new ResourceTemplate("style://profile/{language}", {
     list: async () => {
-      const profile = await deps.profile();
+      const profile = await deps.profile((await toplevel(cwd)) || cwd);
       return { resources: Object.keys(profile?.stats ?? {}).map((l) => ({ uri: `style://profile/${l}`, name: `${l} style`, mimeType: "text/markdown" })) };
     },
   }), { title: "Style profile", description: "The developer's STYLE.md for one language", mimeType: "text/markdown" }, async (uri, { language }) => {

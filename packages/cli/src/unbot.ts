@@ -1,4 +1,4 @@
-import { allExtensions, createProvider, git, languageOf, loadProfile, loadRepoConfig, loadUserConfig, rewriteLikeMe, unbot, userConfigPath, type Violation } from "@shakibkhatri/idiolect-core";
+import { allExtensions, createProvider, git, languageOf, loadServedProfile, loadRepoConfig, loadUserConfig, rewriteLikeMe, unbot, userConfigPath, type Violation } from "@shakibkhatri/idiolect-core";
 import { Command } from "commander";
 import { access, readFile, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
@@ -29,7 +29,7 @@ export function unbotCommand(): Command {
       const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"])).trim();
       const user = await loadUserConfig();
       if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
-      const profile = await loadProfile(user.emails[0]!);
+      const profile = await loadServedProfile(repo);
       if (!profile) throw new Error("no profile, run: idiolect scan");
       const { confidenceThreshold: threshold, check: floors } = await loadRepoConfig(repo);
       const provider = o.llm || o.fix ? createProvider(user.llm) : undefined;

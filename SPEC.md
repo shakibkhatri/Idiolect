@@ -103,6 +103,9 @@ Storage:
 - Per-repo config and cache: `<repo>/.idiolect/config.json` holds repo settings only (languages, ignore, sync targets, thresholds), safe to commit.
   The tool writes `<repo>/.idiolect/.gitignore` with `cache/` and `eval/` the first time it creates the directory, so the host repo's own `.gitignore` is never touched
 - Team rules: `<repo>/.idiolect/team.json` (committed)
+- Served profile: `profile` in the repo config names the email of the profile this repo serves instead of the developer's own.
+  Every command that reads rules goes through `loadServedProfile(repo)`, only `scan`, `status` and `refresh` stay on the developer's own profile.
+  Added 2026-10-03 so a profile learned from human-written open source code can be served while the developer's own, mostly agent-written, keeps scanning
 
 Precedence when serving rules:
 1. Scope first: team beats personal, always. A path-scoped personal rule never overrides a team rule.
