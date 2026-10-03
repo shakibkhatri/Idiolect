@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { analyzeCommits, emptyStats, mergeStats, type CommitStats, type LanguageStats } from "./analyzer.js";
 import type { Spread } from "./metrics.js";
 import type { Commit } from "./collector.js";
-import { loadRepoConfig, loadUserConfig, repoConfigPath } from "./config.js";
 
 export type Language = "kotlin" | "typescript" | "python" | "go";
 
@@ -37,7 +36,10 @@ export type Profile = {
   stats: Partial<Record<Language, LanguageStats>>;
   commitStats: CommitStats;
   rules: Rule[];
-  borrowed?: RuleKind[]; // in memory only: the kinds a repo serves from someone else's profile
+  // the three below exist in memory only, set when a repo serves a style that is not the developer's own
+  borrowed?: RuleKind[]; // the kinds served from it
+  provenance?: string;   // where a shipped style came from, said in the header
+  shipped?: boolean;     // built from styles in the package, so it cannot be saved
 };
 
 const IDIOM_METRIC = /^(kotlin|typescript|python|go)\.|^errors\.run-catching-share$|^functions\.expression-body-ratio$/;
@@ -66,22 +68,10 @@ export async function loadProfile(email: string): Promise<Profile | undefined> {
   return { ...profile, stats: fill(profile.stats), sources: profile.sources.map((s) => ({ ...s, stats: fill(s.stats) })) };
 }
 
-/** The profile a repo serves: the one `profile` names in its config, otherwise the developer's own. */
-export async function loadServedProfile(repo?: string): Promise<Profile | undefined> {
-  const config = repo ? await loadRepoConfig(repo) : undefined;
-  const named = config?.profile;
-  const user = await loadUserConfig();
-  if (!named) return user && loadProfile(user.emails[0]!);
-  const profile = await loadProfile(named);
-  if (!profile) throw new Error(`no profile ${profilePath(named)}, named by "profile" in ${repoConfigPath(repo!)}`);
-  // someone else's profile is borrowed: only the kinds the repo asks for, never its project rules
-  const own = user?.emails.some((e) => e.toLowerCase() === named.toLowerCase());
-  return own ? profile : { ...profile, borrowed: config!.borrow };
-}
-
 export async function saveProfile(profile: Profile) {
   await mkdir(profileDir(), { recursive: true });
-  const { borrowed: _transient, ...stored } = profile;
+  if (profile.shipped) throw new Error("a shipped style is read-only, decisions on it go to the repo's overrides");
+  const { borrowed: _b, provenance: _p, shipped: _s, ...stored } = profile;
   await writeFile(profilePath(profile.developer.emails[0]!), JSON.stringify(stored, null, 2) + "\n");
 }
 

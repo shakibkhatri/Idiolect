@@ -1,11 +1,11 @@
-import { git, isServed, loadServedProfile, loadRepoConfig, loadUserConfig, renderStyleMd, saveProfile, updateRules, userConfigPath, type Profile, type Rule } from "@shakibkhatri/idiolect-core";
+import { git, isServed, loadServedProfile, loadRepoConfig, renderStyleMd, updateRules, type Profile, type Rule } from "@shakibkhatri/idiolect-core";
 import type { Report } from "@shakibkhatri/idiolect-eval";
 import { Command } from "commander";
 import { execFile } from "node:child_process";
 import { readdir, readFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { join, resolve } from "node:path";
-import { writeStyle } from "./rules.js";
+import { NO_PROFILE, persist } from "./rules.js";
 import { THEME } from "./theme.js";
 
 export type ReportRow = { stamp: string; generatedAt: string; rules: number; tasks: number; judge: { withWins: number; total: number }; quiz?: { withWins: number; total: number }; distance: { with: number; without: number } };
@@ -40,9 +40,7 @@ export function uiCommand(): Command {
     .option("--no-open", "print the URL without opening the browser")
     .action(async (o: { repo: string; port: string; open: boolean }) => {
       const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"]).catch(() => resolve(o.repo))).trim();
-      const user = await loadUserConfig();
-      if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
-      const load = async () => { const p = await loadServedProfile(repo); if (!p) throw new Error("no profile, run: idiolect scan"); return p; };
+      const load = async () => { const p = await loadServedProfile(repo); if (!p) throw new Error(NO_PROFILE); return p; };
       const { confidenceThreshold: threshold } = await loadRepoConfig(repo);
       const state = async () => buildState(await load(), repo, threshold, await listReports(repo));
 
@@ -60,8 +58,7 @@ export function uiCommand(): Command {
           if (req.method === "POST" && url.pathname === "/api/rules") {
             const body = JSON.parse(await read(req)) as { ids: string[]; status: "approved" | "rejected" | "edited"; text?: string };
             const profile = updateRules(await load(), body.ids, body.status, body.text);
-            await saveProfile(profile);
-            await writeStyle(profile, threshold);
+            await persist(profile, repo, threshold);
             return json(res, await state());
           }
           res.writeHead(404); res.end();

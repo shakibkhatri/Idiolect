@@ -25,6 +25,8 @@ export const RepoConfigSchema = z.object({
   // email of the profile this repo serves instead of the developer's own, a scan still writes the developer's
   profile: z.string().optional(),
   // which kinds of rules a borrowed profile serves here, idiom is left out because it dates
+  // a shipped style per language, and the one whose commit rules are served. Wins over `profile`
+  styles: z.object({ kotlin: z.string(), typescript: z.string(), python: z.string(), go: z.string(), commits: z.string() }).partial().optional(),
   borrow: z.array(z.enum(["voice", "layout", "idiom"])).default(["voice", "layout"]),
 });
 export type RepoConfig = z.infer<typeof RepoConfigSchema>;
@@ -53,6 +55,12 @@ export async function ensureRepoDir(repo: string): Promise<string> {
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, ".gitignore"), "cache/\neval/\n", { flag: "wx" }).catch(() => undefined);
   return dir;
+}
+
+/** Merges into the stored file, so keys this call does not set survive. */
+export async function updateRepoConfig(repo: string, patch: Record<string, unknown>) {
+  const stored = JSON.parse(await readFile(repoConfigPath(repo), "utf8").catch(() => "{}")) as Record<string, unknown>;
+  await saveRepoConfig(repo, { ...stored, ...patch } as Partial<RepoConfig>);
 }
 
 export async function saveRepoConfig(repo: string, config: Partial<RepoConfig>) {

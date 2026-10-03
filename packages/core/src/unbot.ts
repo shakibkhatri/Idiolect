@@ -19,7 +19,7 @@ const Found = z.object({ violations: z.array(z.object({
 export async function deepCheck(profile: Profile, code: string, opts: CheckOptions, provider: LlmProvider): Promise<Violation[]> {
   const rules = voiceRules(profile, opts);
   if (!rules.length) return [];
-  const list = rules.map((r) => `- [${r.id}] ${r.text}${r.evidence.examples[0] ? `\n  example from their code: ${r.evidence.examples[0].snippet.split("\n").slice(0, 3).join(" ").slice(0, 200)}` : ""}`).join("\n");
+  const list = rules.map((r) => `- [${r.id}] ${r.text}${r.evidence.examples[0]?.snippet ? `\n  example from their code: ${r.evidence.examples[0].snippet.split("\n").slice(0, 3).join(" ").slice(0, 200)}` : ""}`).join("\n");
   const out = await provider.complete({
     system: `You lint code against one developer's voice rules. Each rule has an id. Report only clear violations of the listed rules, with the 1-based line number. Do not invent rules, do not judge correctness, do not report style the rules do not mention. Return JSON.\n\n# Rules\n${list}`,
     user: numbered(code), schema: Found,

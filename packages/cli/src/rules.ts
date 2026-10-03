@@ -1,4 +1,4 @@
-import { loadServedProfile, loadRepoConfig, ruleKind, loadUserConfig, profilePath, renderStyleMd, saveProfile, updateRules, userConfigPath, type Profile, type Rule } from "@shakibkhatri/idiolect-core";
+import { loadServedProfile, loadRepoConfig, ruleKind, profilePath, renderStyleMd, saveOverrides, saveProfile, updateRules, type Profile, type Rule } from "@shakibkhatri/idiolect-core";
 import { Command } from "commander";
 import { spawnSync } from "node:child_process";
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
@@ -10,18 +10,24 @@ export async function writeStyle(profile: Profile, threshold: number) {
   await writeFile(profilePath(profile.developer.emails[0]!).replace(/\.json$/, ".STYLE.md"), renderStyleMd(profile, { threshold }));
 }
 
+export const NO_PROFILE = "no style to serve. Pick a shipped one: idiolect styles, then idiolect use <style>. Or learn your own: idiolect init, then idiolect scan";
+
 async function load(repo: string) {
-  const user = await loadUserConfig();
-  if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
   const profile = await loadServedProfile(resolve(repo));
-  if (!profile) throw new Error("no profile, run: idiolect scan");
+  if (!profile) throw new Error(NO_PROFILE);
   return profile;
+}
+
+/** A decision is written where the served profile lives: its own file, or the repo's overrides for a shipped style. */
+export async function persist(profile: Profile, repo: string, threshold: number) {
+  if (profile.shipped) return saveOverrides(repo, profile);
+  await saveProfile(profile);
+  await writeStyle(profile, threshold);
 }
 
 async function decide(ids: string[], status: "approved" | "rejected" | "edited", repo: string, text?: string) {
   const profile = updateRules(await load(repo), ids, status, text);
-  await saveProfile(profile);
-  await writeStyle(profile, (await loadRepoConfig(resolve(repo))).confidenceThreshold);
+  await persist(profile, resolve(repo), (await loadRepoConfig(resolve(repo))).confidenceThreshold);
   for (const id of ids) console.log(`${status.padEnd(9)} ${id}`);
   console.log("run idiolect sync to update agent files, the MCP server picks this up on its next call");
 }

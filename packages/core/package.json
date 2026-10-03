@@ -16,6 +16,7 @@
     "dist",
     "grammars",
     "data",
+    "styles",
     "!dist/**/*.test.*"
   ],
   "license": "MIT",

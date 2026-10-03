@@ -3,7 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
 import { analyzeCommits, emptyStats } from "./analyzer.js";
-import { emptyProfile, loadServedProfile, saveProfile, updateRules, upsertSource, type Rule, type Source } from "./profile.js";
+import { loadServedProfile } from "./served.js";
+import { emptyProfile, saveProfile, updateRules, upsertSource, type Rule, type Source } from "./profile.js";
 
 const src = (repo: string, fns: number, commits: number): Source => {
   const stats = emptyStats();

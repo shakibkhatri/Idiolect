@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-import { analyze, fileSpread, languageOf, EXTENSIONS, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, ensureRepoDir, userConfigPath, repoConfigPath, loadProfile, loadServedProfile, mergeStats, profilePath, saveProfile, upsertSource, analyzeCommits, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type UserConfig, type SampleInput, type Language, type LanguageStats } from "@shakibkhatri/idiolect-core";
+import { analyze, fileSpread, languageOf, EXTENSIONS, isTestPath, collect, detectEmail, emptyProfile, emptyStats, git, loadUserConfig, saveUserConfig, loadRepoConfig, saveRepoConfig, updateRepoConfig, ensureRepoDir, userConfigPath, repoConfigPath, loadProfile, loadServedProfile, mergeStats, profilePath, saveProfile, upsertSource, analyzeCommits, collectSamples, createProvider, writeRules, buildPrompt, baselineRules, renderStyleMd, estimateTokens, type UserConfig, type SampleInput, type Language, type LanguageStats } from "@shakibkhatri/idiolect-core";
 import { DEFAULT_TASKS_DIR, loadTasks, renderReport, runEval, type Report } from "@shakibkhatri/idiolect-eval";
 import { createIdiolectServer } from "@shakibkhatri/idiolect-mcp";
 import { syncTargets } from "./sync.js";
-import { rulesCommand, writeStyle } from "./rules.js";
+import { NO_PROFILE, rulesCommand, writeStyle } from "./rules.js";
+import { stylesCommand, useCommand } from "./styles.js";
 import { hooksCommand, unbotCommand } from "./unbot.js";
 import { refreshCommand, statusCommand } from "./refresh.js";
 import { ttyQuiz, webQuiz } from "./quiz.js";
@@ -77,8 +78,7 @@ program.command("init")
     }
     const repoConfig = await loadRepoConfig(repo);
     // keep whatever else the repo config holds, init only owns the language list
-    const kept = JSON.parse(await readFile(repoConfigPath(repo), "utf8").catch(() => "{}")) as object;
-    await saveRepoConfig(repo, { ...kept, languages, ignore: repoConfig.ignore });
+    await updateRepoConfig(repo, { languages, ignore: repoConfig.ignore });
 
     const need = { "claude-cli": "your Claude Code login", anthropic: "needs ANTHROPIC_API_KEY", openai: "needs OPENAI_API_KEY and llm.model", gemini: "needs GEMINI_API_KEY and llm.model", "openai-compatible": "needs llm.model, default base url is Ollama", none: "metric rules only" }[provider];
     console.log(`\nwrote ${userConfigPath()}  (you, shared across repos)`);
@@ -172,9 +172,8 @@ program.command("show")
   .option("--evidence", "append metric and example evidence to each rule")
   .action(async (o: { repo: string; email?: string; lang?: string; evidence?: boolean }) => {
     const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"]).catch(() => "")).trim() || undefined;
-    if (!o.email && !(await loadUserConfig())) throw new Error("no ~/.idiolect/config.json, run: idiolect init");
     const profile = o.email ? await loadProfile(o.email) : await loadServedProfile(repo ?? resolve(o.repo));
-    if (!profile) throw new Error(`no profile${o.email ? ` for ${o.email}` : ""}, run: idiolect scan`);
+    if (!profile) throw new Error(o.email ? `no profile for ${o.email}, run: idiolect scan` : NO_PROFILE);
     const { confidenceThreshold } = await loadRepoConfig(resolve(o.repo));
     console.log(renderStyleMd(profile, { threshold: confidenceThreshold, language: o.lang, evidence: o.evidence, repo }));
   });
@@ -185,16 +184,16 @@ program.command("sync")
   .option("--target <file...>", "files to write, overrides sync.targets in .idiolect/config.json")
   .action(async (o: { repo: string; target?: string[] }) => {
     const repo = (await git(resolve(o.repo), ["rev-parse", "--show-toplevel"])).trim();
-    const user = await loadUserConfig();
-    if (!user) throw new Error(`no ${userConfigPath()}, run: idiolect init`);
     const profile = await loadServedProfile(repo);
-    if (!profile) throw new Error("no profile, run: idiolect scan");
+    if (!profile) throw new Error(NO_PROFILE);
     const config = await loadRepoConfig(repo);
     const body = renderStyleMd(profile, { threshold: config.confidenceThreshold, repo });
     const results = await syncTargets(repo, body, o.target ?? config.sync.targets);
     for (const r of results) console.log(`${r.status.padEnd(9)} ${r.file}${r.status === "skipped" ? "  (not present, list it in sync.targets or pass --target to create it)" : ""}`);
   });
 
+program.addCommand(stylesCommand());
+program.addCommand(useCommand());
 program.addCommand(rulesCommand());
 program.addCommand(unbotCommand());
 program.addCommand(hooksCommand());

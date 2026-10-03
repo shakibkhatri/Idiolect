@@ -28,7 +28,7 @@ const COMMON_DEFS: Def[] = [
   { metric: "naming.test-camel-sentence-ratio", category: "naming", kind: "high", text: () => "Name tests as camelCase sentences: fun aDeviceWithoutPowerIsRejected()." },
   { metric: "naming.test-should-ratio", category: "naming", kind: "high", text: () => "Start test names with should: it(\"should reject a device without power\")." },
   { metric: "naming.test-should-ratio", category: "naming", kind: "low", text: () => "Name tests as plain statements, not \"should ...\": it(\"rejects a device without power\")." },
-  { metric: "comments.per-100-loc", category: "comments", kind: "value", text: (m) => `Comment sparingly. About ${n(m.value)} comments per 100 lines of code.` },
+  { metric: "comments.per-100-loc", category: "comments", kind: "value", text: (m) => `${m.value >= 15 ? "Comment freely" : "Comment sparingly"}. About ${n(m.value)} comments per 100 lines of code.` },
   { metric: "comments.doc-ratio", category: "comments", kind: "high", text: () => "Most comments are doc comments on declarations, not inline comments." },
   { metric: "comments.doc-ratio", category: "comments", kind: "low", text: () => "Use short inline comments. Doc comments are rare." },
   { metric: "comments.lowercase-start-ratio", category: "comments", kind: "high", text: () => "Start comments in lowercase." },

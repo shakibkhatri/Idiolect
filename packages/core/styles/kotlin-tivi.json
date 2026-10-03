@@ -1,0 +1,1505 @@
+{
+  "version": 1,
+  "id": "kotlin-tivi",
+  "title": "Tivi",
+  "language": "kotlin",
+  "source": {
+    "project": "github.com/chrisbanes/tivi",
+    "license": "Apache-2.0",
+    "commit": "92cd468cc7fc0c25d2b29ab61104ca7b22c0e0e4",
+    "snapshot": "2023-12-30T12:38:44Z",
+    "lines": 25584
+  },
+  "stats": {
+    "files": 640,
+    "loc": 25584,
+    "functions": {
+      "count": 1324,
+      "blockBody": 721,
+      "expressionBody": 427,
+      "lengthLines": {
+        "1": 2,
+        "3": 172,
+        "4": 67,
+        "5": 58,
+        "6": 29,
+        "7": 42,
+        "8": 30,
+        "9": 31,
+        "10": 9,
+        "11": 11,
+        "12": 15,
+        "13": 14,
+        "14": 10,
+        "15": 9,
+        "16": 11,
+        "17": 15,
+        "18": 11,
+        "19": 11,
+        "20": 9,
+        "21": 8,
+        "22": 8,
+        "23": 6,
+        "24": 11,
+        "25": 7,
+        "26": 11,
+        "27": 7,
+        "28": 4,
+        "29": 7,
+        "30": 2,
+        "31": 4,
+        "32": 3,
+        "33": 6,
+        "34": 4,
+        "35": 1,
+        "36": 4,
+        "37": 3,
+        "38": 3,
+        "39": 3,
+        "40": 3,
+        "41": 4,
+        "42": 2,
+        "43": 2,
+        "44": 1,
+        "45": 2,
+        "47": 3,
+        "48": 1,
+        "49": 1,
+        "51": 1,
+        "52": 1,
+        "54": 2,
+        "57": 1,
+        "58": 3,
+        "60": 2,
+        "61": 2,
+        "62": 1,
+        "64": 1,
+        "65": 1,
+        "66": 3,
+        "72": 2,
+        "73": 1,
+        "76": 2,
+        "77": 1,
+        "81": 1,
+        "88": 1,
+        "90": 1,
+        "92": 1,
+        "95": 2,
+        "98": 1,
+        "103": 1,
+        "104": 1,
+        "107": 1,
+        "113": 1,
+        "121": 1,
+        "130": 1,
+        "142": 1,
+        "152": 1,
+        "155": 1,
+        "159": 1,
+        "160": 1,
+        "167": 1,
+        "168": 1
+      },
+      "params": {
+        "0": 295,
+        "1": 664,
+        "2": 219,
+        "3": 51,
+        "4": 32,
+        "5": 23,
+        "6": 10,
+        "7": 7,
+        "8": 5,
+        "9": 4,
+        "10": 4,
+        "11": 4,
+        "12": 2,
+        "14": 2,
+        "16": 1,
+        "26": 1
+      },
+      "maxNesting": {
+        "0": 358,
+        "1": 173,
+        "2": 87,
+        "3": 55,
+        "4": 33,
+        "5": 10,
+        "6": 3,
+        "7": 2
+      },
+      "earlyReturn": 27
+    },
+    "naming": {
+      "casing": {
+        "function": {
+          "camel": 1080,
+          "pascal": 142,
+          "snake": 0,
+          "screaming": 0,
+          "backtick": 0,
+          "other": 0
+        },
+        "class": {
+          "camel": 0,
+          "pascal": 712,
+          "snake": 0,
+          "screaming": 0,
+          "backtick": 0,
+          "other": 0
+        },
+        "property": {
+          "camel": 303,
+          "pascal": 29,
+          "snake": 2,
+          "screaming": 15,
+          "backtick": 0,
+          "other": 0
+        },
+        "local": {
+          "camel": 638,
+          "pascal": 0,
+          "snake": 0,
+          "screaming": 0,
+          "backtick": 0,
+          "other": 0
+        },
+        "parameter": {
+          "camel": 2809,
+          "pascal": 0,
+          "snake": 12,
+          "screaming": 0,
+          "backtick": 0,
+          "other": 45
+        },
+        "constant": {
+          "camel": 5,
+          "pascal": 0,
+          "snake": 5,
+          "screaming": 33,
+          "backtick": 0,
+          "other": 0
+        }
+      },
+      "nameLength": {
+        "function": {
+          "1": 28,
+          "3": 48,
+          "4": 29,
+          "5": 20,
+          "6": 178,
+          "7": 41,
+          "8": 32,
+          "9": 66,
+          "10": 48,
+          "11": 45,
+          "12": 63,
+          "13": 38,
+          "14": 30,
+          "15": 77,
+          "16": 72,
+          "17": 64,
+          "18": 49,
+          "19": 27,
+          "20": 40,
+          "21": 28,
+          "22": 24,
+          "23": 29,
+          "24": 10,
+          "25": 15,
+          "26": 17,
+          "27": 23,
+          "28": 16,
+          "29": 12,
+          "30": 3,
+          "31": 10,
+          "32": 7,
+          "33": 4,
+          "34": 10,
+          "35": 5,
+          "36": 4,
+          "37": 2,
+          "38": 3,
+          "40": 3,
+          "46": 2
+        },
+        "class": {
+          "4": 2,
+          "5": 4,
+          "6": 47,
+          "7": 12,
+          "8": 6,
+          "9": 12,
+          "10": 29,
+          "11": 20,
+          "12": 31,
+          "13": 27,
+          "14": 26,
+          "15": 57,
+          "16": 32,
+          "17": 43,
+          "18": 36,
+          "19": 24,
+          "20": 44,
+          "21": 36,
+          "22": 31,
+          "23": 36,
+          "24": 23,
+          "25": 25,
+          "26": 21,
+          "27": 15,
+          "28": 16,
+          "29": 16,
+          "30": 10,
+          "31": 6,
+          "32": 4,
+          "33": 3,
+          "34": 7,
+          "35": 6,
+          "36": 3,
+          "37": 1,
+          "38": 1
+        },
+        "property": {
+          "2": 5,
+          "4": 13,
+          "5": 15,
+          "6": 24,
+          "7": 14,
+          "8": 27,
+          "9": 22,
+          "10": 30,
+          "11": 28,
+          "12": 23,
+          "13": 25,
+          "14": 15,
+          "15": 12,
+          "16": 7,
+          "17": 7,
+          "18": 17,
+          "19": 9,
+          "20": 14,
+          "21": 4,
+          "22": 12,
+          "23": 11,
+          "24": 5,
+          "26": 5,
+          "27": 3,
+          "30": 1,
+          "31": 1
+        },
+        "local": {
+          "1": 8,
+          "2": 6,
+          "3": 10,
+          "4": 37,
+          "5": 54,
+          "6": 47,
+          "7": 79,
+          "8": 32,
+          "9": 53,
+          "10": 95,
+          "11": 52,
+          "12": 30,
+          "13": 26,
+          "14": 30,
+          "15": 14,
+          "16": 18,
+          "17": 15,
+          "18": 6,
+          "19": 3,
+          "20": 15,
+          "22": 3,
+          "24": 1,
+          "25": 2,
+          "27": 1,
+          "29": 1
+        },
+        "parameter": {
+          "1": 3,
+          "2": 71,
+          "3": 43,
+          "4": 213,
+          "5": 255,
+          "6": 369,
+          "7": 607,
+          "8": 348,
+          "9": 213,
+          "10": 90,
+          "11": 78,
+          "12": 84,
+          "13": 87,
+          "14": 62,
+          "15": 66,
+          "16": 56,
+          "17": 52,
+          "18": 50,
+          "19": 22,
+          "20": 19,
+          "21": 16,
+          "22": 6,
+          "23": 9,
+          "24": 3,
+          "25": 12,
+          "26": 6,
+          "27": 7,
+          "28": 5,
+          "29": 3,
+          "30": 1,
+          "31": 2,
+          "32": 1,
+          "33": 2,
+          "34": 2,
+          "35": 1,
+          "36": 1,
+          "38": 1
+        },
+        "constant": {
+          "2": 1,
+          "3": 1,
+          "5": 3,
+          "6": 1,
+          "7": 4,
+          "8": 1,
+          "9": 5,
+          "10": 2,
+          "11": 1,
+          "14": 5,
+          "15": 2,
+          "16": 4,
+          "17": 2,
+          "18": 1,
+          "19": 2,
+          "20": 1,
+          "22": 1,
+          "24": 2,
+          "26": 2,
+          "27": 1,
+          "30": 1
+        }
+      },
+      "functionVerb": {
+        "standard": 1,
+        "on": 18,
+        "from": 2,
+        "handle": 5,
+        "finish": 1,
+        "startup": 1,
+        "provide": 101,
+        "get": 100,
+        "select": 1,
+        "initialize": 10,
+        "refresh": 6,
+        "log": 5,
+        "create": 59,
+        "bind": 51,
+        "intercept": 5,
+        "is": 12,
+        "as": 5,
+        "find": 3,
+        "build": 4,
+        "map": 32,
+        "content": 2,
+        "show": 16,
+        "report": 4,
+        "color": 4,
+        "entry": 19,
+        "haze": 1,
+        "body": 1,
+        "item": 2,
+        "gutter": 2,
+        "full": 1,
+        "append": 1,
+        "prepend": 1,
+        "remember": 4,
+        "then": 1,
+        "nested": 1,
+        "tivi": 4,
+        "should": 5,
+        "auto": 1,
+        "backdrop": 4,
+        "placeholder": 2,
+        "date": 5,
+        "time": 4,
+        "clickable": 1,
+        "empty": 2,
+        "expanding": 1,
+        "draw": 3,
+        "scrimmed": 1,
+        "scrim": 1,
+        "async": 1,
+        "result": 1,
+        "size": 1,
+        "measure": 1,
+        "set": 12,
+        "to": 8,
+        "align": 1,
+        "update": 31,
+        "loading": 1,
+        "copy": 2,
+        "plus": 1,
+        "minus": 1,
+        "coerce": 1,
+        "poster": 4,
+        "checkbox": 1,
+        "preference": 3,
+        "search": 11,
+        "sort": 2,
+        "label": 1,
+        "user": 2,
+        "ui": 3,
+        "emit": 1,
+        "clear": 8,
+        "view": 2,
+        "add": 13,
+        "action": 5,
+        "font": 4,
+        "read": 2,
+        "fmt": 4,
+        "format": 28,
+        "airs": 5,
+        "followed": 1,
+        "season": 14,
+        "episode": 25,
+        "genre": 2,
+        "track": 3,
+        "lerp": 2,
+        "combine": 5,
+        "fluent": 1,
+        "parallel": 1,
+        "v": 5,
+        "d": 5,
+        "i": 6,
+        "e": 6,
+        "w": 6,
+        "invoke": 28,
+        "composite": 1,
+        "send": 1,
+        "trace": 2,
+        "observe": 39,
+        "toggle": 2,
+        "decode": 11,
+        "encode": 11,
+        "insert": 17,
+        "upsert": 6,
+        "episodes": 2,
+        "delete": 65,
+        "mapper": 1,
+        "watches": 4,
+        "watch": 3,
+        "entries": 46,
+        "last": 2,
+        "request": 2,
+        "paged": 4,
+        "seasons": 5,
+        "trakt": 3,
+        "image": 2,
+        "save": 11,
+        "remove": 10,
+        "has": 2,
+        "sync": 6,
+        "need": 6,
+        "mark": 6,
+        "fetch": 3,
+        "process": 4,
+        "merge": 3,
+        "pull": 1,
+        "invalidate": 2,
+        "pair": 2,
+        "parse": 2,
+        "syncer": 2,
+        "filter": 2,
+        "store": 1,
+        "using": 1,
+        "reader": 1,
+        "write": 1,
+        "shows": 1,
+        "register": 6,
+        "serialize": 4,
+        "login": 1,
+        "logout": 1,
+        "cache": 1,
+        "main": 1,
+        "do": 26,
+        "unfollow": 1,
+        "follow": 1,
+        "load": 2,
+        "configure": 4,
+        "apply": 2,
+        "compose": 1,
+        "determine": 1,
+        "name": 1,
+        "schedule": 1,
+        "run": 1,
+        "next": 3,
+        "swipeable": 1,
+        "reset": 3,
+        "swipe": 2,
+        "animate": 1,
+        "present": 15,
+        "account": 2,
+        "app": 1,
+        "preview": 3,
+        "dev": 2,
+        "event": 14,
+        "discover": 2,
+        "carousel": 1,
+        "header": 2,
+        "info": 3,
+        "library": 4,
+        "popular": 1,
+        "recommended": 1,
+        "home": 5,
+        "for": 1,
+        "previous": 1,
+        "go": 1,
+        "pop": 1,
+        "settings": 1,
+        "theme": 2,
+        "network": 1,
+        "runtime": 1,
+        "certificate": 1,
+        "genres": 1,
+        "related": 1,
+        "pager": 1,
+        "trending": 1,
+        "up": 4
+      },
+      "booleanPrefix": {
+        "is": 19,
+        "should": 2,
+        "use": 4,
+        "library": 4,
+        "up": 2,
+        "ignore": 2,
+        "report": 4,
+        "developer": 2,
+        "get": 1,
+        "need": 6,
+        "process": 2,
+        "has": 2,
+        "refreshing": 1,
+        "dynamic": 4,
+        "open": 1
+      },
+      "abbreviated": 279,
+      "identifiers": 5830,
+      "testNames": {
+        "camel": 54,
+        "camelSentence": 28,
+        "snake": 20
+      },
+      "genericNames": 0
+    },
+    "tests": {
+      "files": 24,
+      "loc": 1329,
+      "functions": 102
+    },
+    "comments": {
+      "line": 1613,
+      "block": 3,
+      "doc": 35,
+      "chars": 88075,
+      "lowercaseStart": 85,
+      "trailingPeriod": 47,
+      "todo": {
+        "TODO:": 4,
+        "TODO": 6,
+        "FIXME": 1
+      },
+      "tells": {},
+      "publicDecls": 2020,
+      "publicDocumented": 22,
+      "privateDecls": 394,
+      "privateDocumented": 9
+    },
+    "errors": {
+      "tryCatch": 29,
+      "runCatching": 13,
+      "resultType": 23,
+      "forceUnwrap": 58
+    },
+    "kotlin": {
+      "when3": 63,
+      "ifElseChain3": 2,
+      "sealedInterface": 15,
+      "sealedClass": 2,
+      "extensionFunctions": 91,
+      "dataClasses": 146,
+      "composables": 167,
+      "modifierParamFirst": 7,
+      "modifierParamLater": 96,
+      "remember": 171
+    },
+    "typescript": {
+      "arrowFunctions": 0,
+      "functionDeclarations": 0,
+      "typeAliases": 0,
+      "interfaces": 0,
+      "optionalChains": 0,
+      "anyTypes": 0
+    },
+    "python": {
+      "typeHinted": 0,
+      "fStrings": 0,
+      "formatCalls": 0,
+      "comprehensions": 0,
+      "bareExcepts": 0,
+      "dataclasses": 0
+    },
+    "go": {
+      "errChecks": 0,
+      "namedReturns": 0,
+      "structs": 0,
+      "interfaces": 0,
+      "panics": 0
+    }
+  },
+  "commitStats": {
+    "count": 3110,
+    "subjectLength": {
+      "4": 1,
+      "6": 2,
+      "7": 1,
+      "8": 4,
+      "9": 11,
+      "10": 4,
+      "11": 19,
+      "12": 14,
+      "13": 17,
+      "14": 29,
+      "15": 20,
+      "16": 25,
+      "17": 37,
+      "18": 36,
+      "19": 73,
+      "20": 58,
+      "21": 71,
+      "22": 68,
+      "23": 78,
+      "24": 81,
+      "25": 89,
+      "26": 86,
+      "27": 114,
+      "28": 95,
+      "29": 91,
+      "30": 97,
+      "31": 92,
+      "32": 107,
+      "33": 115,
+      "34": 121,
+      "35": 114,
+      "36": 96,
+      "37": 118,
+      "38": 99,
+      "39": 98,
+      "40": 90,
+      "41": 83,
+      "42": 75,
+      "43": 89,
+      "44": 73,
+      "45": 50,
+      "46": 58,
+      "47": 62,
+      "48": 38,
+      "49": 46,
+      "50": 39,
+      "51": 32,
+      "52": 24,
+      "53": 31,
+      "54": 17,
+      "55": 17,
+      "56": 17,
+      "57": 19,
+      "58": 6,
+      "59": 11,
+      "60": 7,
+      "61": 5,
+      "62": 6,
+      "63": 5,
+      "64": 3,
+      "65": 6,
+      "66": 6,
+      "68": 5,
+      "70": 2,
+      "71": 1,
+      "72": 1,
+      "73": 1,
+      "75": 2,
+      "77": 1,
+      "78": 1
+    },
+    "lowercaseStart": 13,
+    "conventionalPrefix": 0,
+    "trailingPeriod": 4,
+    "withBody": 570,
+    "bodyLines": 1556,
+    "bodyLinesWrapped": 1528,
+    "tense": {
+      "imperative": 3070,
+      "thirdPerson": 25,
+      "past": 15
+    }
+  },
+  "rules": [
+    {
+      "id": "kotlin.functions.length-p50.value",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "structure",
+      "kind": "voice",
+      "text": "Keep functions short. Typical length is 7 lines, 90% are under 36 lines.",
+      "evidence": {
+        "metric": {
+          "name": "functions.length-p50",
+          "value": 7,
+          "sampleSize": 721
+        },
+        "examples": []
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.functions.params-p90.value",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "structure",
+      "kind": "voice",
+      "text": "Functions take at most 3 parameters in 90% of cases.",
+      "evidence": {
+        "metric": {
+          "name": "functions.params-p90",
+          "value": 3,
+          "sampleSize": 1324
+        },
+        "examples": []
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.functions.nesting-p90.value",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "structure",
+      "kind": "voice",
+      "text": "Keep nesting shallow. 90% of functions nest at most 3 levels deep.",
+      "evidence": {
+        "metric": {
+          "name": "functions.nesting-p90",
+          "value": 3,
+          "sampleSize": 721
+        },
+        "examples": []
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.naming.constant-screaming-ratio.high",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "naming",
+      "kind": "voice",
+      "text": "Constants are SCREAMING_SNAKE_CASE.",
+      "evidence": {
+        "metric": {
+          "name": "naming.constant-screaming-ratio",
+          "value": 0.868,
+          "sampleSize": 38
+        },
+        "examples": []
+      },
+      "confidence": 0.73,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.naming.abbreviation-ratio.low",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "naming",
+      "kind": "voice",
+      "text": "Spell names out. Avoid abbreviations.",
+      "evidence": {
+        "metric": {
+          "name": "naming.abbreviation-ratio",
+          "value": 0.048,
+          "sampleSize": 5830
+        },
+        "examples": []
+      },
+      "confidence": 0.95,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.comments.per-100-loc.value",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "comments",
+      "kind": "voice",
+      "text": "Comment sparingly. About 6.5 comments per 100 lines of code.",
+      "evidence": {
+        "metric": {
+          "name": "comments.per-100-loc",
+          "value": 6.453,
+          "sampleSize": 25584
+        },
+        "examples": []
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.comments.doc-ratio.low",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "comments",
+      "kind": "voice",
+      "text": "Use short inline comments. Doc comments are rare.",
+      "evidence": {
+        "metric": {
+          "name": "comments.doc-ratio",
+          "value": 0.021,
+          "sampleSize": 1651
+        },
+        "examples": []
+      },
+      "confidence": 0.97,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.comments.lowercase-start-ratio.low",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "comments",
+      "kind": "voice",
+      "text": "Start comments with a capital letter.",
+      "evidence": {
+        "metric": {
+          "name": "comments.lowercase-start-ratio",
+          "value": 0.051,
+          "sampleSize": 1651
+        },
+        "examples": []
+      },
+      "confidence": 0.94,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.comments.trailing-period-ratio.low",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "comments",
+      "kind": "voice",
+      "text": "No trailing period on comments.",
+      "evidence": {
+        "metric": {
+          "name": "comments.trailing-period-ratio",
+          "value": 0.028,
+          "sampleSize": 1651
+        },
+        "examples": []
+      },
+      "confidence": 0.96,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.comments.avg-chars.value",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "comments",
+      "kind": "voice",
+      "text": "Comments average 53 characters.",
+      "evidence": {
+        "metric": {
+          "name": "comments.avg-chars",
+          "value": 53,
+          "sampleSize": 1651
+        },
+        "examples": []
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.comments.public-doc-ratio.low",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "comments",
+      "kind": "voice",
+      "text": "Do not add doc comments to public declarations by default. The name should carry the meaning.",
+      "evidence": {
+        "metric": {
+          "name": "comments.public-doc-ratio",
+          "value": 0.011,
+          "sampleSize": 2020
+        },
+        "examples": []
+      },
+      "confidence": 0.98,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.kotlin.when-ratio.high",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "structure",
+      "kind": "idiom",
+      "text": "Use when instead of if/else chains with three or more branches.",
+      "evidence": {
+        "metric": {
+          "name": "kotlin.when-ratio",
+          "value": 0.969,
+          "sampleSize": 65
+        },
+        "examples": []
+      },
+      "confidence": 0.89,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.kotlin.extension-per-kloc.value",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "structure",
+      "kind": "idiom",
+      "text": "Extension functions are common, about 3.6 per 1000 lines.",
+      "evidence": {
+        "metric": {
+          "name": "kotlin.extension-per-kloc",
+          "value": 3.557,
+          "sampleSize": 25584
+        },
+        "examples": []
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "avoid.kotlin.comments.buzzwords",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "avoid",
+      "kind": "voice",
+      "text": "Do not use words like robust, seamless, leverage, comprehensive, utilize, streamline, crucial or delve in comments.",
+      "evidence": {
+        "metric": {
+          "name": "comments.buzzword-ratio",
+          "value": 0,
+          "sampleSize": 1651
+        },
+        "examples": []
+      },
+      "confidence": 1,
+      "status": "auto"
+    },
+    {
+      "id": "avoid.kotlin.comments.restating",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "avoid",
+      "kind": "voice",
+      "text": "Do not start comments with \"This function\", \"This method\" or \"This class\". Say what is not obvious from the code, or write nothing.",
+      "evidence": {
+        "metric": {
+          "name": "comments.restates-ratio",
+          "value": 0,
+          "sampleSize": 1651
+        },
+        "examples": []
+      },
+      "confidence": 1,
+      "status": "auto"
+    },
+    {
+      "id": "avoid.kotlin.comments.emoji",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "avoid",
+      "kind": "voice",
+      "text": "No emoji in comments.",
+      "evidence": {
+        "metric": {
+          "name": "comments.emoji-ratio",
+          "value": 0,
+          "sampleSize": 1651
+        },
+        "examples": []
+      },
+      "confidence": 1,
+      "status": "auto"
+    },
+    {
+      "id": "avoid.kotlin.comments.private-docblocks",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "avoid",
+      "kind": "voice",
+      "text": "Do not write doc comments on private functions and properties.",
+      "evidence": {
+        "metric": {
+          "name": "comments.private-doc-ratio",
+          "value": 0.023,
+          "sampleSize": 394
+        },
+        "examples": []
+      },
+      "confidence": 0.96,
+      "status": "auto"
+    },
+    {
+      "id": "avoid.kotlin.naming.generic",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "avoid",
+      "kind": "voice",
+      "text": "No generic names like handleData, processItem, result2 or helper. Name the thing after what it is.",
+      "evidence": {
+        "metric": {
+          "name": "naming.generic-ratio",
+          "value": 0,
+          "sampleSize": 1222
+        },
+        "examples": []
+      },
+      "confidence": 1,
+      "status": "auto"
+    },
+    {
+      "id": "avoid.kotlin.comments.todo",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "avoid",
+      "kind": "voice",
+      "text": "Do not leave TODO comments.",
+      "evidence": {
+        "metric": {
+          "name": "comments.todo-ratio",
+          "value": 0.007,
+          "sampleSize": 1651
+        },
+        "examples": []
+      },
+      "confidence": 0.99,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.conventional-ratio.low",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "No conventional commit prefixes. Plain sentences.",
+      "evidence": {
+        "metric": {
+          "name": "commits.conventional-ratio",
+          "value": 0,
+          "sampleSize": 3110
+        },
+        "examples": []
+      },
+      "confidence": 1,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.lowercase-ratio.low",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "Commit subjects start with a capital letter.",
+      "evidence": {
+        "metric": {
+          "name": "commits.lowercase-ratio",
+          "value": 0.004,
+          "sampleSize": 3110
+        },
+        "examples": []
+      },
+      "confidence": 0.99,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.imperative-ratio.high",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "Write commit subjects in the imperative: Add, Fix, Remove.",
+      "evidence": {
+        "metric": {
+          "name": "commits.imperative-ratio",
+          "value": 0.987,
+          "sampleSize": 3110
+        },
+        "examples": []
+      },
+      "confidence": 0.98,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.trailing-period-ratio.low",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "No period at the end of a commit subject.",
+      "evidence": {
+        "metric": {
+          "name": "commits.trailing-period-ratio",
+          "value": 0.001,
+          "sampleSize": 3110
+        },
+        "examples": []
+      },
+      "confidence": 1,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.body-ratio.low",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "Subject line only. Commit bodies are rare.",
+      "evidence": {
+        "metric": {
+          "name": "commits.body-ratio",
+          "value": 0.183,
+          "sampleSize": 3110
+        },
+        "examples": []
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.body-wrap-ratio.high",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "Hard-wrap commit body lines at 72 characters.",
+      "evidence": {
+        "metric": {
+          "name": "commits.body-wrap-ratio",
+          "value": 0.982,
+          "sampleSize": 1556
+        },
+        "examples": []
+      },
+      "confidence": 0.97,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.subject-p50.value",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "Commit subjects are about 34 characters.",
+      "evidence": {
+        "metric": {
+          "name": "commits.subject-p50",
+          "value": 34,
+          "sampleSize": 3110
+        },
+        "examples": []
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.we-now-body",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "When a commit needs a body, write it as one or two first-person-plural sentences stating the new behaviour and the reason: \"We now rely on normal exception handling, which feels clearer\", \"Allows us to enforce that the database is the source of truth\".",
+      "evidence": {
+        "examples": [
+          {
+            "file": "commit:7897692",
+            "line": 0,
+            "snippet": ""
+          },
+          {
+            "file": "commit:64e18b7",
+            "line": 0,
+            "snippet": ""
+          },
+          {
+            "file": "commit:e9f505c",
+            "line": 0,
+            "snippet": ""
+          }
+        ]
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.dependency-bumps",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "Version bumps use the subject \"Update to <Lib> <version>\" or \"Bump <Lib> to <version>\"; a multi-library bump is titled \"Dependency updates\" with a body that is a bare \"- Lib\" list, one library per line.",
+      "evidence": {
+        "examples": [
+          {
+            "file": "commit:753aacc",
+            "line": 0,
+            "snippet": ""
+          },
+          {
+            "file": "commit:61df0a4",
+            "line": 0,
+            "snippet": ""
+          },
+          {
+            "file": "commit:c4e81a1",
+            "line": 0,
+            "snippet": ""
+          }
+        ]
+      },
+      "confidence": 0.9,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.tidy-up-for-now",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "Call cleanup commits \"Tidy up <thing>\".",
+      "evidence": {
+        "examples": [
+          {
+            "file": "commit:f06b28d",
+            "line": 0,
+            "snippet": ""
+          },
+          {
+            "file": "commit:3b94a64",
+            "line": 0,
+            "snippet": ""
+          },
+          {
+            "file": "commit:f8971eb",
+            "line": 0,
+            "snippet": ""
+          }
+        ]
+      },
+      "confidence": 0.7,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.comments.we-voice-with-reason",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "comments",
+      "kind": "voice",
+      "text": "Write inline comments as first-person-plural narration of the next step, with the reason attached in the same sentence by \", so\" or \", as\": \"We're not logged in, so just update the database\", \"We minus 8.dp off the grid padding, as we use content padding on the items below\".",
+      "evidence": {
+        "examples": [
+          {
+            "file": "data/followedshows/src/commonMain/kotlin/app/tivi/data/followedshows/FollowedShowsRepository.kt",
+            "line": 173,
+            "snippet": ""
+          },
+          {
+            "file": "ui/upnext/src/commonMain/kotlin/app/tivi/home/upnext/UpNext.kt",
+            "line": 226,
+            "snippet": ""
+          },
+          {
+            "file": "data/test/src/commonTest/kotlin/app/tivi/data/repositories/SeasonsEpisodesRepositoryTest.kt",
+            "line": 72,
+            "snippet": ""
+          }
+        ]
+      },
+      "confidence": 0.7,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.comments.link-bug-url",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "comments",
+      "kind": "voice",
+      "text": "When code works around an external bug or follows a specific doc, end the comment with the bare URL, optionally after \"See:\", as in \"See: https://issuetracker.google.com/issues/256100927\". Do not paraphrase the issue beyond one line.",
+      "evidence": {
+        "examples": [
+          {
+            "file": "ui/recommended/src/commonMain/kotlin/app/tivi/home/recommended/Recommended.kt",
+            "line": 30,
+            "snippet": ""
+          },
+          {
+            "file": "ui/account/src/commonMain/kotlin/app/tivi/account/AccountUi.kt",
+            "line": 70,
+            "snippet": ""
+          },
+          {
+            "file": "gradle/build-logic/convention/src/main/kotlin/app/tivi/gradle/KotlinMultiplatformConventionPlugin.kt",
+            "line": 63,
+            "snippet": ""
+          }
+        ]
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.comments.section-labels",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "comments",
+      "kind": "voice",
+      "text": "To split a long class or test into regions, use a terse noun-phrase comment as a label, such as \"// Trakt specific stuff\" or \"// Episode details\", not a doc block or banner.",
+      "evidence": {
+        "examples": [
+          {
+            "file": "data/episodes/src/commonMain/kotlin/app/tivi/data/episodes/SeasonsEpisodesRepository.kt",
+            "line": 432,
+            "snippet": ""
+          },
+          {
+            "file": "data/episodes/src/commonMain/kotlin/app/tivi/data/episodes/SeasonsEpisodesRepository.kt",
+            "line": 437,
+            "snippet": ""
+          },
+          {
+            "file": "android-app/common-test/src/main/kotlin/app/tivi/app/test/AppScenarios.kt",
+            "line": 40,
+            "snippet": ""
+          }
+        ]
+      },
+      "confidence": 0.6,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.structure.block-body-return",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "structure",
+      "kind": "idiom",
+      "text": "Write single-call functions as a block body with an explicit `return`, even when they are one line (`return db.showQueries.getShowWithId(id, ::TiviShow)...`). Reserve `= ...` expression bodies for functions whose whole body is a `when` or a Modifier/layout expression.",
+      "evidence": {
+        "examples": [
+          {
+            "file": "data/db-sqldelight/src/commonMain/kotlin/app/tivi/data/daos/SqlDelightTiviShowDao.kt",
+            "line": 37,
+            "snippet": ""
+          },
+          {
+            "file": "data/legacy/src/commonMain/kotlin/app/tivi/data/lastrequests/EntityLastRequestStore.kt",
+            "line": 17,
+            "snippet": ""
+          },
+          {
+            "file": "ui/root/src/commonMain/kotlin/app/tivi/home/Home.kt",
+            "line": 250,
+            "snippet": ""
+          }
+        ]
+      },
+      "confidence": 0.7,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.framework.compose-param-order",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "framework",
+      "kind": "idiom",
+      "text": "Order composable parameters as: required data and callbacks, then `modifier: Modifier = Modifier`, then optional styling defaults, with the `@Composable` slot lambda (`content`, `icon`) last. Pass every argument to a composable by name with a trailing comma, and break Modifier chains one call per line.",
+      "evidence": {
+        "examples": [
+          {
+            "file": "common/ui/compose/src/commonMain/kotlin/app/tivi/common/compose/ui/LoadingButton.kt",
+            "line": 24,
+            "snippet": ""
+          },
+          {
+            "file": "common/ui/compose/src/commonMain/kotlin/app/tivi/common/compose/ui/IconButtonScrim.kt",
+            "line": 19,
+            "snippet": ""
+          },
+          {
+            "file": "common/ui/compose/src/commonMain/kotlin/app/tivi/common/compose/ui/Preference.kt",
+            "line": 53,
+            "snippet": ""
+          }
+        ]
+      },
+      "confidence": 0.9,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.naming.lookup-with-for",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "naming",
+      "kind": "voice",
+      "text": "Name query functions after what they return followed by the lookup key joined with `With` or `For`, no `get` prefix: `episodeWithId`, `entryCountWithShowId`, `episodeTraktIdForId`, `entriesWithDeletePendingActions`.",
+      "evidence": {
+        "examples": [
+          {
+            "file": "data/db-sqldelight/src/commonMain/kotlin/app/tivi/data/daos/SqlDelightFollowedShowsDao.kt",
+            "line": 63,
+            "snippet": ""
+          },
+          {
+            "file": "data/episodes/src/commonMain/kotlin/app/tivi/data/episodes/SeasonsEpisodesRepository.kt",
+            "line": 76,
+            "snippet": ""
+          },
+          {
+            "file": "data/legacy/src/commonMain/kotlin/app/tivi/data/mappers/EpisodeIdToTraktIdMapper.kt",
+            "line": 13,
+            "snippet": ""
+          }
+        ]
+      },
+      "confidence": 0.7,
+      "status": "auto"
+    },
+    {
+      "id": "kotlin.naming.boolean-verb-params",
+      "scope": "personal",
+      "language": "kotlin",
+      "category": "naming",
+      "kind": "voice",
+      "text": "Name boolean UI parameters as imperative verb phrases describing the effect, not is/has: `showProgressIndicator`, `showScrim`, `invertThemeOnScrim`.",
+      "evidence": {
+        "examples": [
+          {
+            "file": "common/ui/compose/src/commonMain/kotlin/app/tivi/common/compose/ui/LoadingButton.kt",
+            "line": 24,
+            "snippet": ""
+          },
+          {
+            "file": "common/ui/compose/src/commonMain/kotlin/app/tivi/common/compose/ui/IconButtonScrim.kt",
+            "line": 19,
+            "snippet": ""
+          },
+          {
+            "file": "common/ui/compose/src/commonMain/kotlin/app/tivi/common/compose/ui/IconButtonScrim.kt",
+            "line": 47,
+            "snippet": ""
+          }
+        ]
+      },
+      "confidence": 0.7,
+      "status": "auto"
+    }
+  ]
+}

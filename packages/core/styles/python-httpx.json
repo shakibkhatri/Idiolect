@@ -1,0 +1,1052 @@
+{
+  "version": 1,
+  "id": "python-httpx",
+  "title": "HTTPX",
+  "language": "python",
+  "experimental": true,
+  "source": {
+    "project": "github.com/encode/httpx",
+    "license": "BSD-3-Clause",
+    "commit": "dd5304d3eb97f0aad7126a45f3fd7041dfee0ac2",
+    "snapshot": "2023-12-28T13:10:37Z",
+    "lines": 9945
+  },
+  "stats": {
+    "files": 53,
+    "loc": 9945,
+    "functions": {
+      "count": 769,
+      "blockBody": 769,
+      "expressionBody": 0,
+      "lengthLines": {
+        "2": 76,
+        "3": 66,
+        "4": 65,
+        "5": 50,
+        "6": 61,
+        "7": 42,
+        "8": 40,
+        "9": 30,
+        "10": 37,
+        "11": 24,
+        "12": 32,
+        "13": 28,
+        "14": 25,
+        "15": 18,
+        "16": 11,
+        "17": 6,
+        "18": 8,
+        "19": 10,
+        "20": 16,
+        "21": 7,
+        "22": 5,
+        "23": 7,
+        "24": 5,
+        "25": 9,
+        "26": 4,
+        "27": 2,
+        "28": 9,
+        "29": 7,
+        "30": 2,
+        "31": 3,
+        "33": 7,
+        "34": 2,
+        "35": 4,
+        "36": 8,
+        "37": 3,
+        "38": 5,
+        "40": 1,
+        "43": 3,
+        "44": 2,
+        "45": 1,
+        "47": 2,
+        "48": 3,
+        "50": 4,
+        "52": 1,
+        "53": 1,
+        "54": 4,
+        "55": 1,
+        "59": 1,
+        "60": 1,
+        "63": 1,
+        "75": 1,
+        "77": 1,
+        "78": 1,
+        "89": 1,
+        "92": 1,
+        "94": 2,
+        "106": 1,
+        "133": 1
+      },
+      "params": {
+        "0": 453,
+        "1": 185,
+        "2": 46,
+        "3": 28,
+        "4": 12,
+        "5": 4,
+        "6": 1,
+        "7": 2,
+        "8": 10,
+        "11": 6,
+        "12": 10,
+        "13": 4,
+        "16": 3,
+        "17": 3,
+        "21": 2
+      },
+      "maxNesting": {
+        "0": 484,
+        "1": 197,
+        "2": 64,
+        "3": 18,
+        "4": 4,
+        "5": 2
+      },
+      "earlyReturn": 75
+    },
+    "naming": {
+      "casing": {
+        "function": {
+          "camel": 108,
+          "pascal": 0,
+          "snake": 140,
+          "screaming": 0,
+          "backtick": 0,
+          "other": 0
+        },
+        "class": {
+          "camel": 1,
+          "pascal": 87,
+          "snake": 0,
+          "screaming": 1,
+          "backtick": 0,
+          "other": 0
+        },
+        "property": {
+          "camel": 133,
+          "pascal": 7,
+          "snake": 47,
+          "screaming": 76,
+          "backtick": 0,
+          "other": 1
+        },
+        "local": {
+          "camel": 1059,
+          "pascal": 2,
+          "snake": 229,
+          "screaming": 2,
+          "backtick": 0,
+          "other": 0
+        },
+        "parameter": {
+          "camel": 0,
+          "pascal": 0,
+          "snake": 0,
+          "screaming": 0,
+          "backtick": 0,
+          "other": 0
+        },
+        "constant": {
+          "camel": 2,
+          "pascal": 0,
+          "snake": 0,
+          "screaming": 8,
+          "backtick": 0,
+          "other": 2
+        }
+      },
+      "nameLength": {
+        "function": {
+          "3": 14,
+          "4": 18,
+          "5": 23,
+          "6": 27,
+          "7": 14,
+          "8": 21,
+          "9": 10,
+          "10": 9,
+          "11": 16,
+          "12": 4,
+          "13": 7,
+          "14": 18,
+          "15": 13,
+          "16": 7,
+          "17": 8,
+          "18": 6,
+          "19": 2,
+          "20": 9,
+          "21": 5,
+          "22": 6,
+          "23": 7,
+          "24": 2,
+          "26": 1,
+          "27": 1
+        },
+        "class": {
+          "3": 2,
+          "4": 2,
+          "5": 3,
+          "6": 1,
+          "7": 4,
+          "8": 1,
+          "9": 12,
+          "10": 5,
+          "11": 9,
+          "12": 6,
+          "13": 9,
+          "14": 8,
+          "15": 8,
+          "16": 6,
+          "18": 5,
+          "19": 3,
+          "20": 3,
+          "21": 1,
+          "23": 1
+        },
+        "property": {
+          "1": 4,
+          "2": 1,
+          "3": 8,
+          "4": 15,
+          "5": 23,
+          "6": 30,
+          "7": 27,
+          "8": 22,
+          "9": 21,
+          "10": 14,
+          "11": 11,
+          "12": 13,
+          "13": 7,
+          "14": 5,
+          "15": 10,
+          "16": 9,
+          "17": 4,
+          "18": 8,
+          "19": 9,
+          "20": 5,
+          "21": 5,
+          "22": 3,
+          "23": 2,
+          "24": 1,
+          "25": 1,
+          "26": 1,
+          "29": 2,
+          "31": 3
+        },
+        "local": {
+          "1": 34,
+          "2": 1,
+          "3": 165,
+          "4": 90,
+          "5": 58,
+          "6": 150,
+          "7": 300,
+          "8": 247,
+          "9": 38,
+          "10": 33,
+          "11": 57,
+          "12": 32,
+          "13": 22,
+          "14": 22,
+          "15": 13,
+          "16": 14,
+          "17": 8,
+          "18": 2,
+          "19": 1,
+          "21": 2,
+          "22": 3
+        },
+        "parameter": {},
+        "constant": {
+          "3": 1,
+          "6": 1,
+          "9": 1,
+          "10": 2,
+          "14": 1,
+          "15": 2,
+          "16": 1,
+          "18": 1,
+          "21": 1,
+          "33": 1
+        }
+      },
+      "functionVerb": {
+        "main": 2,
+        "request": 3,
+        "stream": 3,
+        "get": 18,
+        "options": 3,
+        "head": 3,
+        "post": 3,
+        "put": 3,
+        "patch": 3,
+        "delete": 3,
+        "auth": 5,
+        "build": 4,
+        "parse": 1,
+        "resolve": 1,
+        "close": 7,
+        "aclose": 5,
+        "enforce": 1,
+        "event": 1,
+        "base": 2,
+        "merge": 4,
+        "redirect": 4,
+        "init": 4,
+        "transport": 2,
+        "send": 8,
+        "load": 3,
+        "create": 1,
+        "as": 1,
+        "raw": 5,
+        "encode": 9,
+        "decode": 9,
+        "flush": 9,
+        "print": 4,
+        "format": 3,
+        "download": 1,
+        "validate": 3,
+        "handle": 9,
+        "encoding": 4,
+        "prepare": 2,
+        "content": 2,
+        "read": 2,
+        "aread": 2,
+        "elapsed": 2,
+        "http": 1,
+        "reason": 1,
+        "url": 1,
+        "text": 1,
+        "charset": 1,
+        "is": 16,
+        "has": 1,
+        "cookies": 1,
+        "iter": 3,
+        "aiter": 1,
+        "extract": 1,
+        "set": 3,
+        "add": 2,
+        "info": 1,
+        "render": 6,
+        "map": 1,
+        "start": 1,
+        "authority": 1,
+        "netloc": 2,
+        "copy": 6,
+        "urlparse": 1,
+        "normalize": 4,
+        "percent": 2,
+        "quote": 1,
+        "urlencode": 1,
+        "scheme": 1,
+        "userinfo": 1,
+        "username": 1,
+        "password": 1,
+        "host": 1,
+        "port": 2,
+        "path": 1,
+        "query": 1,
+        "params": 1,
+        "fragment": 1,
+        "join": 1,
+        "multi": 1,
+        "remove": 1,
+        "primitive": 1,
+        "replacer": 1,
+        "same": 1,
+        "to": 1,
+        "peek": 1,
+        "sync": 2,
+        "async": 2,
+        "matches": 1
+      },
+      "booleanPrefix": {
+        "requires": 1,
+        "eq": 6,
+        "is": 26,
+        "first": 2,
+        "contains": 2,
+        "has": 1,
+        "bool": 2,
+        "response": 2,
+        "same": 1,
+        "matches": 1,
+        "stream": 2,
+        "more": 2
+      },
+      "abbreviated": 52,
+      "identifiers": 1905,
+      "testNames": {},
+      "genericNames": 4
+    },
+    "tests": {
+      "files": 30,
+      "loc": 4345,
+      "functions": 423
+    },
+    "comments": {
+      "line": 488,
+      "block": 0,
+      "doc": 244,
+      "chars": 61142,
+      "lowercaseStart": 185,
+      "trailingPeriod": 391,
+      "todo": {},
+      "tells": {
+        "restates": 5,
+        "buzzword": 17
+      },
+      "publicDecls": 899,
+      "publicDocumented": 221,
+      "privateDecls": 37,
+      "privateDocumented": 18
+    },
+    "errors": {
+      "tryCatch": 44,
+      "runCatching": 0,
+      "resultType": 0,
+      "forceUnwrap": 0
+    },
+    "kotlin": {
+      "when3": 0,
+      "ifElseChain3": 0,
+      "sealedInterface": 0,
+      "sealedClass": 0,
+      "extensionFunctions": 0,
+      "dataClasses": 0,
+      "composables": 0,
+      "modifierParamFirst": 0,
+      "modifierParamLater": 0,
+      "remember": 0
+    },
+    "typescript": {
+      "arrowFunctions": 0,
+      "functionDeclarations": 0,
+      "typeAliases": 0,
+      "interfaces": 0,
+      "optionalChains": 0,
+      "anyTypes": 0
+    },
+    "python": {
+      "typeHinted": 387,
+      "fStrings": 103,
+      "formatCalls": 0,
+      "comprehensions": 79,
+      "bareExcepts": 0,
+      "dataclasses": 0
+    },
+    "go": {
+      "errChecks": 0,
+      "namedReturns": 0,
+      "structs": 0,
+      "interfaces": 0,
+      "panics": 0
+    }
+  },
+  "commitStats": {
+    "count": 632,
+    "subjectLength": {
+      "5": 4,
+      "7": 3,
+      "8": 1,
+      "9": 1,
+      "10": 5,
+      "11": 7,
+      "12": 6,
+      "13": 31,
+      "14": 7,
+      "15": 8,
+      "16": 35,
+      "17": 12,
+      "18": 14,
+      "19": 17,
+      "20": 15,
+      "21": 11,
+      "22": 39,
+      "23": 15,
+      "24": 12,
+      "25": 12,
+      "26": 17,
+      "27": 15,
+      "28": 15,
+      "29": 12,
+      "30": 13,
+      "31": 10,
+      "32": 15,
+      "33": 11,
+      "34": 10,
+      "35": 17,
+      "36": 15,
+      "37": 10,
+      "38": 8,
+      "39": 11,
+      "40": 7,
+      "41": 9,
+      "42": 6,
+      "43": 8,
+      "44": 6,
+      "45": 8,
+      "46": 10,
+      "47": 4,
+      "48": 6,
+      "49": 9,
+      "50": 4,
+      "51": 9,
+      "52": 7,
+      "53": 4,
+      "54": 4,
+      "55": 7,
+      "56": 10,
+      "57": 5,
+      "58": 4,
+      "59": 6,
+      "60": 4,
+      "61": 4,
+      "62": 2,
+      "63": 4,
+      "64": 3,
+      "65": 2,
+      "66": 3,
+      "67": 4,
+      "68": 2,
+      "69": 4,
+      "70": 1,
+      "71": 4,
+      "72": 3,
+      "73": 1,
+      "74": 4,
+      "75": 1,
+      "76": 3,
+      "77": 1,
+      "78": 1,
+      "79": 2,
+      "80": 3,
+      "83": 1,
+      "84": 1,
+      "87": 1,
+      "88": 2,
+      "96": 2,
+      "98": 1,
+      "116": 1
+    },
+    "lowercaseStart": 12,
+    "conventionalPrefix": 0,
+    "trailingPeriod": 2,
+    "withBody": 232,
+    "bodyLines": 1055,
+    "bodyLinesWrapped": 1037,
+    "tense": {
+      "imperative": 608,
+      "thirdPerson": 18,
+      "past": 6
+    }
+  },
+  "rules": [
+    {
+      "id": "python.functions.length-p50.value",
+      "scope": "personal",
+      "language": "python",
+      "category": "structure",
+      "kind": "voice",
+      "text": "Keep functions short. Typical length is 8 lines, 90% are under 28 lines.",
+      "evidence": {
+        "metric": {
+          "name": "functions.length-p50",
+          "value": 8,
+          "sampleSize": 769
+        },
+        "examples": []
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "python.functions.params-p90.value",
+      "scope": "personal",
+      "language": "python",
+      "category": "structure",
+      "kind": "voice",
+      "text": "Functions take at most 3 parameters in 90% of cases.",
+      "evidence": {
+        "metric": {
+          "name": "functions.params-p90",
+          "value": 3,
+          "sampleSize": 769
+        },
+        "examples": []
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "python.functions.nesting-p90.value",
+      "scope": "personal",
+      "language": "python",
+      "category": "structure",
+      "kind": "voice",
+      "text": "Keep nesting shallow. 90% of functions nest at most 2 levels deep.",
+      "evidence": {
+        "metric": {
+          "name": "functions.nesting-p90",
+          "value": 2,
+          "sampleSize": 769
+        },
+        "examples": []
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "python.naming.abbreviation-ratio.low",
+      "scope": "personal",
+      "language": "python",
+      "category": "naming",
+      "kind": "voice",
+      "text": "Spell names out. Avoid abbreviations.",
+      "evidence": {
+        "metric": {
+          "name": "naming.abbreviation-ratio",
+          "value": 0.027,
+          "sampleSize": 1905
+        },
+        "examples": []
+      },
+      "confidence": 0.96,
+      "status": "auto"
+    },
+    {
+      "id": "python.comments.per-100-loc.value",
+      "scope": "personal",
+      "language": "python",
+      "category": "comments",
+      "kind": "voice",
+      "text": "Comment sparingly. About 7.4 comments per 100 lines of code.",
+      "evidence": {
+        "metric": {
+          "name": "comments.per-100-loc",
+          "value": 7.36,
+          "sampleSize": 9945
+        },
+        "examples": []
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "python.comments.avg-chars.value",
+      "scope": "personal",
+      "language": "python",
+      "category": "comments",
+      "kind": "voice",
+      "text": "Comments average 84 characters.",
+      "evidence": {
+        "metric": {
+          "name": "comments.avg-chars",
+          "value": 84,
+          "sampleSize": 732
+        },
+        "examples": []
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "python.python.fstring-ratio.high",
+      "scope": "personal",
+      "language": "python",
+      "category": "structure",
+      "kind": "idiom",
+      "text": "Format strings with f-strings, not .format().",
+      "evidence": {
+        "metric": {
+          "name": "python.fstring-ratio",
+          "value": 1,
+          "sampleSize": 103
+        },
+        "examples": []
+      },
+      "confidence": 0.96,
+      "status": "auto"
+    },
+    {
+      "id": "python.python.comprehension-per-kloc.value",
+      "scope": "personal",
+      "language": "python",
+      "category": "structure",
+      "kind": "idiom",
+      "text": "Comprehensions are common, about 7.9 per 1000 lines.",
+      "evidence": {
+        "metric": {
+          "name": "python.comprehension-per-kloc",
+          "value": 7.944,
+          "sampleSize": 9945
+        },
+        "examples": []
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "avoid.python.comments.buzzwords",
+      "scope": "personal",
+      "language": "python",
+      "category": "avoid",
+      "kind": "voice",
+      "text": "Do not use words like robust, seamless, leverage, comprehensive, utilize, streamline, crucial or delve in comments.",
+      "evidence": {
+        "metric": {
+          "name": "comments.buzzword-ratio",
+          "value": 0.023,
+          "sampleSize": 732
+        },
+        "examples": []
+      },
+      "confidence": 0.96,
+      "status": "auto"
+    },
+    {
+      "id": "avoid.python.comments.restating",
+      "scope": "personal",
+      "language": "python",
+      "category": "avoid",
+      "kind": "voice",
+      "text": "Do not start comments with \"This function\", \"This method\" or \"This class\". Say what is not obvious from the code, or write nothing.",
+      "evidence": {
+        "metric": {
+          "name": "comments.restates-ratio",
+          "value": 0.007,
+          "sampleSize": 732
+        },
+        "examples": []
+      },
+      "confidence": 0.98,
+      "status": "auto"
+    },
+    {
+      "id": "avoid.python.comments.emoji",
+      "scope": "personal",
+      "language": "python",
+      "category": "avoid",
+      "kind": "voice",
+      "text": "No emoji in comments.",
+      "evidence": {
+        "metric": {
+          "name": "comments.emoji-ratio",
+          "value": 0,
+          "sampleSize": 732
+        },
+        "examples": []
+      },
+      "confidence": 0.99,
+      "status": "auto"
+    },
+    {
+      "id": "avoid.python.naming.generic",
+      "scope": "personal",
+      "language": "python",
+      "category": "avoid",
+      "kind": "voice",
+      "text": "No generic names like handleData, processItem, result2 or helper. Name the thing after what it is.",
+      "evidence": {
+        "metric": {
+          "name": "naming.generic-ratio",
+          "value": 0.016,
+          "sampleSize": 248
+        },
+        "examples": []
+      },
+      "confidence": 0.96,
+      "status": "auto"
+    },
+    {
+      "id": "avoid.python.errors.bare-except",
+      "scope": "personal",
+      "language": "python",
+      "category": "avoid",
+      "kind": "voice",
+      "text": "Do not use a bare except. Catch the exception you expect.",
+      "evidence": {
+        "metric": {
+          "name": "python.bare-except-per-kloc",
+          "value": 0,
+          "sampleSize": 9945
+        },
+        "examples": []
+      },
+      "confidence": 1,
+      "status": "auto"
+    },
+    {
+      "id": "avoid.python.comments.todo",
+      "scope": "personal",
+      "language": "python",
+      "category": "avoid",
+      "kind": "voice",
+      "text": "Do not leave TODO comments.",
+      "evidence": {
+        "metric": {
+          "name": "comments.todo-ratio",
+          "value": 0,
+          "sampleSize": 732
+        },
+        "examples": []
+      },
+      "confidence": 0.99,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.conventional-ratio.low",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "No conventional commit prefixes. Plain sentences.",
+      "evidence": {
+        "metric": {
+          "name": "commits.conventional-ratio",
+          "value": 0,
+          "sampleSize": 632
+        },
+        "examples": []
+      },
+      "confidence": 0.99,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.lowercase-ratio.low",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "Commit subjects start with a capital letter.",
+      "evidence": {
+        "metric": {
+          "name": "commits.lowercase-ratio",
+          "value": 0.019,
+          "sampleSize": 632
+        },
+        "examples": []
+      },
+      "confidence": 0.97,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.imperative-ratio.high",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "Write commit subjects in the imperative: Add, Fix, Remove.",
+      "evidence": {
+        "metric": {
+          "name": "commits.imperative-ratio",
+          "value": 0.962,
+          "sampleSize": 632
+        },
+        "examples": []
+      },
+      "confidence": 0.94,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.trailing-period-ratio.low",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "No period at the end of a commit subject.",
+      "evidence": {
+        "metric": {
+          "name": "commits.trailing-period-ratio",
+          "value": 0.003,
+          "sampleSize": 632
+        },
+        "examples": []
+      },
+      "confidence": 0.99,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.body-wrap-ratio.high",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "Hard-wrap commit body lines at 72 characters.",
+      "evidence": {
+        "metric": {
+          "name": "commits.body-wrap-ratio",
+          "value": 0.983,
+          "sampleSize": 1055
+        },
+        "examples": []
+      },
+      "confidence": 0.97,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.subject-p50.value",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "Commit subjects are about 30 characters.",
+      "evidence": {
+        "metric": {
+          "name": "commits.subject-p50",
+          "value": 30,
+          "sampleSize": 632
+        },
+        "examples": []
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "python.comments.test-case-outcome-sentence",
+      "scope": "personal",
+      "language": "python",
+      "category": "comments",
+      "kind": "voice",
+      "text": "In tests, introduce each case with a one-line comment stating the expected outcome as a plain sentence, e.g. \"Not proxied if NO_PROXY matches URL.\" or \"If the port matches the scheme default it is normalized to None.\" Group sections with a terse heading like \"Tests for invalid URLs\".",
+      "evidence": {
+        "examples": [
+          {
+            "file": "tests/client/test_proxies.py",
+            "line": 210,
+            "snippet": ""
+          },
+          {
+            "file": "tests/models/test_url.py",
+            "line": 247,
+            "snippet": ""
+          },
+          {
+            "file": "tests/models/test_url.py",
+            "line": 299,
+            "snippet": ""
+          }
+        ]
+      },
+      "confidence": 0.8,
+      "status": "auto"
+    },
+    {
+      "id": "python.comments.quote-literals",
+      "scope": "personal",
+      "language": "python",
+      "category": "comments",
+      "kind": "voice",
+      "text": "Wrap literal values, header names, keyword arguments and symbols in single quotes or backticks inside comments: \"'WWW-Authenticate: Digest ...'\", \"`httpx.ReadTimeout`\", \"'query' may be 'None'\". Never leave a code token bare in prose.",
+      "evidence": {
+        "examples": [
+          {
+            "file": "httpx/_auth.py",
+            "line": 213,
+            "snippet": ""
+          },
+          {
+            "file": "httpx/_transports/default.py",
+            "line": 76,
+            "snippet": ""
+          },
+          {
+            "file": "httpx/_urlparse.py",
+            "line": 219,
+            "snippet": ""
+          }
+        ]
+      },
+      "confidence": 0.65,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.drop-tweak-tidy-verbs",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "Use \"Drop\" for removals (\"Drop wait_closed\", \"Drop RawURL\"), and \"Tweak\" or \"Tidy up\" for small adjustments (\"Tweak QueryParams implementation\", \"Tidy up redirect tests\"). Avoid \"Remove\", \"Refactor\" and \"Clean up\" for these.",
+      "evidence": {
+        "examples": [
+          {
+            "file": "commit:4ed3a8a",
+            "line": 0,
+            "snippet": ""
+          },
+          {
+            "file": "commit:8fe32c5",
+            "line": 0,
+            "snippet": ""
+          },
+          {
+            "file": "commit:e40b0bf",
+            "line": 0,
+            "snippet": ""
+          }
+        ]
+      },
+      "confidence": 0.7,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.call-signature-notation",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "Name APIs in commit subjects using call-signature notation with elided arguments, like \"Add Client(http_versions=...) support\" or \"Support `Response(content=<bytes iterator>)`\", wrapping the code in backticks or single quotes.",
+      "evidence": {
+        "examples": [
+          {
+            "file": "commit:b343ee4",
+            "line": 0,
+            "snippet": ""
+          },
+          {
+            "file": "commit:5ee6135",
+            "line": 0,
+            "snippet": ""
+          },
+          {
+            "file": "commit:59914c7",
+            "line": 0,
+            "snippet": ""
+          }
+        ]
+      },
+      "confidence": 0.5,
+      "status": "auto"
+    },
+    {
+      "id": "any.commits.x-not-y-contrast",
+      "scope": "personal",
+      "language": "any",
+      "category": "commits",
+      "kind": "voice",
+      "text": "When a change swaps one behaviour or name for another, phrase the subject as a contrast with a trailing \", not Y\" clause: \"params argument on URL should merge, not replace.\", \"URL.port becomes Optional[int], not int\".",
+      "evidence": {
+        "examples": [
+          {
+            "file": "commit:74e5115",
+            "line": 0,
+            "snippet": ""
+          },
+          {
+            "file": "commit:c089480",
+            "line": 0,
+            "snippet": ""
+          },
+          {
+            "file": "commit:d98e9e7",
+            "line": 0,
+            "snippet": ""
+          }
+        ]
+      },
+      "confidence": 0.4,
+      "status": "auto"
+    }
+  ]
+}

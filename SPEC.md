@@ -112,6 +112,13 @@ Storage:
   `borrow` in the repo config lists the kinds served, default voice and layout. Project rules are never served from a borrowed profile, approved and edited rules always are.
   The render says the style is borrowed, gives the date of the newest commit it was learned from (`headDate` on the source), states that the repo's code, formatter and current language practice win, and labels every language rule.
   The marker is `profile.borrowed`, set by `loadServedProfile` in memory and stripped by `saveProfile`
+- Shipped styles, added 2026-10-03 for people whose code is written by an agent and who have no history to learn from.
+  A style is a frozen file in `packages/core/styles/<language>-<project>.json`: the personal rules of one scanned profile for one language, its stats, and its source project, licence, commit and snapshot date. It is named after the project, never the person, and holds no emails, no code snippets and no project rules.
+  `idiolect styles build` cuts one from a scanned profile. Metric rules go in as measured. A rule the LLM wrote goes in only when a person approved or edited it, because three scans of the same code gave three different rule sets.
+  `idiolect styles` lists them, `idiolect use <style...>` writes `styles` into the repo config, one style per language plus the one that owns the commit rules, and syncs. No `~/.idiolect` is needed.
+  `composeStyles` turns the picked styles into one borrowed profile, so render, check, Unbot and the MCP server need no special case. `styles` wins over `profile`.
+  A shipped style is read-only. Rule decisions made in a repo are stored in `<repo>/.idiolect/overrides.json` and applied on load.
+  A style nobody who writes the language has reviewed is marked `experimental`
 
 Precedence when serving rules:
 1. Scope first: team beats personal, always. A path-scoped personal rule never overrides a team rule.

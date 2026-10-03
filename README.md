@@ -87,6 +87,26 @@ npm install -g idiolect
 
 Or run it without installing: `npx -y idiolect <command>`.
 
+## No code of your own yet
+
+If an AI writes most of your code, there is no history to learn from.
+Pick a style that ships with idiolect instead.
+Each one was learned from a well-known open source project, reviewed by a person and frozen.
+
+```
+npx -y idiolect styles                              # what ships
+npx -y idiolect use kotlin-tivi typescript-vue      # one per language, written into CLAUDE.md and AGENTS.md
+```
+
+That is the whole setup: no scan, no LLM call, no account.
+Your agent now writes fewer and shorter comments, plainer names and short commit messages, and `idiolect unbot` flags code that sounds like AI.
+
+A shipped style shapes naming, comments, commit messages and layout.
+It leaves the choice of language features to the agent, because the code it was learned from has a date and languages move.
+The code already in your repo and your formatter always win over it.
+`idiolect rules reject <id>` and `idiolect rules edit <id>` change a style for your repo only, the decisions live in `.idiolect/overrides.json`.
+Styles marked experimental have not been reviewed by someone who writes that language.
+
 ## Use
 
 ```

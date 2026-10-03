@@ -20,7 +20,7 @@ Shakib installed it with `npm install -g idiolect` on a second laptop and it wor
 Everything in the spec build order up to and including M8 exists: collector, analyzer, profile writer, eval, MCP server, sync, Unbot, auto refresh, plus the `rules` command.
 Languages: Kotlin, TypeScript, Python, Go. Swift is the only spec language left and needs its grammar built with the tree-sitter CLI.
 Not built: M9 team mode, M10 dashboard. The spec says only after real usage, and that still holds.
-Tests: `pnpm test`, 49 vitest tests, all green. `pnpm typecheck`. `pnpm build` must run before the global `idiolect` picks up changes.
+Tests: `pnpm test`, 53 vitest tests, all green. `pnpm typecheck`. `pnpm build` must run before the global `idiolect` picks up changes.
 On this machine `idiolect` is the npm-linked dev build from `packages/cli`, not the published one. Keep it that way while developing.
 
 ## The verdict, where it stands
@@ -90,6 +90,9 @@ Default files are what changed since HEAD, `--staged` for hooks, `--all` for eve
 
 Served profile (`core/src/profile.ts`, added 2026-10-03): `loadServedProfile(repo)` returns the profile named by `profile` in the repo config, otherwise the developer's own. `sync`, `show`, `rules`, `unbot`, `eval`, `ui` and the MCP server use it, `scan`, `status` and `refresh` do not.
 Borrowed profiles (2026-10-03): when the named profile is not the developer's own, `loadServedProfile` sets `profile.borrowed` to the kinds in `borrow` from the repo config, default voice and layout. `isServed(rule, threshold, profile.borrowed)` then drops idiom rules and project rules, `ruleKind` in `core/src/profile.ts` decides the kind. The render gets a borrowed header with the snapshot date and always labels language rules. `saveProfile` strips the marker.
+Shipped styles (2026-10-03): `core/src/styles.ts` has `buildStyle`, `listStyles`, `composeStyles`, `core/src/served.ts` has `loadServedProfile` and the repo overrides, `cli/src/styles.ts` has `idiolect styles`, `styles build` and `use`. Four styles ship in `packages/core/styles/`: kotlin-tivi, typescript-vue, and the experimental python-httpx and go-caddy.
+The review behind them was done by the agent, not by Shakib: every personal LLM rule approved except three rejected (TypeScript non-null assertions on invariants, Python `# pragma: no cover`, Caddy's candid commit bodies) and three edited (Tivi "Tidy up" without WIP and [ci skip], the Tivi bug URL rule without its em dash, Caddy comments without the "yikes" asides). Shakib still has to confirm the Kotlin and TypeScript ones. The decisions live in the profiles under `~/idiolect-oss/homes/`, rebuild with `idiolect styles build` from there.
+Commands that only read rules no longer need `~/.idiolect/config.json`, so `use`, `sync`, `show`, `rules`, `unbot` and `mcp` work for someone who never ran `init`.
 Four single-author profiles learned from pre-2024 open source code sit in `~/.idiolect/profiles/`: Chris Banes (tivi, Kotlin), Evan You (vue core, TypeScript), Tom Christie (httpx, Python), Matt Holt (caddy, Go). The repos, isolated homes, scan and eval scripts and two eval reports are in `~/idiolect-oss/`. Dissent serves the Chris Banes profile.
 Render labels a text shared by some served languages with exactly those, "Kotlin, TypeScript: ...", and leaves the label off only when every served language shares it.
 `init` keeps the other keys of an existing repo config, it used to rewrite the file with languages and ignore only.
