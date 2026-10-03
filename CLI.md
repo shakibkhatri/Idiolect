@@ -170,7 +170,7 @@ End with what changed for them and how to undo.
 ```
 Written to AGENTS.md and CLAUDE.md.
 Your agent follows the style from its next session.
-Check existing code: idiolect unbot --all.  Undo: idiolect use --none.
+Check existing code: idiolect unbot --all.  Undo: idiolect remove.
 ```
 
 The single line naming the agent files that were not written stays.
@@ -203,13 +203,77 @@ One small module, `cli/src/term.ts`, holds colour, the spinner and the TTY check
 
 - **Preview.**
   In the menu, typing `?` and a number prints that style's rules, what `styles show` prints, and returns to the prompt.
-- **Remove.**
-  `idiolect use --none` removes `styles` from the repo config and the idiolect block from every agent file it finds.
-  A file that held nothing but the block and was created by idiolect is deleted, a file with other content keeps it.
-  Removing the block is new code in `sync.ts`, it must leave everything outside the markers byte for byte like `syncBlock` does.
 - **Arrow keys are optional.**
   Number entry works everywhere and stays the baseline.
   Add arrow-key selection only if it needs no dependency and degrades to numbers in a pipe.
+
+### 7. Remove what idiolect did
+
+Decided by Shakib on 2026-10-03: a user must be able to take idiolect out of a project again, down to everything it put there, and choose how far that goes.
+An agent file that idiolect created and that holds nothing but its block is deleted, not left behind empty.
+
+Today there is no way back except editing files by hand.
+`idiolect remove` is the new command, `idiolect use --none` is a shortcut for its first level.
+
+**What idiolect leaves in a project**
+
+| What | Where | Made by |
+|---|---|---|
+| The style block | between the idiolect markers in `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.cursor/rules/idiolect.mdc`, `.github/copilot-instructions.md` and any `--target` file | `use`, `sync` |
+| The choice of style | `styles`, `profile` and `borrow` in `.idiolect/config.json` | `use`, by hand |
+| Rule decisions on house styles | `.idiolect/overrides.json` | `rules`, `ui` |
+| Repo settings | the rest of `.idiolect/config.json` | `init`, by hand |
+| Cache and eval reports | `.idiolect/cache/`, `.idiolect/eval/`, `.idiolect/.gitignore` | `scan`, `eval` |
+| Git hooks | two marked lines in `pre-commit` and `post-commit`, in `.git/hooks` or `.husky` | `hooks install` |
+
+Outside the project it keeps `~/.idiolect/`, the developer's own profile and config.
+That belongs to every project on the machine, so it is the last level and never part of removing a project.
+
+**Three levels**
+
+1. **The style.**
+   The block is taken out of every agent file, and `styles`, `profile` and `borrow` are taken out of the repo config.
+   The agent stops following the style, everything else stays, and `idiolect use` brings it back.
+   This is what `use --none` does.
+2. **Everything in this project.**
+   Level 1, plus the two hook lines and the whole `.idiolect/` folder, including the rule decisions and the eval reports.
+   The project is as it was before idiolect.
+3. **Everything on this machine.**
+   Level 2, plus `~/.idiolect/`.
+   The learned profile is gone and can only be rebuilt with a scan.
+
+**How it runs**
+
+`idiolect remove` first lists what it found, by level, with the real paths, and changes nothing.
+In a TTY it then asks for a level by number, the same way the picker asks for a style, and Enter does nothing.
+Level 2 and level 3 ask once more, naming what cannot be brought back: the eval reports and quiz picks at level 2, the learned profile at level 3.
+
+For scripts: `idiolect remove --style`, `--project` or `--everything`, with `--yes` to skip the questions and `--dry-run` to only list.
+Without a level and without a TTY it lists and exits 0.
+
+It ends with one line per thing removed and one line on what is left, for example the MCP server.
+
+**Rules for the code**
+
+- An agent file is deleted only when nothing is left after the block is taken out, apart from whitespace and the Cursor frontmatter idiolect itself writes.
+  That test needs no record of who created the file, and it never deletes a file with the user's own text in it.
+- Everything outside the markers stays byte for byte, the same promise `syncBlock` makes.
+  Taking the block out also takes out the blank line `syncBlock` added before it, so `use` followed by `remove` gives back the original file exactly.
+  This is new code next to `syncBlock` in `sync.ts`.
+- A hook file loses only the comment line that starts with `# idiolect:` and the command line after it, which `installHook` in `cli/src/unbot.ts` writes.
+  A hook file that is then only a shebang is deleted, any other hook in it stays.
+  For `lefthook.yml` idiolect never wrote anything, so it only says which line the user added by hand.
+- Files to look at are the known targets, `sync.targets` from the repo config, and any file in the repo root that contains the start marker.
+- `.idiolect/` may be committed.
+  Removing it is a change the user has to commit, say so.
+
+**What it cannot undo, and says so**
+
+- A file that `unbot --fix` rewrote.
+  Git has the old version.
+- The MCP server registration, which lives in the agent's own config.
+  Print the command to remove it, `claude mcp remove idiolect`, and do not run it.
+- Block copies in files outside the repo.
 
 ## Compatibility
 
@@ -221,7 +285,7 @@ One small module, `cli/src/term.ts`, holds colour, the spinner and the TTY check
 
 ## Out of scope
 
-- New features beyond `use --none`.
+- New features beyond `idiolect remove` and its `use --none` shortcut.
 - A terminal UI framework, a full-screen interface, mouse support.
 - Renaming `unbot`.
   It is the product's name for the linter and is in the README, a one-line description in the help is enough.
@@ -245,12 +309,15 @@ Each step is a branch, verified, merged and reported before the next starts.
 5. **Quiet output** for `scan`, `use`, `sync` and `rules list`, with `--verbose` on `scan`.
    Done when each ends with a result line and a next-step line, and `scan --verbose` prints what `scan` prints today.
 6. **Progress** on the four LLM commands and the blame pass.
-7. **Picker preview and `use --none`.**
-   Done when `use --none` in a repo with a hand-written `CLAUDE.md` leaves that file exactly as it was before `use`.
-8. **README and SPEC** updated to the new output, then release 0.2.0.
+7. **`idiolect remove`** with its three levels, and `use --none`.
+   Done when, in a throwaway repo with a hand-written `CLAUDE.md` and an existing pre-commit hook, `use` then `hooks install` then `remove --project` leaves `git status` clean and both files byte for byte as they were, and the `AGENTS.md` idiolect created is gone.
+   Level 3 is tested with an isolated `HOME`, never against Shakib's real `~/.idiolect`.
+8. **Picker preview.**
+9. **README and SPEC** updated to the new output, then release 0.2.0.
 
 Steps 1 to 5 are the redesign.
-Steps 6 and 7 are polish and can ship in a later release.
+Step 7 gives the user a way back and belongs in the same release as the redesign.
+Steps 6 and 8 are polish and can ship later.
 
 ## How to verify
 
@@ -266,7 +333,8 @@ Steps 6 and 7 are polish and can ship in a later release.
 ## Open decisions for Shakib
 
 1. Whether bare `idiolect` should prompt at all, or only report and print the commands.
-2. Whether `use --none` should delete an `AGENTS.md` that idiolect created and that holds nothing else.
-3. Whether 0.2.0 waits for steps 6 and 7 or ships after step 5.
+2. Whether 0.2.0 waits for the polish steps 6 and 8 or ships after step 7.
 
-Decided: the user-facing name for shipped styles is "house styles", see the vocabulary section.
+Decided on 2026-10-03:
+- The user-facing name for shipped styles is "house styles", see the vocabulary section.
+- Removing deletes an agent file idiolect created that holds nothing else, and the user picks how much to remove, up to everything idiolect did, see section 7.
