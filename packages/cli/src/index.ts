@@ -49,11 +49,13 @@ program.command("init")
       console.log("Authors in this repo:");
       authors.forEach((a, i) => {
         const tag = known.has(a.email) ? "  <- you (from ~/.idiolect)" : a.email === mine ? "  <- git config" : "";
-        console.log(`  ${i + 1}. ${a.email}  (${a.name}, ${a.commits} commits)${tag}`);
+        console.log(`  ${i + 1}. ${a.email}  (${a.name}, ${a.commits} ${a.commits === 1 ? "commit" : "commits"})${tag}`);
       });
       const myName = user?.name ?? authors.find((x) => x.email === mine)?.name;
-      const def = authors.map((a, i) => (known.has(a.email) || a.email === mine || sameName(a.name, myName) ? i + 1 : 0)).filter(Boolean);
-      const answer = o.yes ? "" : (await ask(`Which are you? numbers, comma separated [${def.join(",")}]: `)).trim();
+      const matched = authors.map((a, i) => (known.has(a.email) || a.email === mine || sameName(a.name, myName) ? i + 1 : 0)).filter(Boolean);
+      // a repo with one author needs no guess, and an empty default is not shown as []
+      const def = matched.length || authors.length !== 1 ? matched : [1];
+      const answer = o.yes ? "" : (await ask(`Which are you? numbers, comma separated${def.length ? ` [${def.join(",")}]` : ""}: `)).trim();
       const picks = answer ? answer.split(/[,\s]+/).map(Number) : def;
       emails = picks.map((i) => authors[i - 1]?.email).filter((e): e is string => !!e);
       name ??= authors[(picks[0] ?? 1) - 1]?.name;
@@ -65,11 +67,12 @@ program.command("init")
     if (!provider || provider === "none" && !o.provider && !user) {
       const hasClaude = await onPath("claude");
       const def = hasClaude ? "claude-cli" : "none";
-      console.log(`\nLLM provider. Samples of your code go to it to phrase the rules. "none" keeps everything local with metric rules only.`);
+      console.log(`\nLLM provider. Samples of your code go to it to phrase the rules.`);
       console.log(`  claude-cli         your installed Claude Code, uses your existing plan${hasClaude ? "  <- found" : "  (not found on PATH)"}`);
-      console.log(`  anthropic | openai | gemini   API key`);
+      console.log(`  anthropic          API key in ANTHROPIC_API_KEY`);
+      console.log(`  openai, gemini     API key, and llm.model in ~/.idiolect/config.json`);
       console.log(`  openai-compatible  Ollama, LM Studio, vLLM, any local server`);
-      console.log(`  none`);
+      console.log(`  none               nothing is sent, metric rules only`);
       const answer = o.yes ? "" : (await ask(`Provider [${def}]: `)).trim();
       provider = (answer || def) as Provider;
     }
@@ -93,7 +96,7 @@ program.command("init")
     console.log(`  emails:    ${allEmails.join(", ")}`);
     console.log(`  llm:       ${provider} (${need})`);
     console.log(`wrote ${repoConfigPath(repo)}  (repo settings only, safe to commit)`);
-    console.log(`  languages: ${languages.join(", ") || "none supported yet (kotlin and typescript for now)"}`);
+    console.log(`  languages: ${languages.join(", ") || "no Kotlin, TypeScript, Python or Go files found"}`);
     console.log(`\nnext: idiolect scan`);
   });
 
