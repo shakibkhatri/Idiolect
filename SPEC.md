@@ -271,7 +271,7 @@ Published 2026-10-02 as `idiolect@0.0.1` on npm. The org name `idiolect` was tak
 - `idiolect refresh` compares HEAD with the head stored for this repo in the profile. At `refresh.everyCommits` new commits (default 50), or with `--force`, it starts `idiolect scan` detached and returns at once, logging to `.idiolect/cache/refresh.log`. Below the count it prints nothing
 - `idiolect hooks install` adds it as a post-commit hook next to the pre-commit unbot hook
 - Changed approved rules go to `pending`, the user decides with `idiolect rules`
-- `idiolect status` shows profile age, rule counts, the pending rules, the last scan of this repo, commits since and when the refresh is due
+- `idiolect status` shows what the repo serves first, then for the developer's own style its age, rule counts, the pending rules, the last scan of this repo, commits since and when the refresh is due. Since 0.2.0 it is the report of bare `idiolect`
 
 ### M9 Team mode (`team`)
 - Source: GitHub (token or `gh` auth), GitLab later
@@ -295,19 +295,28 @@ Published 2026-10-02 as `idiolect@0.0.1` on npm. The org name `idiolect` was tak
 
 ## 7. CLI
 
-The commands below are what 0.1.2 ships.
-`CLI.md` is the brief for a redesign that keeps every command and reorders how they are presented: a guided bare `idiolect`, help grouped by audience, one vocabulary, quiet output, progress, and `use --none`. Not built yet.
+The commands below are what 0.2.0 ships.
+0.2.0 is the redesign briefed in `CLI.md`, built 2026-10-03: every 0.1.2 command and flag still works, and how they are presented changed.
+
+- Bare `idiolect` is the front door. It reports one of four states, no style, a house style, the developer's own, or their own without a scan of this repo, and in a terminal lists the next steps by number and runs the one picked. Enter leaves and changes nothing. Without a terminal, with `--no-prompt`, and as `idiolect status`, it prints the report and the commands and exits 0. It lives in `cli/src/start.ts`
+- Whether the agent files are current is a dry run of `syncTargets`, its `write` flag
+- `idiolect --help` shows three groups, Get a style, Review and check, Advanced, at most 80 columns, from `cli/src/help.ts`. A registered command that is not grouped lands under Advanced
+- One vocabulary. Users read "style", and "house style" for the shipped ones. "Profile" is the stored JSON and stays in code, comments and paths. "Borrowed" is only said in the block the agent reads
+- Quiet output. `scan` ends with one line per language, a total and a next step, the statistics are behind `--verbose`. `use` says where it wrote and what changes. `sync` lists the files it touched. `rules list` groups by section with a marker, `+` served, `-` held back, `?` pending, `x` rejected, the text first and the id last, wrapped at 100 columns
+- Progress. `cli/src/term.ts` holds colour, the spinner and the TTY check, and no command writes ANSI codes itself. Colour only in a terminal without `NO_COLOR`. The four LLM commands show a spinner with elapsed seconds on stderr in a terminal and print the announcing line and "done in Ns" in a pipe. The blame pass counts files in a terminal only
+- `idiolect remove` takes idiolect out again at one of three levels: the style, everything in the project, everything on the machine. It lists first and changes nothing, levels 2 and 3 ask before deleting what cannot be brought back. `use --none` is level 1. `removeBlock` in `sync.ts` and `removeHook` in `unbot.ts` undo what `syncBlock` and `installHook` wrote, and a file left with nothing of the user's is deleted. A file that ended without a newline, or with two, before the block was added comes back ending in one
 
 ```
+idiolect                      # where this project stands, and the next steps by number
 idiolect init                 # detect emails, languages, create config
-idiolect scan [--repo ...]    # collect + analyze + write profile
+idiolect scan [--repo ...] [--verbose]   # collect + analyze + write profile
 idiolect show [--lang kotlin] [--email <profile>] # print STYLE.md as served here, or one stored profile in full
 idiolect sync                 # write into agent instruction files
 idiolect rules list|show|approve|reject|edit <id>   # decide on pending or wrong rules, decisions survive rescans
 idiolect unbot [files] [--fix] [--llm] [--strict]
 idiolect hooks install
 idiolect eval [--quiz]
-idiolect status
+idiolect status               # the report of bare idiolect, without the prompt
 idiolect refresh [--force]
 idiolect team scan            # team mode
 idiolect mcp                  # start MCP server
@@ -315,7 +324,8 @@ idiolect ui [--repo] [--port] [--no-open]   # dashboard
 idiolect styles [--all]       # shipped styles for the languages of this project
 idiolect styles show <id>     # source project, licence, snapshot and rules of one style
 idiolect styles build ...     # maintainers: cut a style from a scanned, reviewed profile
-idiolect use [style...] [--all] [--target <file...>]   # pick styles by number, or by id, and sync
+idiolect use [style...] [--all] [--target <file...>] [--none]   # pick styles by number, or by id, and sync
+idiolect remove [--style|--project|--everything] [--yes] [--dry-run]   # take idiolect out again
 ```
 
 Commands that only read rules need no `~/.idiolect/config.json`: `use`, `styles`, `sync`, `show`, `rules`, `unbot` without `--llm` and `--fix`, `ui` and `mcp`.
@@ -389,6 +399,7 @@ Repo, `<repo>/.idiolect/config.json`, every field optional:
 7. Add languages (Swift, TS, Python, Go), **M8 Auto refresh**. M8 done 2026-10-02. TypeScript, Python and Go done 2026-10-02, TypeScript and Python verified in Dissent, Go on its fixture. Swift still needs its grammar built
 8. **M9 Team mode**, **M10 Dashboard** - only after real usage. M10 built 2026-10-02 as one page in the CLI, see M10
 9. **Shipped styles**, 2026-10-03, released as 0.1.0 to 0.1.2. In order: a repo can serve another profile, borrowed profiles serve voice and layout only, the headless Claude leak fixed, the catalogue with `styles` and `use`, the short list with `styles show`, the numbered picker limited to the project's languages, Claude Code found on Windows. Installed from npm on a Windows laptop and picked a style there
+10. **CLI redesign**, 2026-10-03, released as 0.2.0, see section 7 and `CLI.md`. The picker preview is the one part left for a later release
 
 ## 12. Out of scope for v1
 

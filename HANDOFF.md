@@ -3,7 +3,7 @@
 Read this first, then `SPEC.md`, then `SUGGESTIONS.md` and `bugs/`.
 `CLI.md` is the brief for the next piece of work, the CLI redesign.
 Written on 2026-10-02 at the end of the first day of work, rewritten the same night after the release, and again late that night after suggestion 13 and six smaller items.
-Updated on 2026-10-03 after shipped styles and the 0.1.0, 0.1.1 and 0.1.2 releases.
+Updated on 2026-10-03 after shipped styles and the 0.1.0, 0.1.1 and 0.1.2 releases, and again that evening after the CLI redesign, prepared as 0.2.0.
 Every statement here was true at that point.
 Verify against the code before relying on anything that could have moved.
 
@@ -23,7 +23,8 @@ Shakib installs each release with `npm install -g idiolect` on a Windows laptop.
 Everything in the spec build order up to and including M8 exists: collector, analyzer, profile writer, eval, MCP server, sync, Unbot, auto refresh, plus the `rules` command.
 Languages: Kotlin, TypeScript, Python, Go. Swift is the only spec language left and needs its grammar built with the tree-sitter CLI.
 Built on top since: the dashboard `idiolect ui` (M10), shipped styles with `idiolect styles` and `idiolect use`. Not built: M9 team mode.
-Tests: `pnpm test`, 58 vitest tests, all green. `pnpm typecheck`. `pnpm build` must run before the global `idiolect` picks up changes.
+Version 0.2.0 is prepared on `main` and not yet published: the CLI redesign of `CLI.md`, steps 1 to 8. Shakib pushes and publishes, and tests the release on the Windows laptop.
+Tests: `pnpm test`, 70 vitest tests, all green. `pnpm typecheck`. `pnpm build` must run before the global `idiolect` picks up changes.
 On this machine `idiolect` is the npm-linked dev build from `packages/cli`, not the published one. Keep it that way while developing.
 
 ## The verdict, where it stands
@@ -44,7 +45,7 @@ Borrowed styles were measured the same day with the profile learned from Tivi in
 
 ```
 packages/core    collector, analyzers, metrics, baseline rules, sampler, redact, llm providers, writer, render, check, unbot, config, profile, styles, served
-packages/cli     idiolect init | scan | show | rules | unbot | hooks | status | refresh | eval | mcp | sync | ui | styles | use
+packages/cli     idiolect (bare) | init | scan | show | rules | unbot | hooks | status | refresh | eval | mcp | sync | ui | styles | use | remove
 packages/eval    task loading, with/without generation, judge, metric distance, report; tasks/ holds 15 Kotlin and 5 TypeScript tasks
 packages/mcp     createIdiolectServer: get_style, check_style, rewrite_like_me, get_team_rules, one resource, one prompt
 packages/core/grammars   vendored kotlin, typescript, tsx, python, go wasm plus licenses
@@ -106,6 +107,9 @@ Render labels a text shared by some served languages with exactly those, "Kotlin
 `init` keeps the other keys of an existing repo config, it used to rewrite the file with languages and ignore only.
 
 Rules (`cli/src/rules.ts`): `list|show|approve|reject|edit` over `updateRules`. Decisions survive rescans.
+
+CLI surface (0.2.0): `cli/src/term.ts` is the only place with ANSI codes, `term` writes to stdout and `progress` to stderr. `start.ts` is bare `idiolect` and `status`: `projectState`, `renderState`, `stepsFor`, and a picked step runs as a child process of the same build. `help.ts` is the grouped top-level help. `remove.ts` is `idiolect remove`: `find` lists, `apply` removes up to a level, and it leans on `removeBlock` in `sync.ts` and `removeHook` in `unbot.ts`. `scanSummary` in `summary.ts` is the quiet scan output, the old statistics are behind `scan --verbose`.
+The user-facing words are "style" and "house style". "Profile" and "shipped" stay in code, comments, paths and these documents.
 
 Refresh (`cli/src/refresh.ts`): `status` and `refresh`. Commits since the last scan come from `git rev-list --count <source.head>..HEAD`. At `refresh.everyCommits` it spawns `scan` detached and logs to `.idiolect/cache/refresh.log`.
 
@@ -177,7 +181,7 @@ The agent cannot start headless `claude` in his setup, the permission classifier
 
 ## Open items, in order
 
-1. The CLI redesign in `CLI.md`. Shakib finds the CLI basic and cluttered. He asked for the brief on 2026-10-03 and has not yet said go, and every decision in it is made: bare `idiolect` prompts in every state and only reports without a terminal. What is missing is his go to start building. He already decided that shipped styles are called "house styles" in everything a user reads, and that `idiolect remove` lets a user take out everything idiolect did in a project, at a level they choose. Steps 1 to 7 ship as 0.2.0, he decided that on 2026-10-03. The picker preview comes later.
+1. Release 0.2.0. The CLI redesign in `CLI.md` is built, steps 1 to 8, and the version is bumped on `main`. Shakib pushes, publishes and tests on Windows. Not verified by the agent: the spinner against the real `claude-cli` provider, and a successful `eval` run under the spinner, both need an LLM call he runs himself. Then step 9, the picker preview: `?` and a number in the menu prints that style's rules.
 1. Shakib's own profile is the stale 79-rule one from before the leak fix, and Dissent no longer serves it. One `idiolect scan` in Dissent rebuilds it clean. To serve it again he removes `styles` from Dissent's config.
 2. Retake the quiz with the clean baseline, suggestion 29. It is the only way to know whether the chance-level verdict was real.
 3. More styles, suggestion 31. Shakib wants to learn from more open source projects. One project and one main author per style, recipe in `scripts/styles/README.md`.
@@ -213,5 +217,8 @@ A search for comments piped through `grep -v test` hid a line that contained the
 `which` does not exist on Windows. The check for an installed `claude` uses `where` there.
 `pnpm -r publish` refuses to run with untracked files in the tree, and `pnpm pack --dry-run` in `packages/cli` runs `prepack` and copies the README in.
 An eval judge with no reference samples still returns a confident verdict. An empty repo gives zero references, read the count in the first line of the eval output.
+The step 6 progress was checked against a local stand-in for an OpenAI-compatible server, a 40-line Node script that waits and returns the smallest valid JSON. It covers scan, `unbot --llm` and `--fix`. It cannot answer an eval, so the eval spinner was only seen failing.
+`removeBlock` cannot tell whether a file ended in one newline, two or none before the block was appended, `syncBlock` produces the same bytes for all three. It restores one newline.
+BSD `sed` on macOS has no `\|` alternation, a filter written that way prints nothing and looks like missing output.
 The eval inside the source repo of a borrowed profile serves that repo's project rules, which put a Tivi copyright header into 10 of 12 outputs. Measure a borrowed style in a neutral repo.
 

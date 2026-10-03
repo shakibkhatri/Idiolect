@@ -3,10 +3,10 @@
 Idiolect gives AI coding agents a style to write in, so their code stops sounding like AI.
 
 If you write code yourself, it learns how you write code, comments and commits from your own git history, and what the agent writes reads like you wrote it.
-If an agent writes most of your code, you pick a style that ships with idiolect, learned from a well-known open source project, and the agent writes clean code in that.
+If an agent writes most of your code, you pick a house style, the way one well-known open source project writes its code, and the agent writes clean code in that.
 
 It runs on your machine.
-It reads only the lines you authored, measures them, and turns the numbers and a few real examples into a style profile.
+It reads only the lines you authored, measures them, and turns the numbers and a few real examples into a style.
 Claude Code, Cursor, Copilot, Gemini CLI, anything that reads `AGENTS.md` and any MCP client can read the style.
 Unbot, the linter, flags code that breaks the style or sounds like AI, and can rewrite it.
 
@@ -52,7 +52,7 @@ class UserDataManager(private val repository: UserRepository) {
 }
 ```
 
-`idiolect unbot --fix` on it, with a profile learned from 130,000 lines of one developer's Kotlin:
+`idiolect unbot --fix` on it, with a style learned from 130,000 lines of one developer's Kotlin:
 
 ```kotlin
 class UserDataManager(private val repository: UserRepository) {
@@ -91,6 +91,25 @@ npm install -g idiolect
 
 Or run it without installing: `npx -y idiolect <command>`.
 
+Then type `idiolect` in your project.
+It says where the project stands and lists what you can do next by number.
+
+```
+> idiolect
+This project has no style yet.
+idiolect gives your AI coding agent a style to write in.
+Pick a house style, or learn your own from this project's git history.
+
+  1  Pick a house style                      idiolect use
+  2  Learn my own style from my git history  idiolect init, then idiolect scan
+
+Type a number, or Enter to leave:
+```
+
+Enter leaves without changing anything, and each step names the command it runs, so you know what to type next time.
+In a script, in CI or with `--no-prompt` it only prints the report and the commands.
+`idiolect --help` lists every command in three groups.
+
 ## No code of your own yet
 
 If an AI writes most of your code, there is no history to learn from.
@@ -125,6 +144,12 @@ It creates `CLAUDE.md` only when Claude Code is in use, meaning it is installed 
 It updates `.github/copilot-instructions.md` and `GEMINI.md` when they exist, and `--target <file>` writes any other file.
 The files it did not write are named in one line at the end.
 
+```
+Written to AGENTS.md and CLAUDE.md.
+Your agent follows the style from its next session.
+Check existing code: idiolect unbot --all.  Undo: idiolect remove.
+```
+
 That is the whole setup: no scan, no LLM call, no account.
 Your agent now writes fewer and shorter comments, plainer names and short commit messages, and `idiolect unbot` flags code that sounds like AI.
 
@@ -134,13 +159,46 @@ The code already in your repo and your formatter always win over it.
 `idiolect rules reject <id>` and `idiolect rules edit <id>` change a house style for your repo only, the decisions live in `.idiolect/overrides.json`.
 Styles marked experimental have not been reviewed by someone who writes that language.
 
+## Take it out again
+
+```
+idiolect remove
+```
+
+`remove` first lists everything idiolect left behind, with the real paths, and changes nothing.
+Then you pick how far it goes:
+
+1. **The style.** The block comes out of every agent file and the choice of style out of `.idiolect/config.json`. `idiolect use --none` does the same.
+2. **Everything in this project.** Also the two git hook lines and the whole `.idiolect/` folder.
+3. **Everything on this machine.** Also `~/.idiolect/`, your own learned style.
+
+Your own text in an agent file stays byte for byte.
+A file that idiolect created and that holds nothing but its block is deleted.
+Levels 2 and 3 name what cannot be brought back, such as eval reports, and ask before they delete it.
+For scripts: `idiolect remove --style`, `--project` or `--everything`, with `--yes` to skip the question and `--dry-run` to only list.
+
+It cannot undo a file that `unbot --fix` rewrote, git has the old version.
+The MCP server registration lives in your agent's own config, remove it with `claude mcp remove idiolect`.
+
 ## Learn your own style
 
 ```
 cd your-repo
 idiolect init      # picks your author emails, asks which LLM to use
 idiolect scan      # reads your lines, writes ~/.idiolect/profiles/<email>.json and STYLE.md
-idiolect show      # the profile as the agent reads it
+idiolect show      # the style as your agent reads it
+```
+
+A scan ends with one line per language, the total and the next step.
+`idiolect scan --verbose` also prints the measured statistics.
+
+```
+Kotlin      794 files, 95536 lines, 41 rules
+TypeScript   56 files,  8210 lines, 23 rules
+Commits     481 commits, 15 rules, 42 written by an agent left out
+
+Learned 79 rules, 12 of them from examples of your code.
+Next: idiolect show to read them, idiolect sync to give them to your agent.
 ```
 
 The scan works without any LLM and gives you the metric rules.
@@ -150,33 +208,33 @@ It runs in safe mode with idiolect's own prompt, so your `CLAUDE.md`, hooks and 
 Anthropic, OpenAI, Gemini and any OpenAI-compatible local server such as Ollama work too.
 Run `idiolect scan --dry-run` to see exactly what would be sent.
 
-Scan more than one repo and the profile merges them.
-Rules that only hold in one repo, like a team's commit prefixes, are kept as project rules and served only inside that repo.
+Scan more than one repo and your style is merged over all of them.
+Rules that only hold in one repo, like a team's commit prefixes, are kept as rules for that repo only.
 
 ### Feed it to your agent
 
 ```
-idiolect sync                               # writes STYLE.md into CLAUDE.md, AGENTS.md, GEMINI.md, Cursor and Copilot files
+idiolect sync                               # writes the style into CLAUDE.md, AGENTS.md, GEMINI.md, Cursor and Copilot files
 claude mcp add idiolect -- npx -y idiolect mcp     # MCP server: get_style, check_style, rewrite_like_me
 ```
 
 Sync only writes between `<!-- idiolect:start -->` and `<!-- idiolect:end -->` and never touches anything else.
-The MCP server re-reads the profile on every call, so a rescan or a rule decision is live at once.
+The MCP server re-reads the style on every call, so a rescan or a rule decision is live at once.
 
-### Serve another profile in a repo
+### Serve someone else's style in a repo
 
 ```
 { "profile": "shakib@example.com" }      # in <repo>/.idiolect/config.json
 ```
 
-`sync`, `show`, `rules`, `unbot`, `eval`, `ui` and the MCP server then use that profile from `~/.idiolect/profiles/` inside this repo.
-A scan still writes your own profile, so this is how you serve a style learned from someone else's code while yours keeps growing.
+`sync`, `show`, `rules`, `unbot`, `eval`, `ui` and the MCP server then use the style stored under that email in `~/.idiolect/profiles/` inside this repo.
+A scan still updates your own style, so this is how you serve a style learned from someone else's code while yours keeps growing.
 
-A profile that is not yours is borrowed, and a borrowed profile is served differently.
+A style that is not yours is served differently.
 Only its voice and layout rules are served: naming, comments, commit messages, formatting.
 Its idiom rules, the choice of language features and APIs, are left out because they date with the language.
-Its project rules are never served, and every language rule says which language it is for.
-The header tells the agent the style is borrowed, how old the code behind it is, and that the repo's own code and formatter win.
+Its rules for one repo only are never served, and every language rule says which language it is for.
+The header tells the agent the style comes from other code, how old that code is, and that the repo's own code and formatter win.
 `"borrow": ["voice"]` in the same file narrows it further, `["voice", "layout", "idiom"]` serves everything.
 A rule you approve or edit with `idiolect rules` is served whatever its kind.
 
@@ -190,6 +248,9 @@ idiolect rules reject <id...>
 idiolect rules edit <id> "new text"
 ```
 
+`rules list` groups the rules by section the way the style is rendered, with a marker in front and the id last:
+`+` served, `-` held back, `?` pending, `x` rejected.
+
 Your decisions survive rescans.
 A rule whose evidence changed after you approved it comes back as pending.
 
@@ -199,7 +260,7 @@ A rule whose evidence changed after you approved it comes back as pending.
 idiolect unbot                  # source files changed since HEAD
 idiolect unbot --all            # the whole repo
 idiolect unbot --llm            # the LLM also checks voice rules, with line numbers
-idiolect unbot --fix            # rewrite flagged files in your style
+idiolect unbot --fix            # rewrite flagged files in the style
 idiolect unbot --strict         # exit 1 when anything is flagged
 idiolect hooks install          # warn-only pre-commit hook
 ```
@@ -218,7 +279,7 @@ Review every rule with its evidence, approve, reject or edit in place, read the 
 ### Keep it fresh
 
 ```
-idiolect status                 # profile age, pending rules, commits since the last scan
+idiolect status                 # the report of bare idiolect, without the prompt
 idiolect refresh                # rescans in the background once enough commits have landed
 ```
 
@@ -227,7 +288,7 @@ idiolect refresh                # rescans in the background once enough commits 
 ### Measure it
 
 ```
-idiolect eval            # generates each task with and without the profile, a judge picks blind
+idiolect eval            # generates each task with and without the style, a judge picks blind
 idiolect eval --quiz     # you pick blind
 ```
 
@@ -241,7 +302,7 @@ Your identity lives in `~/.idiolect/config.json`, never in a repo.
 `<repo>/.idiolect/config.json` holds repo settings only and is safe to commit.
 No telemetry, no accounts, no backend.
 
-A shipped style holds rules and numbers only: no author emails and no code from the project it was learned from.
+A house style holds rules and numbers only: no author emails and no code from the project it was learned from.
 `idiolect styles show <style>` names that project, its licence and the date of the code.
 
 ## Status
