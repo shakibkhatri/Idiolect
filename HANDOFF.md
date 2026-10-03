@@ -188,7 +188,7 @@ The agent cannot start headless `claude` in his setup, the permission classifier
 8. Swift (suggestion 3). `tree-sitter-swift` 0.7.1 ships no wasm and `tree-sitter build --wasm` needs emscripten or docker, neither is installed. Installing emscripten with Homebrew changes his machine, ask first.
 9. Launch post. The README now leads with both audiences and has the before and after.
 10. Suggestion 15's judge half, suggestion 22, the "do less" rule family from suggestion 13, then the older open suggestions, or M9 after real usage.
-11. Local branches `served-profile`, `borrowed-style`, `clean-claude-cli`, `plain-rule-text`, `catalogue`, `release-0.1.0`, `styles-list`, `pick-by-number`, `windows-claude-detect` and `docs-0.1.2` are all contained in `main` and can be deleted.
+11. There are no local branches besides `main`. The sixteen from 2026-10-03 were merged and deleted.
 
 ## Things that bit us, so you do not repeat them
 
